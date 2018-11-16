@@ -3,17 +3,16 @@ import numpy as np
 import colorsys
 
 # to be set
-VIDEO = './videos/23s.mp4'
+VIDEO = './videos/29s.mp4'
 TEMPLATE = './images/legoBlue_50.JPG'
-SCALE = 85
-THRESHOLD = 0.8
+RESCALE = 1 # set 1 to rescale the size of video and template
+SCALE = 50
+THRESHOLD = 0.83
+
 
 # resize frame or template for efficiency/testing purposes
 def rescale(image, w, h, if_frame):
     percent = SCALE
-    # TODO: not sure why yet but needed for template (50px) to be found
-    if if_frame == 0:
-        percent = int(percent/2)
     w = int(w * percent/100)
     h = int(h * percent/100)
     return cv2.resize(image, (w, h), interpolation=cv2.INTER_AREA)
@@ -33,10 +32,11 @@ cap = cv2.VideoCapture(VIDEO)
 
 # set template
 template = cv2.imread(TEMPLATE, 0)
-w, h = template.shape[::-1]
+h, w = template.shape[:2]
 print("template width: %d, height: %d" % (w, h))
-template = rescale(template, w, h, if_frame=0)
-w, h = template.shape[::-1]
+if RESCALE == 1:
+    template = rescale(template, w, h, if_frame=0)
+h, w = template.shape[:2]
 print("templateResize width: %d, height: %d" % (w, h))
 # print("templateColorHSV: ")
 # print(get_colorHSV(template, w, h))
@@ -57,7 +57,8 @@ print("video width: %d, height: %d" % (width, height))
 while cap.isOpened():
     # capture and resize frame by frame
     ret, frame = cap.read()
-    frame = rescale(frame, width, height, if_frame=1)
+    if RESCALE == 1:
+        frame = rescale(frame, width, height, if_frame=1)
 
     if ret == True:
 
@@ -82,6 +83,7 @@ while cap.isOpened():
             # if blue TODO: to adapt
             if (0.55, 0.33, 141) <= colorHSV <= (0.65, 1, 255):
                 cv2.rectangle(frame, pt, (pt[0] + w, pt[1] + h), (255, 0, 0), 2)
+
             # if red TODO: to adapt
             if (0.92, 0.33, 200) <= colorHSV <= (1, 1, 255):
                 cv2.rectangle(frame, pt, (pt[0] + w, pt[1] + h), (0, 0, 255), 2)

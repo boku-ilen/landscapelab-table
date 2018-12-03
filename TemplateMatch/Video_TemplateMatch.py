@@ -87,6 +87,7 @@ while cap.isOpened():
         legosBlue = []
         legosRed = []
 
+        # TODO: to rewrite
         for pt in zip(*loc[::-1]):  # list loc[<start>:<stop>:<step>]
             # get mean color (RGB) of found template
             color = cv2.mean(frame[pt[1]:pt[1] + h, pt[0]:pt[0]+w])

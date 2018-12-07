@@ -9,19 +9,29 @@ RESCALE = 1 # set 1 to rescale the size of video and template
 SCALE = 60
 THRESHOLD = 0.83
 DISTANCE = 10 # must be more than DISTANCE px between found positions
+BLUE_MIN = (0.55, 0.33, 141)
+BLUE_MAX = (0.65, 1, 255)
+RED_MIN = (0.92, 0.33, 200)
+RED_MAX = (1, 1, 255)
+# or define the lower and upper boundaries of the colors in the HSV color space
+# LOWER = {'red': (0.92, 0.33, 200), 'blue': (0.55, 0.33, 141)}
+# UPPER = {'red': (1, 1, 255), 'blue': (0.65, 1, 255)}
+# define standard colors for circle around the object
+# COLORS = {'red': (0, 0, 255), 'green': (0, 255, 0), 'blue': (255, 0, 0)}
 
 
 # resize frame or template for efficiency/testing purposes
-def rescale(image, w, h, if_frame):
+def rescale(image, w, h, if_template):
     percent = SCALE
-    #if if_frame == 0:
+    # test object recognition with template of different size
+    # if if_template == 1:
     #    percent = int(percent - 4)
     w = int(w * percent/100)
     h = int(h * percent/100)
     return cv2.resize(image, (w, h), interpolation=cv2.INTER_AREA)
 
 
-# get the HSV value
+# get the HSV from RGB value
 def get_colorHSV(image, w, h):
     min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(image)
     top_left = max_loc
@@ -30,13 +40,18 @@ def get_colorHSV(image, w, h):
     return colorsys.rgb_to_hsv(color[2], color[1], color[0])
 
 
+# get position of found templates and save without duplicates in a single frame
 def find_single_position(array, element):
+    # duplicate if located closer than given distance in both directions
     distance = DISTANCE
-    for i in range(len(array)):
-        if -distance < element[0] - array[i][0] < distance and -distance < element[1] - array[i][1] < distance:
-            break
-        if i == len(array) - 1:
-            array.append(element)
+    if not array:
+        array.append(element)
+    else:
+        for idx in range(len(array)):
+            if -distance < element[0] - array[idx][0] < distance and -distance < element[1] - array[idx][1] < distance:
+                break
+            if idx == len(array) - 1:
+                array.append(element)
 
 
 # initialize the camera or video
@@ -44,20 +59,20 @@ cap = cv2.VideoCapture(VIDEO)
 
 # set template
 template = cv2.imread(TEMPLATE, 0)
-h, w = template.shape[:2]
-print("template width: %d, height: %d" % (w, h))
+height_tem, width_tem = template.shape[:2]
+print("template width: %d, height: %d" % (width_tem, height_tem))
 if RESCALE == 1:
-    template = rescale(template, w, h, if_frame=0)
-h, w = template.shape[:2]
-print("templateResize width: %d, height: %d" % (w, h))
+    template = rescale(template, width_tem, height_tem, if_template=1)
+height_tem, width_tem = template.shape[:2]
+print("templateResize width: %d, height: %d" % (width_tem, height_tem))
 # print("templateColorHSV: ")
-# print(get_colorHSV(template, w, h))
+# print(get_colorHSV(template, width_tem, height_tem))
 
 # do only if needed, testing
 # rotate template by 45 degrees
-# templateCenter = (w/2, h/2)
+# templateCenter = (width_tem/2, height_tem/2)
 # M = cv2.getRotationMatrix2D(templateCenter, 45, 1.0)
-# templateRotated = cv2.warpAffine(template, M, (w, h))
+# templateRotated = cv2.warpAffine(template, M, (width_tem, height_tem))
 
 # get video size, fps
 # fps = cap.get(cv2.CAP_PROP_FPS)
@@ -70,54 +85,58 @@ while cap.isOpened():
     # capture and resize frame by frame
     ret, frame = cap.read()
     if RESCALE == 1:
-        frame = rescale(frame, width, height, if_frame=1)
+        frame = rescale(frame, width, height, if_template=0)
 
-    if ret == True:
+    if ret:
 
         img_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
         # match Template
-        res = cv2.matchTemplate(img_gray, template, cv2.TM_CCOEFF_NORMED)
-        # res2 = cv2.matchTemplate(img_gray, templateRotated, cv2.TM_CCOEFF_NORMED)
+        result = cv2.matchTemplate(img_gray, template, cv2.TM_CCOEFF_NORMED)
+        # result2 = cv2.matchTemplate(img_gray, templateRotated, cv2.TM_CCOEFF_NORMED)
 
-        loc = np.where(res >= THRESHOLD)
-        # if templateRotated used
-        # loc = np.where((res >= threshold) | (res2 >= THRESHOLD))
+        locations = np.where(result >= THRESHOLD)
+        # if templateRotated used:
+        # locations = np.where((result >= threshold) | (result2 >= THRESHOLD))
+
+        # example of print(locations):
+        # (array([ x1, x2, ... ], dtype=int64), array([ y1, y2, ...], dtype=int64))
 
         legosBlue = []
         legosRed = []
+        single_locations = []
 
-        # TODO: to rewrite
-        for pt in zip(*loc[::-1]):  # list loc[<start>:<stop>:<step>]
-            # get mean color (RGB) of found template
-            color = cv2.mean(frame[pt[1]:pt[1] + h, pt[0]:pt[0]+w])
+        # save found locations (left-top) without duplicates in single frame
+        # the * operator unpacks arguments in a function invocation statement
+        for loc in zip(*locations[::-1]):
+            find_single_position(single_locations, loc)
+        # print(single_locations)
 
+        mid_h_start = int(height_tem / 3)
+        mid_h_end = int(2 * height_tem / 3)
+        mid_w_start = int(width_tem / 3)
+        mid_w_end = int(2 * width_tem / 3)
+        for loc in single_locations:
+            # calculate the mean color (RGB) in the middle of the found template (without white space)
+            color = cv2.mean(frame[loc[1] + mid_h_start:loc[1] + mid_h_end, loc[0] + mid_w_start:loc[0] + mid_w_end])
+            # or calculate the mean color (RGB) for the whole found template
+            # color = cv2.mean(frame[loc[1]:loc[1] + height_tem, loc[0]:loc[0] + width_tem])
             # print(color)
+
             colorHSV = colorsys.rgb_to_hsv(color[2], color[1], color[0])
             # print(colorHSV)
 
-            # if blue TODO: to adapt
-            if (0.55, 0.33, 141) <= colorHSV <= (0.65, 1, 255):
-                cv2.rectangle(frame, pt, (pt[0] + w, pt[1] + h), (255, 0, 0), 2)
-                blue = [pt[0] + w, pt[1] + h]
+            # TODO: rewrite
+            if BLUE_MIN <= colorHSV <= BLUE_MAX:
+                cv2.rectangle(frame, (loc[0], loc[1]), (loc[0] + width_tem, loc[1] + height_tem), (255, 0, 0), 2)
+                blue = [loc[0] + width_tem, loc[1] + height_tem]
+                legosBlue.append(blue)
 
-                if legosBlue == []:
-                    legosBlue.append(blue)
-                else:
-                    find_single_position(legosBlue, blue)
+            if RED_MIN <= colorHSV <= RED_MAX:
+                cv2.rectangle(frame, (loc[0], loc[1]), (loc[0] + width_tem, loc[1] + height_tem), (0, 0, 255), 2)
+                red = [loc[0] + width_tem, loc[1] + height_tem]
+                legosRed.append(red)
 
-            # if red TODO: to adapt
-            if (0.92, 0.33, 200) <= colorHSV <= (1, 1, 255):
-                cv2.rectangle(frame, pt, (pt[0] + w, pt[1] + h), (0, 0, 255), 2)
-                red = [pt[0] + w, pt[1] + h]
-
-                if legosRed == []:
-                    legosRed.append(red)
-                else:
-                    find_single_position(legosRed, red)
-
-            # if yellow TODO: to found
-            # not found with the template
         print("Blue: ")
         print(legosBlue)
         print("Red: ")

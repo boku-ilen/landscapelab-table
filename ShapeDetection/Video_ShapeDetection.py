@@ -22,16 +22,21 @@ while cap.isOpened():
     frame = imutils.resize(crop_frame, width=1000)
 
     if ret:
-        # convert the resized image to grayscale, blur it slightly, and threshold it
+        # convert the resized image to grayscale
         img_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-        # in OpenCV, finding contours is like finding white object from black background
+        # finding contours is like finding white object from black background
         # change whiteboard to black
-        # TODO: improve so only white/light gray will be black
-        thresh2 = cv2.threshold(img_gray, 140, 255, cv2.THRESH_BINARY)[1]
-        frame[thresh2 == 255] = 0
+        thresh = cv2.threshold(img_gray, 140, 255, cv2.THRESH_BINARY)[1]
+        frame[thresh == 255] = 0
         kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
         erosion = cv2.erode(frame, kernel, iterations=1)
+
+        # optional whiteboard to black using HLS
+        # imgHLS = cv2.cvtColor(frame, cv2.COLOR_BGR2HLS)
+        # l_channel = imgHLS[:, :, 1]
+        # mask = cv2.inRange(l_channel, 150, 255)
+        # frame[mask == 255] = 0
 
         # convert the resized image to grayscale, blur it slightly, and threshold it
         img_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)

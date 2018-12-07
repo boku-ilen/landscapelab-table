@@ -1,3 +1,4 @@
 .idea
 ShapeDetection/venv/*
 ShapeDetection/pyimagesearch/__pycache__/*
+examples/shape-detection/pyimagesearch/__pycache__/*

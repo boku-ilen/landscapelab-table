@@ -15,13 +15,12 @@ while cap.isOpened():
     # capture and resize frame by frame
     ret, frame = cap.read()
 
-    # TODO: find the whiteboard and crop to it
-    crop_frame = frame[50:1000, 445:1590]
-
-    # resize
-    frame = imutils.resize(crop_frame, width=1000)
-
     if ret:
+        # TODO: find the whiteboard and crop to it
+        crop_frame = frame[50:1000, 445:1590]
+        # resize
+        frame = imutils.resize(crop_frame, width=1000)
+
         # convert the resized image to grayscale
         img_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
@@ -67,5 +66,9 @@ while cap.isOpened():
         # if the `q` key was pressed, break from the loop
         if key == ord("q"):
             break
+    # Break the loop
+    else:
+        break
+
 cap.release()
 cv2.destroyAllWindows()

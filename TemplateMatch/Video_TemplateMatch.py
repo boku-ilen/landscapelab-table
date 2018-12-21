@@ -4,7 +4,7 @@ import colorsys
 
 # to be set
 VIDEO = './videos/29s.mp4'
-TEMPLATE = './images/legoBlue_50.JPG'
+TEMPLATE = './images/legoBlue_50.jpg'
 RESCALE = 1 # set 1 to rescale the size of video and template
 SCALE = 60
 THRESHOLD = 0.83
@@ -13,6 +13,7 @@ BLUE_MIN = (0.55, 0.33, 141)
 BLUE_MAX = (0.65, 1, 255)
 RED_MIN = (0.92, 0.33, 200)
 RED_MAX = (1, 1, 255)
+SAVE_VIDEO = 0
 # or define the lower and upper boundaries of the colors in the HSV color space
 # LOWER = {'red': (0.92, 0.33, 200), 'blue': (0.55, 0.33, 141)}
 # UPPER = {'red': (1, 1, 255), 'blue': (0.65, 1, 255)}
@@ -80,14 +81,18 @@ width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
 height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
 print("video width: %d, height: %d" % (width, height))
 
+# Define the codec and create VideoWriter object.The output is stored in 'outpy.avi' file.
+# Define the fps to be equal to 10. Also frame size is passed.
+if SAVE_VIDEO == 1:
+    out = cv2.VideoWriter('outpy.avi', cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'), 10, (int(width * SCALE/100), int(height * SCALE/100)))
+
 # capture frames until video is completed
 while cap.isOpened():
     # capture and resize frame by frame
     ret, frame = cap.read()
-    if RESCALE == 1:
-        frame = rescale(frame, width, height, if_template=0)
-
     if ret:
+        if RESCALE == 1:
+            frame = rescale(frame, width, height, if_template=0)
 
         img_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
@@ -142,6 +147,10 @@ while cap.isOpened():
         print("Red: ")
         print(legosRed)
 
+        # Write the frame into the file 'output.avi'
+        if SAVE_VIDEO == 1:
+            out.write(frame)
+
         # show the frame
         cv2.imshow("Frame", frame)
         key = cv2.waitKey(1) & 0xFF
@@ -149,5 +158,11 @@ while cap.isOpened():
         # if the `q` key was pressed, break from the loop
         if key == ord("q"):
             break
+    # Break the loop
+    else:
+        break
+
+if SAVE_VIDEO == 1:
+    out.release()
 cap.release()
 cv2.destroyAllWindows()

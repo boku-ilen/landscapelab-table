@@ -8,6 +8,7 @@ import cv2
 import matplotlib.pyplot as plt
 import os
 
+# TODO: try with images with minimal shadows
 QUERY_IMAGE = './images/board.png'
 TRAIN_IMAGE = './images/legoBlau_rgb.JPG'
 

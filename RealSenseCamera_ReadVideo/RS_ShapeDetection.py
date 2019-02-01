@@ -1,6 +1,12 @@
 # TODO: information about Apache License?
 # License: Apache 2.0. (pyrealsense2)
 
+# TODO: optimization possibilities:
+# temporal filtering (IIR filter) to remove "holes" (depth=0), hole-filling
+# edge-preserving filtering to smooth the depth noise
+# changing the depth step-size
+# IR pattern removal
+
 import pyrealsense2 as rs
 import imutils
 import numpy as np
@@ -23,6 +29,7 @@ def detect(contour):
         # TODO: find size of objects depend on distance to the board, check color
         if (8 < h < 22) & (8 < w < 22):
             # Check if it is a square or a rectangle
+            # TODO: maybe change the ratio
             if 0.7 <= ar <= 1.3:
                 shape = "square"
             elif 0.4 < ar < 2.2:
@@ -33,10 +40,11 @@ def detect(contour):
 # Configure depth and color streams
 pipeline = rs.pipeline()
 config = rs.config()
+# TODO: use the max resolution (1280,720) and post processing with downsample 3
 config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
 config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
 
-# TODO : find the middle of the frame to take distance to the board
+# TODO: find the middle of the frame to take distance to the board
 middleX = int(320)
 middleY = int(240)
 # Initialize the clipping distance

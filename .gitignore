@@ -3,3 +3,4 @@ ShapeDetection/venv/*
 ShapeDetection/pyimagesearch/__pycache__/*
 examples/shape-detection/pyimagesearch/__pycache__/*
 RealSenseCamera_ReadVideo/venv/*
+RealSenseCamera_ReadVideo/QRCodeDetection/__pycache__/*

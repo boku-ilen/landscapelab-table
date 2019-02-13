@@ -11,6 +11,7 @@ import imutils
 import numpy as np
 import cv2
 import colorsys
+from QRCodeDetection.QRCodeDetection import QRCodeDetector
 
 # For resolution 1280x720 and distance ~1 meter a short side of lego piece has ~14 px length
 WIDTH = int(1280)
@@ -25,7 +26,7 @@ MIN_SQ = 0.7
 MAX_SQ = 1.3
 MIN_REC = 0.2
 MAX_REC = 2.5
-# accepted HSV colors
+# Accepted HSV colors
 BLUE_MIN = (0.53, 0.33, 141)
 BLUE_MAX = (0.65, 1, 255)
 RED_MIN = (0.92, 0.33, 170)
@@ -106,6 +107,8 @@ middleX = int(WIDTH/2)
 middleY = int(HEIGHT/2)
 # Initialize the clipping distance
 clip_dist = 0
+# Detection of the board with QR-Code Detector until the board found
+detected = 0
 
 # Create alignment primitive with color as its target stream:
 align = rs.align(rs.stream.color)
@@ -117,6 +120,9 @@ profile = pipeline.start(config)
 depth_sensor = profile.get_device().first_depth_sensor()
 depth_scale = depth_sensor.get_depth_scale()
 print("Depth Scale is: ", depth_scale)
+
+# Initialize board detection
+det = QRCodeDetector()
 
 try:
     while True:
@@ -141,6 +147,21 @@ try:
             clip_dist = aligned_depth_frame.get_distance(middleX, middleY) / depth_scale
             print("Distance to the table is:", clip_dist)
 
+        # Detect the corners of the board with QR-Code Detector and eliminate perspective transformations (square)
+        result, corners = det.qr_code_outer_corners(color_image)
+        qr_code_size = 300
+        if result:
+            if all((0, 0) < tuple(c) < (color_image.shape[1], color_image.shape[0]) for c in corners):
+                # Print corners coordinates
+                for c in corners:
+                    print(c)
+                # Calculate board coordinates
+                minX, minY, maxX, maxY = det.find_minmax(corners)
+                # Eliminate perspective transformations, change to square
+                # TODO: decide if rectified is useful, the board must be square, markers should be placed precisely
+                rectified = det.rectify(color_image, corners, (qr_code_size, qr_code_size))
+        cv2.imshow('QR code detection', rectified)
+
         # Change background regarding clip_dist to black (depth image is 1 channel, color is 3 channels)
         depth_image_3d = np.dstack((depth_image, depth_image, depth_image))
         bg_removed = np.where((depth_image_3d > clip_dist * (1 + CLIP)) | (depth_image_3d < clip_dist * (1 - CLIP)), 0, color_image)
@@ -152,11 +173,6 @@ try:
         cv2.imshow('Aligned', bg_removed)
 
         # Change the white board to black and find objects
-
-        # TODO: to optimize find the whiteboard and crop to it
-        # TODO: maybe not needed if clipping with depth information used
-        # crop_frame = bg_removed[50:120, 435:600]
-
         frame = bg_removed
 
         # Convert the image to grayscale
@@ -171,6 +187,7 @@ try:
         # TODO: check if it helps
         # Trying to remove gray colors to ignore shadows
         frame_HSV = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+
         thresh = cv2.inRange(frame_HSV, (0, 0, 0), (255, 255, 120))
         frame[thresh == 255] = 0
 
@@ -178,6 +195,8 @@ try:
         img_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         blurred = cv2.GaussianBlur(img_gray, (5, 5), 0)
         thresh = cv2.threshold(blurred, 55, 255, cv2.THRESH_BINARY)[1]
+
+        # TODO: Change around the board to black (minX, minY, maxX, maxY)
 
         # Find contours in the thresholded image
         contours = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)

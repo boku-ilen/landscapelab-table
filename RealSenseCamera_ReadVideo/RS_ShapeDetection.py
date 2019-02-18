@@ -1,6 +1,7 @@
 # Used pyrealsense2 on License: Apache 2.0.
 
 # TODO: optimization possibilities:
+# detect inner corners of markers to exclude the QR-Code-markers from analysis
 # temporal filtering (IIR filter) to remove "holes" (depth=0), hole-filling
 # edge-preserving filtering to smooth the depth noise
 # changing the depth step-size
@@ -109,6 +110,7 @@ middleY = int(HEIGHT/2)
 clip_dist = 0
 # Detection of the board with QR-Code Detector until the board found
 detected = 0
+result = False
 board_size = HEIGHT
 
 # Create alignment primitive with color as its target stream:
@@ -155,10 +157,13 @@ try:
             clip_dist = aligned_depth_frame.get_distance(middleX, middleY) / depth_scale
             print("Distance to the table is:", clip_dist)
 
-        # Detect the corners of the board with QR-Code Detector and eliminate perspective transformations (square)
-        # TODO: detect inner corners of markers to exclude the markers from analysis
-        # TODO: detect corners only once and save position, if camera is lightly moving position must be updated
-        result, corners = det.qr_code_outer_corners(color_image)
+        # Detect the corners of the board, save position and eliminate perspective transformations (square)
+        # The board must be square, markers should be placed precisely
+        # TODO: if camera is lightly moving position must be updated
+        if detected == 0:
+            print("detecting")
+            result, corners = det.qr_code_outer_corners(color_image)
+            detected = 1
         if result:
             if all((0, 0) < tuple(c) < (color_image.shape[1], color_image.shape[0]) for c in corners):
                 # Print corners coordinates
@@ -167,9 +172,7 @@ try:
                     # Calculate board coordinates
                     minX, minY, maxX, maxY = det.find_minmax(corners)
                     board_size = maxX-minX
-                    detected = 1
                 # Eliminate perspective transformations, change to square
-                # TODO: the board must be square, markers should be placed precisely
                 rectified = det.rectify(clipped_color_image, corners, (board_size, board_size))
                 # Set ROI to black and add only the rectified board with searched objects
                 roi[0:HEIGHT, 0:WIDTH] = [0, 0, 0]

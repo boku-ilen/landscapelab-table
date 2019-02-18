@@ -7,11 +7,13 @@
 # changing the depth step-size
 # IR pattern removal
 
+# installed opencv-contrib-python for tracking
 import pyrealsense2 as rs
 import imutils
 import numpy as np
 import cv2
 import colorsys
+import time
 from QRCodeDetection.QRCodeDetection import QRCodeDetector
 
 # For resolution 1280x720 and distance ~1 meter a short side of lego piece has ~14 px length
@@ -52,11 +54,14 @@ def detect(contour):
 
         # Compute the bounding box of the contour and the aspect ratio
         (x, y, w, h) = cv2.boundingRect(approx)
+        bbox = (x, y, w, h)
+        # cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
 
         # Check the size and color of the shape to decide if it is the searched object
         if (MIN_LENGTH < h < MAX_LENGTH) & (MIN_LENGTH < w < MAX_LENGTH):
             shape = check_if_square(box)
-    return shape
+        return shape, bbox
+    return shape, []
 
 
 # Check if square or rectangle
@@ -127,8 +132,18 @@ print("Depth Scale is: ", depth_scale)
 # Initialize board detection
 det = QRCodeDetector()
 
+# Initialize trackers
+name = 'KCF'
+tracker = cv2.TrackerKCF_create
+tracker = tracker()
+initialized = False
+# for name, tracker in (('KCF', cv2.TrackerKCF_create), ('MIL', cv2.TrackerMIL_create), ('TLD', cv2.TrackerTLD_create)):
+#    tracker = tracker()
+#    initialized = False
+
 try:
     while True:
+        t0 = time.time()
         # Wait for depth and color frames
         frames = pipeline.wait_for_frames()
         # Align the depth frame to color frame
@@ -151,6 +166,7 @@ try:
 
         # Set ROI as the color_image to set the same size
         roi = color_image
+        # Set empty list of found objects
 
         # Get the distance to the board (the middle of the frame)
         if clip_dist == 0:
@@ -161,14 +177,15 @@ try:
         # The board must be square, markers should be placed precisely
         # TODO: if camera is lightly moving position must be updated
         if detected == 0:
-            print("detecting")
+            print("Board detecting")
             result, corners = det.qr_code_outer_corners(color_image)
             detected = 1
         if result:
             if all((0, 0) < tuple(c) < (color_image.shape[1], color_image.shape[0]) for c in corners):
+                # print("Board:", corners)
                 # Print corners coordinates
                 for c in corners:
-                    print(c)
+                    # print("Board corner:", c)
                     # Calculate board coordinates
                     minX, minY, maxX, maxY = det.find_minmax(corners)
                     board_size = maxX-minX
@@ -177,7 +194,6 @@ try:
                 # Set ROI to black and add only the rectified board with searched objects
                 roi[0:HEIGHT, 0:WIDTH] = [0, 0, 0]
                 roi[0:board_size, 0:board_size] = rectified
-                # TODO: calculate coordinates
         else:
             roi[0:HEIGHT, 0:WIDTH] = [0, 0, 0]
         cv2.imshow('ROI', roi)
@@ -207,7 +223,7 @@ try:
 
         # Find contours in the thresholded image
         contours = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        contours = contours[0] if imutils.is_cv2() else contours[1]
+        contours = contours[0]
 
         # Loop over the contours
         for c in contours:
@@ -216,17 +232,37 @@ try:
             if M["m00"] != 0:
                 cX = int((M["m10"] / M["m00"]))
                 cY = int((M["m01"] / M["m00"]))
-                shape = detect(c)
+                shape, bbox = detect(c)
                 if shape != "shape":
                     check = False
                     # Check color (currently only red and blue accepted)
                     check = check_color(cX, cY)
-                    print("Coordinates:", cX, cY, check)
                     # eliminate very small contours
                     if check & (cv2.contourArea(c) > 20):
                         cv2.drawContours(frame, [c], -1, (0, 255, 0), 3)
                         cv2.putText(frame, shape, (cX, cY), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+                        print("Bounding box:", bbox)
+                        print("Center coordinates:", cX, cY)
                         print("Area:", cv2.contourArea(c))
+
+                        # Track the first object
+                        # TODO: to improve
+                        if initialized:
+                            tracked, bbox = tracker.update(frame)
+                            print("update", bbox)
+                        else:
+                            cv2.imwrite('/tmp/frame.png', frame)
+                            tracked = tracker.init(frame, bbox)
+                            print("init", bbox)
+                            initialized = True
+                        fps = 1 / (time.time() - t0)
+                        cv2.putText(frame, 'tracker: {}, fps: {:.1f}'.format(name, fps), (10, 50),
+                                    cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
+                        if tracked:
+                            bbox = tuple(map(int, bbox))
+                            cv2.rectangle(frame, (bbox[0], bbox[1]), (bbox[0] + bbox[2], bbox[1] + bbox[3]),
+                                          (255, 0, 0), 3)
+                        # cv2.imshow(name + ' tracker', frame)
 
         # Render shape detection images
         cv2.namedWindow('Shape detection', cv2.WINDOW_AUTOSIZE)

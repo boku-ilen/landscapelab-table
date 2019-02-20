@@ -7,7 +7,6 @@
 # changing the depth step-size
 # IR pattern removal
 
-# installed opencv-contrib-python for tracking
 import pyrealsense2 as rs
 import imutils
 import numpy as np
@@ -15,6 +14,7 @@ import cv2
 import colorsys
 import time
 from QRCodeDetection.QRCodeDetection import QRCodeDetector
+from pyimagesearch.centroidtracker import CentroidTracker
 
 # For resolution 1280x720 and distance ~1 meter a short side of lego piece has ~14 px length
 WIDTH = int(1280)
@@ -137,6 +137,7 @@ print("Depth Scale is: ", depth_scale)
 det = QRCodeDetector()
 
 # No tracker can track lego movement precisely
+# No tracker can track lego movement precisely
 # TODO: implement own tracker
 # Initialize trackers
 name = 'TLD'
@@ -147,6 +148,9 @@ initialized = False
 # TrackerTLD - not precise after updating, should handle rapid motions, partial occlusions, object absence
 # TrackerMedianFlow - suitable for very smooth movements when object is visible throughout the whole sequence
 # TrackerCSRT - follows a hand after update, problem to find when object shortly absent
+
+# Initialize the centroid tracker
+ct = CentroidTracker()
 
 try:
     while True:
@@ -232,6 +236,9 @@ try:
         contours = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         contours = contours[0]
 
+        # Bounding box rectangles (tuple with this structure: (startX, startY, endX, endY))
+        rects = []
+
         # Loop over the contours
         for c in contours:
             # compute the center of the contour (cX, cY) and detect whether it is the searched object
@@ -244,7 +251,7 @@ try:
                     check = False
                     # Check color (currently only red and blue accepted)
                     check = check_color(cX, cY)
-                    # eliminate very small contours
+                    # Eliminate very small contours
                     if check & (cv2.contourArea(c) > 20):
                         cv2.drawContours(frame, [c], -1, (0, 255, 0), 3)
                         cv2.putText(frame, shape, (cX, cY), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
@@ -252,23 +259,17 @@ try:
                         print("Center coordinates:", cX, cY)
                         print("Area:", cv2.contourArea(c))
 
-                        # Track the first object
-                        # TODO: implement own tracker
-                        if initialized:
-                            tracked, bbox = tracker.update(frame)
-                            print("update", bbox)
-                        else:
-                            cv2.imwrite('/tmp/frame.png', frame)
-                            tracked = tracker.init(frame, bbox)
-                            print("init", bbox)
-                            initialized = True
-                        fps = 1 / (time.time() - t0)
-                        cv2.putText(frame, 'tracker: {}, fps: {:.1f}'.format(name, fps), (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
-                        if tracked:
-                            bbox = tuple(map(int, bbox))
-                            print("tracked", bbox)
-                            cv2.rectangle(frame, (bbox[0], bbox[1]), (bbox[0] + bbox[2], bbox[1] + bbox[3]), (255, 0, 0), 3)
-                        # cv2.imshow(name + ' tracker', frame)
+                        # Update the bounding box rectangles list
+                        rects.append((bbox[0], bbox[1], bbox[0] + bbox[2], bbox[1] + bbox[3]))
+
+        # Update the centroid tracker using the computed set of bounding box rectangles
+        objects = ct.update(rects)
+        # Loop over the tracked objects
+        for (objectID, centroid) in objects.items():
+            # Draw both the ID of the object and the centroid of the object on the output frame
+            text = "ID {}".format(objectID)
+            cv2.putText(frame, text, (centroid[0] - 10, centroid[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+            cv2.circle(frame, (centroid[0], centroid[1]), 4, (0, 255, 0), -1)
 
         # Render shape detection images
         cv2.namedWindow('Shape detection', cv2.WINDOW_AUTOSIZE)

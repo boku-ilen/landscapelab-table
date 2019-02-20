@@ -32,7 +32,7 @@ MAX_REC = 2.5
 # Accepted HSV colors
 BLUE_MIN = (0.53, 0.33, 141)
 BLUE_MAX = (0.65, 1, 255)
-RED_MIN = (0.92, 0.33, 170)
+RED_MIN = (0.92, 0.40, 160)
 RED_MAX = (1, 1, 255)
 
 
@@ -98,7 +98,11 @@ def check_color(x, y):
     colorHSV = colorsys.rgb_to_hsv(color[2], color[1], color[0])
     print("HSV:", colorHSV)
 
-    if (RED_MIN <= colorHSV <= RED_MAX) | (BLUE_MIN <= colorHSV <= BLUE_MAX):
+    # not working as supposed
+    # if (RED_MIN <= colorHSV <= RED_MAX) | (BLUE_MIN <= colorHSV <= BLUE_MAX):
+
+    if ((RED_MIN[0] <= colorHSV[0] <= RED_MAX[0]) & (RED_MIN[1] <= colorHSV[1] <= RED_MAX[1]) & (RED_MIN[2] <= colorHSV[2] <= RED_MAX[2]))\
+            | ((BLUE_MIN[0] <= colorHSV[0] <= BLUE_MAX[0]) & (BLUE_MIN[1] <= colorHSV[1] <= BLUE_MAX[1]) & (BLUE_MIN[2] <= colorHSV[2] <= BLUE_MAX[2])):
         return True
     return False
 
@@ -132,14 +136,17 @@ print("Depth Scale is: ", depth_scale)
 # Initialize board detection
 det = QRCodeDetector()
 
+# No tracker can track lego movement precisely
+# TODO: implement own tracker
 # Initialize trackers
-name = 'KCF'
-tracker = cv2.TrackerKCF_create
-tracker = tracker()
+name = 'TLD'
+tracker = cv2.TrackerTLD_create()
 initialized = False
-# for name, tracker in (('KCF', cv2.TrackerKCF_create), ('MIL', cv2.TrackerMIL_create), ('TLD', cv2.TrackerTLD_create)):
-#    tracker = tracker()
-#    initialized = False
+# TrackerKCF - problem with updating
+# TrackerMIL - not precise after updating
+# TrackerTLD - not precise after updating, should handle rapid motions, partial occlusions, object absence
+# TrackerMedianFlow - suitable for very smooth movements when object is visible throughout the whole sequence
+# TrackerCSRT - follows a hand after update, problem to find when object shortly absent
 
 try:
     while True:
@@ -246,7 +253,7 @@ try:
                         print("Area:", cv2.contourArea(c))
 
                         # Track the first object
-                        # TODO: to improve
+                        # TODO: implement own tracker
                         if initialized:
                             tracked, bbox = tracker.update(frame)
                             print("update", bbox)
@@ -256,12 +263,11 @@ try:
                             print("init", bbox)
                             initialized = True
                         fps = 1 / (time.time() - t0)
-                        cv2.putText(frame, 'tracker: {}, fps: {:.1f}'.format(name, fps), (10, 50),
-                                    cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
+                        cv2.putText(frame, 'tracker: {}, fps: {:.1f}'.format(name, fps), (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
                         if tracked:
                             bbox = tuple(map(int, bbox))
-                            cv2.rectangle(frame, (bbox[0], bbox[1]), (bbox[0] + bbox[2], bbox[1] + bbox[3]),
-                                          (255, 0, 0), 3)
+                            print("tracked", bbox)
+                            cv2.rectangle(frame, (bbox[0], bbox[1]), (bbox[0] + bbox[2], bbox[1] + bbox[3]), (255, 0, 0), 3)
                         # cv2.imshow(name + ' tracker', frame)
 
         # Render shape detection images

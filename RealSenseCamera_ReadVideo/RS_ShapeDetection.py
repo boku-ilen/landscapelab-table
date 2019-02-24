@@ -237,7 +237,7 @@ try:
         contours = contours[0]
 
         # Bounding box rectangles (tuple with this structure: (startX, startY, endX, endY))
-        rects = []
+        centroids = []
 
         # Loop over the contours
         for c in contours:
@@ -260,10 +260,10 @@ try:
                         print("Area:", cv2.contourArea(c))
 
                         # Update the bounding box rectangles list
-                        rects.append((bbox[0], bbox[1], bbox[0] + bbox[2], bbox[1] + bbox[3]))
+                        centroids.append((cX, cY))
 
         # Update the centroid tracker using the computed set of bounding box rectangles
-        objects = ct.update(rects)
+        objects = ct.update(centroids)
         # Loop over the tracked objects
         for (objectID, centroid) in objects.items():
             # Draw both the ID of the object and the centroid of the object on the output frame

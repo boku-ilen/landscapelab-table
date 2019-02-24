@@ -241,7 +241,7 @@ try:
         contours = contours[0]
 
         # Bounding box rectangles (tuple with this structure: (startX, startY, endX, endY))
-        centroids = []
+        properties = []
         allObjects = []
 
 
@@ -265,18 +265,22 @@ try:
                         print("Center coordinates:", cX, cY)
                         print("Area:", cv2.contourArea(c))
 
-                        # Update the centroid list
-                        centroids.append((cX, cY))
+                        # Update the properites/objects list
+                        properties.append((cX, cY, shape, checkColor))
                         myObject = MyObject((cX, cY), shape, checkColor)
                         allObjects.append(myObject)
 
         # Print all objects with properties
         print("All saved objects with properties:")
-        for (i, item) in enumerate(allObjects):
-            print(allObjects[i].centroid, allObjects[i].shape, allObjects[i].color)
+        length = 0
+        for (idx, item) in enumerate(allObjects):
+            length += 1
+            print(allObjects[idx].centroid, allObjects[idx].shape, allObjects[idx].color)
 
-        # Update the centroid tracker using the computed set of bounding box rectangles
-        objects = ct.update(centroids)
+        # TODO: do update with objects instead of just properties
+
+        # Update the centroid tracker using the computed set of properties/objects
+        objects = ct.update(properties, length)
         # Loop over the tracked objects
         for (objectID, centroid) in objects.items():
             # Draw both the ID of the object and the centroid of the object on the output frame

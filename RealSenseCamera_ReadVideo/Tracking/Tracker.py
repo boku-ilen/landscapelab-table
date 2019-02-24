@@ -8,7 +8,7 @@ from scipy.spatial import distance as dist
 import numpy as np
 
 
-class Tracker():
+class Tracker:
     def __init__(self, maxDisappeared=50):
         """Initialize the next unique object ID with two ordered dictionaries"""
         self.nextObjectID = 0
@@ -29,10 +29,10 @@ class Tracker():
         del self.objects[objectID]
         del self.disappeared[objectID]
 
-    def update(self, centroids):
+    def update(self, objects, length):
         """Update position of the object"""
         # Check if the list of input bounding box rectangles is empty
-        if len(centroids) == 0:
+        if length == 0:
             # Loop over any existing tracked objects and mark them as disappeared
             for objectID in self.disappeared.keys():
                 self.disappeared[objectID] += 1
@@ -45,18 +45,23 @@ class Tracker():
             return self.objects
 
         # Initialize an array of input centroids for the current frame
-        inputCentroids = np.zeros((len(centroids), 2), dtype="int")
+        inputCentroids = np.zeros((length, 2), dtype="int")
+        shapes = [None] * length
+        colors = [None] * length
 
-        # Loop over the bounding box rectangles
-        for (i, (cX, cY)) in enumerate(centroids):
+        # Loop over the objects with properties
+        for (i, item) in enumerate(objects):
             # Save new centroids
-            inputCentroids[i] = (cX, cY)
+            inputCentroids[i] = (item[0], item[1])
+            shapes[i] = item[2]
+            colors[i] = item[3]
 
         # If no objects are currently tracked take the input centroids and register each of them
         if len(self.objects) == 0:
             for i in range(0, len(inputCentroids)):
                 self.register(inputCentroids[i])
         # Otherwise try to match the input centroids to existing object centroids
+        # TODO: match only objects with the same shape and color
         else:
             # Grab the set of object IDs and corresponding centroids
             objectIDs = list(self.objects.keys())

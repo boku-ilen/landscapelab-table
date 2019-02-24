@@ -14,7 +14,9 @@ import cv2
 import colorsys
 import time
 from QRCodeDetection.QRCodeDetection import QRCodeDetector
-from pyimagesearch.centroidtracker import CentroidTracker
+from Tracking.Tracker import Tracker
+from Tracking.MyObject import MyObject
+
 
 # For resolution 1280x720 and distance ~1 meter a short side of lego piece has ~14 px length
 WIDTH = int(1280)
@@ -91,6 +93,7 @@ def calculate_size(box):
 
 # TODO: find correct RGB
 def check_color(x, y):
+    col = "wrongColor"
     # calculate the mean color (RGB)
     color = cv2.mean(color_image[y:y+4, x:x+4])
     # print("RGB:", color[2], color[1], color[0])
@@ -101,10 +104,11 @@ def check_color(x, y):
     # not working as supposed
     # if (RED_MIN <= colorHSV <= RED_MAX) | (BLUE_MIN <= colorHSV <= BLUE_MAX):
 
-    if ((RED_MIN[0] <= colorHSV[0] <= RED_MAX[0]) & (RED_MIN[1] <= colorHSV[1] <= RED_MAX[1]) & (RED_MIN[2] <= colorHSV[2] <= RED_MAX[2]))\
-            | ((BLUE_MIN[0] <= colorHSV[0] <= BLUE_MAX[0]) & (BLUE_MIN[1] <= colorHSV[1] <= BLUE_MAX[1]) & (BLUE_MIN[2] <= colorHSV[2] <= BLUE_MAX[2])):
-        return True
-    return False
+    if (RED_MIN[0] <= colorHSV[0] <= RED_MAX[0]) & (RED_MIN[1] <= colorHSV[1] <= RED_MAX[1]) & (RED_MIN[2] <= colorHSV[2] <= RED_MAX[2]):
+        col = "red"
+    elif (BLUE_MIN[0] <= colorHSV[0] <= BLUE_MAX[0]) & (BLUE_MIN[1] <= colorHSV[1] <= BLUE_MAX[1]) & (BLUE_MIN[2] <= colorHSV[2] <= BLUE_MAX[2]):
+        col = "blue"
+    return col
 
 
 # Configure depth and color streams
@@ -150,7 +154,7 @@ initialized = False
 # TrackerCSRT - follows a hand after update, problem to find when object shortly absent
 
 # Initialize the centroid tracker
-ct = CentroidTracker()
+ct = Tracker()
 
 try:
     while True:
@@ -238,6 +242,8 @@ try:
 
         # Bounding box rectangles (tuple with this structure: (startX, startY, endX, endY))
         centroids = []
+        allObjects = []
+
 
         # Loop over the contours
         for c in contours:
@@ -248,19 +254,26 @@ try:
                 cY = int((M["m01"] / M["m00"]))
                 shape, bbox = detect(c)
                 if shape != "shape":
-                    check = False
+                    checkColor = "wrongColor"
                     # Check color (currently only red and blue accepted)
-                    check = check_color(cX, cY)
+                    checkColor = check_color(cX, cY)
                     # Eliminate very small contours
-                    if check & (cv2.contourArea(c) > 20):
+                    if (checkColor != "wrongColor") & (cv2.contourArea(c) > 20):
                         cv2.drawContours(frame, [c], -1, (0, 255, 0), 3)
                         cv2.putText(frame, shape, (cX, cY), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
                         print("Bounding box:", bbox)
                         print("Center coordinates:", cX, cY)
                         print("Area:", cv2.contourArea(c))
 
-                        # Update the bounding box rectangles list
+                        # Update the centroid list
                         centroids.append((cX, cY))
+                        myObject = MyObject((cX, cY), shape, checkColor)
+                        allObjects.append(myObject)
+
+        # Print all objects with properties
+        print("All saved objects with properties:")
+        for (i, item) in enumerate(allObjects):
+            print(allObjects[i].centroid, allObjects[i].shape, allObjects[i].color)
 
         # Update the centroid tracker using the computed set of bounding box rectangles
         objects = ct.update(centroids)

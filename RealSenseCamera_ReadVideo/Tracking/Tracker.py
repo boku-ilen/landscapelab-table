@@ -1,28 +1,34 @@
 # Main source: https://www.pyimagesearch.com/2018/07/23/simple-object-tracking-with-opencv/
 # TODO: to improve
 # Add parameters: color, shape and use them to differ objects
+# Use class MyObject or remove it, control self.allObjects
 
 # Dict subclass that remembers the order entries were added
 from collections import OrderedDict
 from scipy.spatial import distance as dist
 import numpy as np
+from Tracking.MyObject import MyObject
 
 
-class Tracker:
-    def __init__(self, maxDisappeared=50):
-        """Initialize the next unique object ID with two ordered dictionaries"""
+class Tracker(MyObject):
+    """Initialize the next unique object ID with two ordered dictionaries"""
+    def __init__(self, centroid, shape, color):
+        MyObject.__init__(self, centroid, shape, color)
+
         self.nextObjectID = 0
         self.objects = OrderedDict()
         self.disappeared = OrderedDict()
 
         # Number of maximum consecutive frames a given object is allowed to be marked as "disappeared"
-        self.maxDisappeared = maxDisappeared
+        self.maxDisappeared = 50
 
-    def register(self, centroid):
+    # TODO: register only if object is longer visible (about 10 frames)
+    def register(self, obj):
         """When registering an object use the next available object ID to store the centroid"""
-        self.objects[self.nextObjectID] = centroid
+        self.objects[self.nextObjectID] = obj
         self.disappeared[self.nextObjectID] = 0
         self.nextObjectID += 1
+        print("end register")
 
     def deregister(self, objectID):
         """When deregistering an object ID delete the object ID from both of dictionaries"""
@@ -31,6 +37,7 @@ class Tracker:
 
     def update(self, objects, length):
         """Update position of the object"""
+        print("update")
         # Check if the list of input bounding box rectangles is empty
         if length == 0:
             # Loop over any existing tracked objects and mark them as disappeared
@@ -44,28 +51,35 @@ class Tracker:
             # Return early as there are no centroids or tracking info to update
             return self.objects
 
-        # Initialize an array of input centroids for the current frame
+        # Initialize arrays of input objects and centroids only for the current frame
         inputCentroids = np.zeros((length, 2), dtype="int")
-        shapes = [None] * length
-        colors = [None] * length
+        inputObjects = []
 
         # Loop over the objects with properties
         for (i, item) in enumerate(objects):
-            # Save new centroids
+            # Save new objects and their centroids
             inputCentroids[i] = (item[0], item[1])
-            shapes[i] = item[2]
-            colors[i] = item[3]
+            inputObjects.append((np.array(((item[0], item[1]), item[2], item[3]), dtype=object)))
 
-        # If no objects are currently tracked take the input centroids and register each of them
+        # If no objects are currently tracked take all objects and register each of them
         if len(self.objects) == 0:
-            for i in range(0, len(inputCentroids)):
-                self.register(inputCentroids[i])
+            for i in range(0, len(inputObjects)):
+                self.register(inputObjects[i])
+
         # Otherwise try to match the input centroids to existing object centroids
         # TODO: match only objects with the same shape and color
+        # try to list searched objects
+        # print([c.shape for c in MyObject.listObjects.searchShape('rectangle')])
         else:
             # Grab the set of object IDs and corresponding centroids
             objectIDs = list(self.objects.keys())
-            objectCentroids = list(self.objects.values())
+            objectCentroids = []
+            # print("first centroid", self.objects[0][0])
+            # print("objects:", self.objects)
+            for key, val in self.objects.items():
+                objectCentroids.append(self.objects[key][0])
+            print("Matching object Centroids:", objectCentroids, "with input Centroids:")
+            print(inputCentroids)
 
             # Compute the distance between each pair of object centroids and input centroids
             # Goal is to match an input centroid to an existing object centroid
@@ -95,7 +109,7 @@ class Tracker:
             usedRows = set()
             usedCols = set()
 
-            # Update object centroids
+            # Update objects
             # Loop over the combination of the (row, column) index tuples
             for (row, col) in zip(rows, cols):
                 # If the row or column value examined before, ignore it value
@@ -105,7 +119,7 @@ class Tracker:
                 # and has not been matched with any other object, so it will be set as a new centroid
                 # Grab the object ID for the current row, set its new centroid, and reset the disappeared counter
                 objectID = objectIDs[row]
-                self.objects[objectID] = inputCentroids[col]
+                self.objects[objectID] = inputObjects[col]
                 self.disappeared[objectID] = 0
 
                 # Indicate that we have examined each of the row and column indexes
@@ -129,10 +143,9 @@ class Tracker:
                     if self.disappeared[objectID] > self.maxDisappeared:
                         self.deregister(objectID)
 
-            # Otherwise, register each new input centroid as a trackable object
+            # Otherwise, register each new input object as a trackable object
             else:
                 for col in unusedCols:
-                    self.register(inputCentroids[col])
-
+                    self.register(inputObjects[col])
         # Return the set of trackable objects
         return self.objects

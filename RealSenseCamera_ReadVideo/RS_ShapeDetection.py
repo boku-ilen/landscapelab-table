@@ -15,6 +15,7 @@ import colorsys
 import time
 from QRCodeDetection.QRCodeDetection import QRCodeDetector
 from Tracking.Tracker import Tracker
+# TODO: use MyObject or remove it
 from Tracking.MyObject import MyObject
 
 
@@ -154,7 +155,9 @@ initialized = False
 # TrackerCSRT - follows a hand after update, problem to find when object shortly absent
 
 # Initialize the centroid tracker
-ct = Tracker()
+# TODO: initialize without parameters
+ct = Tracker((500, 500), 'shape', 'wrongColor')
+# ct = Tracker()
 
 try:
     while True:
@@ -258,13 +261,14 @@ try:
                     # Check color (currently only red and blue accepted)
                     checkColor = check_color(cX, cY)
                     # Eliminate very small contours
-                    if (checkColor != "wrongColor") & (cv2.contourArea(c) > 20):
+                    if (checkColor != "wrongColor") & (cv2.contourArea(c) > 70):
                         cv2.drawContours(frame, [c], -1, (0, 255, 0), 3)
                         cv2.putText(frame, shape, (cX, cY), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
                         print("Bounding box:", bbox)
                         print("Center coordinates:", cX, cY)
                         print("Area:", cv2.contourArea(c))
 
+                        # TODO: do update with objects instead of just properties
                         # Update the properites/objects list
                         properties.append((cX, cY, shape, checkColor))
                         myObject = MyObject((cX, cY), shape, checkColor)
@@ -278,15 +282,15 @@ try:
             print(allObjects[idx].centroid, allObjects[idx].shape, allObjects[idx].color)
 
         # TODO: do update with objects instead of just properties
-
         # Update the centroid tracker using the computed set of properties/objects
         objects = ct.update(properties, length)
         # Loop over the tracked objects
-        for (objectID, centroid) in objects.items():
+        for (ID, item) in objects.items():
+            print("Detection:", ID, item)
             # Draw both the ID of the object and the centroid of the object on the output frame
-            text = "ID {}".format(objectID)
-            cv2.putText(frame, text, (centroid[0] - 10, centroid[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-            cv2.circle(frame, (centroid[0], centroid[1]), 4, (0, 255, 0), -1)
+            text = "ID {}".format(ID)
+            cv2.putText(frame, text, (item[0][0] - 10, item[0][1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+            cv2.circle(frame, (item[0][0], item[0][1]), 4, (0, 255, 0), -1)
 
         # Render shape detection images
         cv2.namedWindow('Shape detection', cv2.WINDOW_AUTOSIZE)

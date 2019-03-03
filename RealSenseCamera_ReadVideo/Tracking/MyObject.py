@@ -13,10 +13,20 @@ class MyObject:
     """Holder for object properties"""
     allObjects = []
     listObjects = Search()
+    count = 0
 
-    def __init__(self, centroid, shape, color):
+    def __init__(self, ID, centroid, shape, color):
+        self.ID = ID
         self.centroid = centroid
         self.shape = shape
         self.color = color
-        MyObject.allObjects.append(self)
+        MyObject.allObjects.append(self.__dict__)
+        MyObject.count += 1
+
+    def move(self, new_centroid):
+        pass
+
+    def delete(self):
+        MyObject.count -= 1
+        pass
 

@@ -29,14 +29,15 @@ MAX_LENGTH = 35
 CLIP = 0.04
 # Aspect ratio for square and rectangle
 MIN_SQ = 0.7
-MAX_SQ = 1.3
+MAX_SQ = 1.35
 MIN_REC = 0.2
 MAX_REC = 2.5
 # Accepted HSV colors
-BLUE_MIN = (0.53, 0.33, 141)
+BLUE_MIN = (0.53, 0.33, 105)
 BLUE_MAX = (0.65, 1, 255)
-RED_MIN = (0.92, 0.40, 160)
+RED_MIN = (0.92, 0.40, 140)
 RED_MAX = (1, 1, 255)
+SAVE_VIDEO = 0
 
 
 # Check if the shape is the searched object
@@ -92,7 +93,7 @@ def calculate_size(box):
     return np.delete(length, np.argmax(length))
 
 
-# TODO: find correct RGB
+# Return color name of the found object
 def check_color(x, y):
     col = "wrongColor"
     # calculate the mean color (RGB)
@@ -110,6 +111,13 @@ def check_color(x, y):
     elif (BLUE_MIN[0] <= colorHSV[0] <= BLUE_MAX[0]) & (BLUE_MIN[1] <= colorHSV[1] <= BLUE_MAX[1]) & (BLUE_MIN[2] <= colorHSV[2] <= BLUE_MAX[2]):
         col = "blue"
     return col
+
+
+# TODO: (0, 1 000 000) or float
+# Return coordinates of the detected object for (min, max) = (0, 1000)
+# (0, 0) is the outer corner of the middle QR-Code marker
+def calculate_coordinates(board_size, coordinates, max=1000):
+    return int(coordinates[0] * max / board_size), int(coordinates[1] * max / board_size)
 
 
 # Configure depth and color streams
@@ -155,9 +163,13 @@ initialized = False
 # TrackerCSRT - follows a hand after update, problem to find when object shortly absent
 
 # Initialize the centroid tracker
-# TODO: initialize without parameters
-ct = Tracker((500, 500), 'shape', 'wrongColor')
-# ct = Tracker()
+ct = Tracker()
+
+# Define the codec and create VideoWriter object.The output is stored in 'outpy.avi' file.
+# Define the fps to be equal to 10. Also frame size is passed.
+if SAVE_VIDEO == 1:
+    out = cv2.VideoWriter('outpy.avi', cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'), 10, (int(WIDTH), int(HEIGHT)))
+    out2 = cv2.VideoWriter('outpy2.avi', cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'), 10, (int(WIDTH), int(HEIGHT)))
 
 try:
     while True:
@@ -187,7 +199,7 @@ try:
         # Set empty list of found objects
 
         # Get the distance to the board (the middle of the frame)
-        if clip_dist == 0:
+        if clip_dist == 0 | detected == 0:
             clip_dist = aligned_depth_frame.get_distance(middleX, middleY) / depth_scale
             print("Distance to the table is:", clip_dist)
 
@@ -197,16 +209,18 @@ try:
         if detected == 0:
             print("Board detecting")
             result, corners = det.qr_code_outer_corners(color_image)
-            detected = 1
         if result:
+            detected = 1
             if all((0, 0) < tuple(c) < (color_image.shape[1], color_image.shape[0]) for c in corners):
                 # print("Board:", corners)
+                # print("Distance to the table is:", clip_dist)
                 # Print corners coordinates
                 for c in corners:
                     # print("Board corner:", c)
                     # Calculate board coordinates
                     minX, minY, maxX, maxY = det.find_minmax(corners)
                     board_size = maxX-minX
+                    # print(board_size)
                 # Eliminate perspective transformations, change to square
                 rectified = det.rectify(clipped_color_image, corners, (board_size, board_size))
                 # Set ROI to black and add only the rectified board with searched objects
@@ -243,11 +257,8 @@ try:
         contours = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         contours = contours[0]
 
-        # Bounding box rectangles (tuple with this structure: (startX, startY, endX, endY))
         properties = []
-        allObjects = []
-
-
+        length = 0
         # Loop over the contours
         for c in contours:
             # compute the center of the contour (cX, cY) and detect whether it is the searched object
@@ -268,29 +279,67 @@ try:
                         print("Center coordinates:", cX, cY)
                         print("Area:", cv2.contourArea(c))
 
-                        # TODO: do update with objects instead of just properties
                         # Update the properites/objects list
                         properties.append((cX, cY, shape, checkColor))
-                        myObject = MyObject((cX, cY), shape, checkColor)
-                        allObjects.append(myObject)
+                        length += 1
 
         # Print all objects with properties
         print("All saved objects with properties:")
-        length = 0
-        for (idx, item) in enumerate(allObjects):
-            length += 1
-            print(allObjects[idx].centroid, allObjects[idx].shape, allObjects[idx].color)
+        for obj in properties:
+            print(obj)
 
-        # TODO: do update with objects instead of just properties
-        # Update the centroid tracker using the computed set of properties/objects
+        # Update the centroid tracker using the computed set of properties
         objects = ct.update(properties, length)
         # Loop over the tracked objects
         for (ID, item) in objects.items():
-            print("Detection:", ID, item)
             # Draw both the ID of the object and the centroid of the object on the output frame
             text = "ID {}".format(ID)
             cv2.putText(frame, text, (item[0][0] - 10, item[0][1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
             cv2.circle(frame, (item[0][0], item[0][1]), 4, (0, 255, 0), -1)
+            print("Detection:", ID, item)
+            # Calculate coordinates, but not every frame, only when saving in JSON
+            # item[0] = calculate_coordinates(board_size, item[0])
+            # print("Detection recalculated:", ID, item)
+
+            # Save objects in MyObject class
+            if MyObject.allObjects == []:
+                myObject = MyObject(ID, (item[0]), item[1], item[2])
+                print("My objects:")
+                print(MyObject.allObjects)
+                print("count:", MyObject.count)
+            else:
+                # TODO: check if object ID exists -> add/modify, delete the rest
+                for (idx, obj) in enumerate(MyObject.allObjects):
+                    if ID == obj["ID"]:
+                        break
+                        # Check if position of the object has changed
+                        # print(obj["ID"])
+                        # print(item[0])
+                        # print(obj["centroid"])
+                        # print(myObject.centroid)
+                        # if item[0] == obj["centroid"]:
+                        #    break
+                        # else:
+                        #    TODO: save new centroid if position changed significantly
+                        #    print("TODO: save new centroid")
+                    # If the last element checked and the ID is not found yet -> initialize new object
+                    elif idx == MyObject.count-1:
+                        print("initialize new object")
+                        myObject = MyObject(ID, (item[0]), item[1], item[2])
+
+        # Print all objects with properties
+        print("My objects:")
+        print(MyObject.allObjects)
+        for (idx, obj) in enumerate(MyObject.allObjects):
+            print(idx, ":", obj)
+        print("count:", MyObject.count)
+
+        # Write the frame into the file 'output.avi'
+        if SAVE_VIDEO == 1:
+            out.write(frame)
+
+        # Prepare json to send
+        # TODO: differ between new, delete, move
 
         # Render shape detection images
         cv2.namedWindow('Shape detection', cv2.WINDOW_AUTOSIZE)
@@ -298,6 +347,7 @@ try:
         cv2.waitKey(1)
 
 finally:
-
+    if SAVE_VIDEO == 1:
+        out.release()
     # Stop streaming
     pipeline.stop()

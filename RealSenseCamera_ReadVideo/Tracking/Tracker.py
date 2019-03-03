@@ -1,34 +1,29 @@
 # Main source: https://www.pyimagesearch.com/2018/07/23/simple-object-tracking-with-opencv/
 # TODO: to improve
 # Add parameters: color, shape and use them to differ objects
-# Use class MyObject or remove it, control self.allObjects
 
 # Dict subclass that remembers the order entries were added
 from collections import OrderedDict
 from scipy.spatial import distance as dist
 import numpy as np
-from Tracking.MyObject import MyObject
 
 
-class Tracker(MyObject):
+class Tracker:
     """Initialize the next unique object ID with two ordered dictionaries"""
-    def __init__(self, centroid, shape, color):
-        MyObject.__init__(self, centroid, shape, color)
-
+    def __init__(self, maxDisappeared=50):
         self.nextObjectID = 0
         self.objects = OrderedDict()
         self.disappeared = OrderedDict()
 
         # Number of maximum consecutive frames a given object is allowed to be marked as "disappeared"
-        self.maxDisappeared = 50
+        self.maxDisappeared = maxDisappeared
 
     # TODO: register only if object is longer visible (about 10 frames)
-    def register(self, obj):
+    def register(self, centroid):
         """When registering an object use the next available object ID to store the centroid"""
-        self.objects[self.nextObjectID] = obj
+        self.objects[self.nextObjectID] = centroid
         self.disappeared[self.nextObjectID] = 0
         self.nextObjectID += 1
-        print("end register")
 
     def deregister(self, objectID):
         """When deregistering an object ID delete the object ID from both of dictionaries"""
@@ -37,7 +32,6 @@ class Tracker(MyObject):
 
     def update(self, objects, length):
         """Update position of the object"""
-        print("update")
         # Check if the list of input bounding box rectangles is empty
         if length == 0:
             # Loop over any existing tracked objects and mark them as disappeared

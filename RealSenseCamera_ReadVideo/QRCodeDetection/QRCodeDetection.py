@@ -17,6 +17,7 @@ class QRCodeDetector:
     def intersect(l1, l2):
         """Implement a function which finds the intersection point of two lines"""
         delta = np.array([l1[1] - l1[0], l2[1] - l2[0]]).astype(np.float32)
+        # TODO: if delta != 0
         delta = 1 / delta
         delta[:, 0] *= -1
         b = np.matmul(delta, np.array([l1[0], l2[0]]).transpose())

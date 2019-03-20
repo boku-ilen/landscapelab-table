@@ -23,10 +23,28 @@ class MyObject:
         MyObject.allObjects.append(self.__dict__)
         MyObject.count += 1
 
-    def move(self, new_centroid):
-        pass
+    def move(count, allObjects, id, new_centroid):
+        for idx in range(count):
+            if allObjects[idx]["ID"] == id:
+                allObjects[idx]["centroid"] == new_centroid
 
-    def delete(self):
-        MyObject.count -= 1
-        pass
+    def delete(count, allObjects, id):
+        for idx in range(count):
+            if allObjects[idx]["ID"] == id:
+                del allObjects[idx]
+                MyObject.count -= 1
+
+    def searchShape(count, allObjects, shape):
+        matching_objects = []
+        for idx in range(count):
+            if allObjects[idx]["shape"] == shape:
+                matching_objects.append(allObjects[idx])
+        return matching_objects
+
+    def searchColor(count, allObjects, color):
+        matching_objects = []
+        for idx in range(count):
+            if allObjects[idx]["color"] == color:
+                matching_objects.append(allObjects[idx])
+        return matching_objects
 

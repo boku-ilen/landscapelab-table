@@ -15,10 +15,8 @@ import colorsys
 import time
 from QRCodeDetection.QRCodeDetection import QRCodeDetector
 from Tracking.Tracker import Tracker
-# TODO: use MyObject or remove it
-from Tracking.MyObject import MyObject
 
-
+# Max RGB resolution: 1920 x 1080 at 30 fps, depth: up to 1280 x 720, up to 90 fps
 # For resolution 1280x720 and distance ~1 meter a short side of lego piece has ~14 px length
 WIDTH = int(1280)
 HEIGHT = int(720)
@@ -26,7 +24,7 @@ HEIGHT = int(720)
 MIN_LENGTH = 4
 MAX_LENGTH = 35
 # Objects in greater distance to the board than (1 +- CLIP) * x will be excluded from processing
-CLIP = 0.04
+CLIP = 0.1
 # Aspect ratio for square and rectangle
 MIN_SQ = 0.7
 MAX_SQ = 1.35
@@ -149,19 +147,6 @@ print("Depth Scale is: ", depth_scale)
 # Initialize board detection
 det = QRCodeDetector()
 
-# No tracker can track lego movement precisely
-# No tracker can track lego movement precisely
-# TODO: implement own tracker
-# Initialize trackers
-name = 'TLD'
-tracker = cv2.TrackerTLD_create()
-initialized = False
-# TrackerKCF - problem with updating
-# TrackerMIL - not precise after updating
-# TrackerTLD - not precise after updating, should handle rapid motions, partial occlusions, object absence
-# TrackerMedianFlow - suitable for very smooth movements when object is visible throughout the whole sequence
-# TrackerCSRT - follows a hand after update, problem to find when object shortly absent
-
 # Initialize the centroid tracker
 ct = Tracker()
 
@@ -197,6 +182,9 @@ try:
         # Set ROI as the color_image to set the same size
         roi = color_image
         # Set empty list of found objects
+
+        # Show color image
+        cv2.imshow('Color', color_image)
 
         # Get the distance to the board (the middle of the frame)
         if clip_dist == 0 | detected == 0:
@@ -300,39 +288,6 @@ try:
             # Calculate coordinates, but not every frame, only when saving in JSON
             # item[0] = calculate_coordinates(board_size, item[0])
             # print("Detection recalculated:", ID, item)
-
-            # Save objects in MyObject class
-            if MyObject.allObjects == []:
-                myObject = MyObject(ID, (item[0]), item[1], item[2])
-                print("My objects:")
-                print(MyObject.allObjects)
-                print("count:", MyObject.count)
-            else:
-                # TODO: check if object ID exists -> add/modify, delete the rest
-                for (idx, obj) in enumerate(MyObject.allObjects):
-                    if ID == obj["ID"]:
-                        break
-                        # Check if position of the object has changed
-                        # print(obj["ID"])
-                        # print(item[0])
-                        # print(obj["centroid"])
-                        # print(myObject.centroid)
-                        # if item[0] == obj["centroid"]:
-                        #    break
-                        # else:
-                        #    TODO: save new centroid if position changed significantly
-                        #    print("TODO: save new centroid")
-                    # If the last element checked and the ID is not found yet -> initialize new object
-                    elif idx == MyObject.count-1:
-                        print("initialize new object")
-                        myObject = MyObject(ID, (item[0]), item[1], item[2])
-
-        # Print all objects with properties
-        print("My objects:")
-        print(MyObject.allObjects)
-        for (idx, obj) in enumerate(MyObject.allObjects):
-            print(idx, ":", obj)
-        print("count:", MyObject.count)
 
         # Write the frame into the file 'output.avi'
         if SAVE_VIDEO == 1:

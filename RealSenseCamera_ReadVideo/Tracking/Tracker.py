@@ -6,11 +6,11 @@
 from collections import OrderedDict
 from scipy.spatial import distance as dist
 import numpy as np
-
+from Tracking.MyObject import MyObject
 
 class Tracker:
     """Initialize the next unique object ID with two ordered dictionaries"""
-    def __init__(self, maxDisappeared=50):
+    def __init__(self, maxDisappeared=20):
         self.nextObjectID = 0
         self.objects = OrderedDict()
         self.disappeared = OrderedDict()
@@ -19,14 +19,16 @@ class Tracker:
         self.maxDisappeared = maxDisappeared
 
     # TODO: register only if object is longer visible (about 10 frames)
-    def register(self, centroid):
+    def register(self, inputObject):
         """When registering an object use the next available object ID to store the centroid"""
-        self.objects[self.nextObjectID] = centroid
+        self.objects[self.nextObjectID] = inputObject
         self.disappeared[self.nextObjectID] = 0
+        MyObject(self.nextObjectID, (inputObject[0]), inputObject[1], inputObject[2])
         self.nextObjectID += 1
 
     def deregister(self, objectID):
         """When deregistering an object ID delete the object ID from both of dictionaries"""
+        MyObject.delete(MyObject.count, MyObject.allObjects, objectID)
         del self.objects[objectID]
         del self.disappeared[objectID]
 
@@ -74,6 +76,10 @@ class Tracker:
                 objectCentroids.append(self.objects[key][0])
             print("Matching object Centroids:", objectCentroids, "with input Centroids:")
             print(inputCentroids)
+
+            print("My Objects:", MyObject.allObjects)
+            print("Input Objects:", inputObjects)
+            # print(MyObject.searchShape(MyObject.count, MyObject.allObjects, "square"))
 
             # Compute the distance between each pair of object centroids and input centroids
             # Goal is to match an input centroid to an existing object centroid

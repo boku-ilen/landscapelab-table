@@ -15,6 +15,7 @@ import colorsys
 import time
 from QRCodeDetection.QRCodeDetection import QRCodeDetector
 from Tracking.Tracker import Tracker
+from Tracking.MyTracker import MyTracker
 
 # Max RGB resolution: 1920 x 1080 at 30 fps, depth: up to 1280 x 720, up to 90 fps
 # For resolution 1280x720 and distance ~1 meter a short side of lego piece has ~14 px length
@@ -149,6 +150,7 @@ det = QRCodeDetector()
 
 # Initialize the centroid tracker
 ct = Tracker()
+# ct = MyTracker()
 
 # Define the codec and create VideoWriter object.The output is stored in 'outpy.avi' file.
 # Define the fps to be equal to 10. Also frame size is passed.

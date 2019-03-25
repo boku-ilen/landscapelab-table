@@ -28,7 +28,7 @@ class Tracker:
 
     def deregister(self, objectID):
         """When deregistering an object ID delete the object ID from both of dictionaries"""
-        MyObject.delete(MyObject.count, MyObject.allObjects, objectID)
+        MyObject.delete(objectID)
         del self.objects[objectID]
         del self.disappeared[objectID]
 
@@ -76,10 +76,6 @@ class Tracker:
                 objectCentroids.append(self.objects[key][0])
             print("Matching object Centroids:", objectCentroids, "with input Centroids:")
             print(inputCentroids)
-
-            print("My Objects:", MyObject.allObjects)
-            print("Input Objects:", inputObjects)
-            # print(MyObject.searchShape(MyObject.count, MyObject.allObjects, "square"))
 
             # Compute the distance between each pair of object centroids and input centroids
             # Goal is to match an input centroid to an existing object centroid

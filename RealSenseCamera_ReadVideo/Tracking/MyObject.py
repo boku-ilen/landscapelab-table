@@ -8,43 +8,101 @@ class Search(list):
                 matching_objects.append(obj)
         return matching_objects
 
-
+# TODO: del self.__dict__
+# TODO: work properly with self
 class MyObject:
     """Holder for object properties"""
-    allObjects = []
-    listObjects = Search()
-    count = 0
+    # allObjects = []
+    empty = True
+    redRcts = []
+    redSqrs = []
+    blueRcts = []
+    blueSqrs = []
 
     def __init__(self, ID, centroid, shape, color):
         self.ID = ID
         self.centroid = centroid
         self.shape = shape
         self.color = color
-        MyObject.allObjects.append(self.__dict__)
-        MyObject.count += 1
+        MyObject.empty = False
+        # MyObject.allObjects.append(self.__dict__)
 
-    def move(count, allObjects, id, new_centroid):
-        for idx in range(count):
-            if allObjects[idx]["ID"] == id:
-                allObjects[idx]["centroid"] == new_centroid
+        if self.color == "red":
+            if self.shape == "square":
+                MyObject.redSqrs.append(self.__dict__)
+            elif self.shape == "rectangle":
+                MyObject.redRcts.append(self.__dict__)
+        elif self.color == "blue":
+            if self.shape == "square":
+                MyObject.blueSqrs.append(self.__dict__)
+            elif self.shape == "rectangle":
+                MyObject.blueRcts.append(self.__dict__)
 
-    def delete(count, allObjects, id):
-        for idx in range(count):
-            if allObjects[idx]["ID"] == id:
-                del allObjects[idx]
-                MyObject.count -= 1
+    def move(id, new_centroid):
+        moved = 0
+        objects = 0
+        print(id, new_centroid)
+        list = [MyObject.redRcts, MyObject.redSqrs, MyObject.blueRcts, MyObject.blueSqrs]
+        # TODO: look for only until id found
+        while objects < len(list):
+            i = 0
+            while i < len(list[objects]):
+                if list[objects][i]["ID"] == id:
+                    list[objects][i]["centroid"] == new_centroid
+                    moved += 1
+                i += 1
+            objects += 1
 
-    def searchShape(count, allObjects, shape):
-        matching_objects = []
-        for idx in range(count):
-            if allObjects[idx]["shape"] == shape:
-                matching_objects.append(allObjects[idx])
-        return matching_objects
+    def delete(id):
+        removed = 0
+        objects = 0
+        list = [MyObject.redRcts, MyObject.redSqrs, MyObject.blueRcts, MyObject.blueSqrs]
+        # TODO: look for only until id found
+        while objects < len(list):
+            print("objects", objects)
+            i = 0
+            while i < len(list[objects]):
+                print("len:", len(list[objects]))
+                print("iteration:", i)
+                print("id:", id)
+                print(list[objects][i]["ID"])
+                if list[objects][i]["ID"] == id:
+                    del list[objects][i]
+                    removed += 1
+                i += 1
+            objects += 1
+        MyObject.ifEmpty()
 
-    def searchColor(count, allObjects, color):
-        matching_objects = []
-        for idx in range(count):
-            if allObjects[idx]["color"] == color:
-                matching_objects.append(allObjects[idx])
-        return matching_objects
+        #redSqrs = MyObject.redSqrs
+        #while i < len(redSqrs):
+        #    if redSqrs[i]["ID"] == id:
+        #        del redSqrs[i]
+        #        i += 1
+        #        removed += 1
+
+
+    def deleteAll():
+        MyObject.redRcts = []
+        MyObject.redSqrs = []
+        MyObject.blueRcts = []
+        MyObject.blueSqrs = []
+
+    #def searchShape(allObjects, shape):
+    #    matching_objects = []
+    #    for obj in allObjects:
+    #        if obj["shape"] == shape:
+    #            matching_objects.append(obj)
+    #    return matching_objects
+
+    #def searchColor(allObjects, color):
+    #    matching_objects = []
+    #    for obj in allObjects:
+    #        if obj["color"] == color:
+    #            matching_objects.append(obj)
+    #    return matching_objects
+
+    def ifEmpty():
+        if len(MyObject.redSqrs) == 0 & len(MyObject.redRcts) == 0 & len(MyObject.blueSqrs) == 0 & len(MyObject.blueRcts) == 0:
+            MyObject.empty = True
+        MyObject.empty = False
 

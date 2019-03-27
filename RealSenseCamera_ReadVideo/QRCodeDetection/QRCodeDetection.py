@@ -29,7 +29,7 @@ class QRCodeDetector:
     def rectify(image, corners, out_size):
         """Define a function which un-warps the perspective distortions by calculating the
         correspondence between four pairs of distorted and un-distorted points"""
-        rect = np.zeros((4, 2), dtype = "float32")
+        rect = np.zeros((4, 2), dtype="float32")
         rect[0] = corners[0]
         rect[1] = corners[1]
         rect[2] = corners[2]
@@ -37,10 +37,12 @@ class QRCodeDetector:
         dst = np.array([[0, 0], [out_size[1] - 1, 0], [out_size[1] - 1, out_size[0] - 1], [0, out_size[0] - 1]], dtype = "float32")
         M = cv2.getPerspectiveTransform(rect, dst)
         rectified = cv2.warpPerspective(image, M, out_size)
+
         return rectified
 
     def qr_code_outer_corners(self, image):
         """Create a function which finds the outer corners of the QR code"""
+
         outer_corners_found = False
         outer_corners = []
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)

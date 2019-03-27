@@ -1,4 +1,5 @@
 class Search(list):
+
     def searchShape(self, shape):
         """Return all objects that contain the search value in their shape."""
 
@@ -8,19 +9,37 @@ class Search(list):
                 matching_objects.append(obj)
         return matching_objects
 
+
+class LegoBrickCollection:
+
+    collection = None
+
+    def __init__(self):
+
+        collection = {}
+
+    def create_lego_brick(self):
+        self.collection.append()
+        return LegoBrick(id, cen)
+
+    def delete_lego_brick(self, id):
+        pass
+
+    def serch_lego(self):
+
+
+
 # TODO: del self.__dict__
 # TODO: work properly with self
-class MyObject:
+class LegoBrick:
     """Holder for object properties"""
     # allObjects = []
     empty = True
-    redRcts = []
-    redSqrs = []
-    blueRcts = []
-    blueSqrs = []
+    shape = None
+    color = None
 
-    def __init__(self, ID, centroid, shape, color):
-        self.ID = ID
+    def __init__(self, id, centroid, shape, color):
+        self.id = id
         self.centroid = centroid
         self.shape = shape
         self.color = color
@@ -106,3 +125,8 @@ class MyObject:
             MyObject.empty = True
         MyObject.empty = False
 
+
+if __name__ == "__main__":
+    collection = {}
+    lego_brick = LegoBrick()
+    collection.append(lego_brick)

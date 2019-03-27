@@ -41,3 +41,9 @@ class MyObject2:
             if allObjects[idx]["color"] == color:
                 matching_objects.append(allObjects[idx])
         return matching_objects
+
+
+if __name__ == '__main__':
+    from MyObject import LegoBrickCollection
+    mlbc = LegoBrickCollection()
+

@@ -6,9 +6,12 @@
 from collections import OrderedDict
 from scipy.spatial import distance as dist
 import numpy as np
-from Tracking.MyObject import MyObject
+from Tracking.LegoBrick import LegoBrickCollections
+from Tracking.LegoBrick import LegoBrick
+
 
 class Tracker:
+    lego_brick_collection = None
     """Initialize the next unique object ID with two ordered dictionaries"""
     def __init__(self, maxDisappeared=20):
         self.nextObjectID = 0
@@ -17,27 +20,33 @@ class Tracker:
 
         # Number of maximum consecutive frames a given object is allowed to be marked as "disappeared"
         self.maxDisappeared = maxDisappeared
+        self.lego_brick_collection = LegoBrickCollections()
 
     # TODO: register only if object is longer visible (about 10 frames)
     def register(self, inputObject):
         """When registering an object use the next available object ID to store the centroid"""
         self.objects[self.nextObjectID] = inputObject
         self.disappeared[self.nextObjectID] = 0
-        MyObject(self.nextObjectID, (inputObject[0]), inputObject[1], inputObject[2])
+        LegoBrickCollections.create_lego_brick(self.lego_brick_collection, self.nextObjectID, (inputObject[0]), inputObject[1], inputObject[2])
         self.nextObjectID += 1
 
     def deregister(self, objectID):
         """When deregistering an object ID delete the object ID from both of dictionaries"""
-        MyObject.delete(objectID)
+        LegoBrickCollections.delete_lego_brick(self.lego_brick_collection, objectID)
         del self.objects[objectID]
         del self.disappeared[objectID]
 
     def update(self, objects, length):
         """Update position of the object"""
+        # Show LegoBrickCollections
+        print("LegoBrickCollections:\nred_sqrs:", self.lego_brick_collection.red_sqrs_collection)
+        print("red_rcts:", self.lego_brick_collection.red_rcts_collection)
+        print("blue_sqrs:", self.lego_brick_collection.blue_sqrs_collection)
+        print("blue_rcts:", self.lego_brick_collection.blue_rcts_collection)
         # Check if the list of input bounding box rectangles is empty
         if length == 0:
             # Loop over any existing tracked objects and mark them as disappeared
-            for objectID in self.disappeared.keys():
+            for objectID in list(self.disappeared.keys()):
                 self.disappeared[objectID] += 1
 
                 # Deregister, if a maximum number of consecutive frames is reached

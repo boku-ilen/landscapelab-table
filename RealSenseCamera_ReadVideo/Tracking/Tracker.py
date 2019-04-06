@@ -6,8 +6,19 @@
 from collections import OrderedDict
 from scipy.spatial import distance as dist
 import numpy as np
+import logging.config
 from Tracking.LegoBrick import LegoBrickCollections
 from Tracking.LegoBrick import LegoBrick
+
+
+# configure logging
+logger_tracker = logging.getLogger(__name__)
+try:
+    # TODO: Set configurations
+    logging.config.fileConfig('logging.conf')
+except:
+    logging.basicConfig(level=logging.DEBUG)
+    logging.info("Could not initialize: logging.conf not found or misconfigured")
 
 
 class Tracker:
@@ -39,10 +50,10 @@ class Tracker:
     def update(self, objects, length):
         """Update position of the object"""
         # Show LegoBrickCollections
-        print("LegoBrickCollections:\nred_sqrs:", self.lego_brick_collection.red_sqrs_collection)
-        print("red_rcts:", self.lego_brick_collection.red_rcts_collection)
-        print("blue_sqrs:", self.lego_brick_collection.blue_sqrs_collection)
-        print("blue_rcts:", self.lego_brick_collection.blue_rcts_collection)
+        logger_tracker.debug("LegoBrickCollections:\nred_sqrs: %s", self.lego_brick_collection.red_sqrs_collection)
+        logger_tracker.debug("red_rcts: %s", self.lego_brick_collection.red_rcts_collection)
+        logger_tracker.debug("blue_sqrs: %s", self.lego_brick_collection.blue_sqrs_collection)
+        logger_tracker.debug("blue_rcts: %s", self.lego_brick_collection.blue_rcts_collection)
         # Check if the list of input bounding box rectangles is empty
         if length == 0:
             # Loop over any existing tracked objects and mark them as disappeared
@@ -83,8 +94,7 @@ class Tracker:
             # print("objects:", self.objects)
             for key, val in self.objects.items():
                 objectCentroids.append(self.objects[key][0])
-            print("Matching object Centroids:", objectCentroids, "with input Centroids:")
-            print(inputCentroids)
+            logger_tracker.debug("Matching object Centroids: {} with input Centroids: \n{}".format(objectCentroids, inputCentroids))
 
             # Compute the distance between each pair of object centroids and input centroids
             # Goal is to match an input centroid to an existing object centroid

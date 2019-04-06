@@ -1,5 +1,5 @@
 import numpy as np
-from Tracking.MyObject import MyObject
+#from Tracking.MyObject import MyObject
 
 # Max distance change without updating the object: abs(x1 - x) & abs(y1 - y)
 MAX_DISTANCE = 6

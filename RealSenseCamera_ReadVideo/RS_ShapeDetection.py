@@ -9,11 +9,15 @@
 # Used pyrealsense2 on License: Apache 2.0.
 from builtins import staticmethod
 
+# Used libraries versions:
+# python=3.6.8
+# opencv=3.3.1 (opencv=4.1 released, to update when working with python 3.7)
+# pyrelasense=2.20.0.714, not working with python 3.7 yet
+
 import pyrealsense2 as rs  # TODO: ship a binary build
 import numpy as np
 import cv2  # TODO: fix the requirements.txt or provide library
 import colorsys
-import logging
 import logging.config
 import time
 from QRCodeDetection.QRCodeDetection import QRCodeDetector
@@ -84,7 +88,7 @@ class ShapeDetector:
         # Getting the depth sensor's depth scale
         depth_sensor = self.profile.get_device().first_depth_sensor()
         self.depth_scale = depth_sensor.get_depth_scale()
-        logger.debug("Depth Scale is: ", self.depth_scale)
+        logger.debug("Depth Scale is: {}".format(self.depth_scale))
 
         # Initialize board detection
         self.qrcode_detector = QRCodeDetector()
@@ -142,12 +146,12 @@ class ShapeDetector:
         # Check if aspect ratio is near 1:1
         if MIN_SQ <= aspect_ratio <= MAX_SQ:
             contour_name = "square"
-            logger.debug("Square size:", length_a, length_b)
+            logger.debug("Square size: {}, {}".format(length_a, length_b))
 
         # Check if aspect ratio is near 2:1
         elif MIN_REC < aspect_ratio < MAX_REC:
             contour_name = "rectangle"
-            logger.debug("Rectangle size:", length_a, length_b)
+            logger.debug("Rectangle size: {}, {}".format(length_a, length_b))
 
         # return contour name
         return contour_name
@@ -180,7 +184,7 @@ class ShapeDetector:
 
         # Change color in RGB to HSV
         color_hsv = colorsys.rgb_to_hsv(color[2], color[1], color[0])
-        logger.debug("HSV:", color_hsv)
+        logger.debug("HSV: {}".format(color_hsv))
 
         # Initialize the color name
         color_name = "wrongColor"
@@ -274,10 +278,10 @@ class ShapeDetector:
 
                 # Get the distance to the board (to the middle of the frame)
                 if not clip_dist or not board_detected:
-                    logger.debug("clip_dist_", clip_dist)
-                    logger.debug("board detected", board_detected)
+                    logger.debug("clip_dist_: {}".format(clip_dist))
+                    logger.debug("board detected: {}".format(board_detected))
                     clip_dist = aligned_depth_frame.get_distance(middle_x, middle_y) / self.depth_scale
-                    logger.debug("Distance to the table is:", clip_dist)
+                    logger.debug("Distance to the table is: {}".format(clip_dist))
 
                 # Detection of the board with QR-Code Detector, detecting until the board is found
                 # Detect the corners of the board, save position and eliminate perspective transformations
@@ -338,8 +342,9 @@ class ShapeDetector:
                 thresh = cv2.threshold(blurred, 55, 255, cv2.THRESH_BINARY)[1]
 
                 # Find contours in the thresholded image
-                contours = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-                contours = contours[0]
+
+                # Retrieve all of the contours without establishing any hierarchical relationships (RETR_LIST)
+                _, contours, hierarchy = cv2.findContours(thresh.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
 
                 # Initialize legos brick properties list and its length
                 legos_properties_list = []
@@ -359,6 +364,7 @@ class ShapeDetector:
 
                         # Check if the contour is a lego brick
                         # Compute contour name and rotated bounding box of the found contour
+                        # TODO: Error after libraries updating
                         contour_name, bbox = self.detect_lego_brick(contour, frame)
 
                         # If if the contour name is computed (square or rectangle),
@@ -374,9 +380,9 @@ class ShapeDetector:
                                 # Draw green lego bricks contours
                                 cv2.drawContours(frame, [contour], -1, (0, 255, 0), 3)
 
-                                logger.debug("Bounding box:", bbox)
-                                logger.debug("Center coordinates:", centroid_x, centroid_y)
-                                logger.debug("Area:", cv2.contourArea(contour))
+                                logger.debug("Bounding box: {}".format(bbox))
+                                logger.debug("Center coordinates: {}, {}".format(centroid_x, centroid_y))
+                                logger.debug("Area: {}".format(cv2.contourArea(contour)))
 
                                 # Update the properties list of all lego bricks which are found in the frame
                                 legos_properties_list.append((centroid_x, centroid_y, contour_name, color_name))
@@ -408,7 +414,7 @@ class ShapeDetector:
                     # Draw green lego bricks centroid points
                     cv2.circle(frame, (tracked_lego_brick[0][0], tracked_lego_brick[0][1]), 4, (0, 255, 0), -1)
 
-                    logger.debug("Detection:", ID, tracked_lego_brick)
+                    logger.debug("Detection: {}, {}".format(ID, tracked_lego_brick))
                     # Calculate coordinates, but not every frame, only when saving in JSON
                     # item[0] = calculate_coordinates(board_size, item[0])
                     # logger.debug("Detection recalculated:", ID, item)

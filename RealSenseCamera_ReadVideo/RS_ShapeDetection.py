@@ -12,7 +12,8 @@ from builtins import staticmethod
 # Used libraries versions:
 # python=3.6.8
 # opencv=3.3.1 (opencv=4.1 released, to update when working with python 3.7)
-# pyrelasense=2.20.0.714, not working with python 3.7 yet
+# pyrelasense=2.20.0.714, not working with python 3.7 yet (https://pypi.org/project/pyrealsense2/)
+# pyzbar=0.1.8
 
 import pyrealsense2 as rs  # TODO: ship a binary build
 import numpy as np
@@ -20,6 +21,8 @@ import cv2  # TODO: fix the requirements.txt or provide library
 import colorsys
 import logging.config
 import time
+from shapely import geometry
+import pyzbar.pyzbar as pyzbar
 from QRCodeDetection.QRCodeDetection import QRCodeDetector
 from Tracking.Tracker import Tracker
 #from Tracking.MyTracker import MyTracker
@@ -204,6 +207,50 @@ class ShapeDetector:
         # Return the color name
         return color_name
 
+    # Detect the board using four QR-Codes in the board corners
+    @staticmethod
+    def detect_board(decoded_codes):
+
+        board_corners = []
+        upper_left_corner = None
+        upper_right_corner = None
+        bottom_right_corner = None
+        bottom_left_corner = None
+
+        # Check all found codes
+        for code in decoded_codes:
+
+            code_data = code.data.decode()
+
+            # TODO: rename QR-Codes: "upper left board"
+            # Compute outer corners of the board
+            # TODO: use "board" or "corner" instead of UL/UR/BR/BL
+            # if "board corner" in code_data:
+            if code_data == "UpperLeft" or code_data == "UpperRight" \
+                    or code_data == "BottomRight" or code_data == "BottomLeft":
+
+                # Compute the centroid (middle) of the single code
+                code_polygon = geometry.Polygon([[point.x, point.y] for point in code.polygon])
+                board_corner = int(code_polygon.centroid.x), int(code_polygon.centroid.y)
+
+                if code_data == "UpperLeft":
+                    upper_left_corner = board_corner
+                elif code_data == "UpperRight":
+                    upper_right_corner = board_corner
+                elif code_data == "BottomRight":
+                    bottom_right_corner = board_corner
+                elif code_data == "BottomLeft":
+                    bottom_left_corner = board_corner
+
+        # Save corners in the right order
+        board_corners = [upper_left_corner, upper_right_corner, bottom_right_corner, bottom_left_corner]
+        # print(board_corners)
+
+        # TODO: check if all corners are saved, if so:
+        # TODO: rectify with outer_corners = [upper left, upper right, bottom right, bottom left]
+
+        # TODO: read other codes with metadata
+
     # TODO: (0, 1 000 000) or float, compute geographic coordinates
     # Return coordinates of the detected object for (min, max) = (0, 1000)
     # (0, 0) is the outer corner of the middle QR-Code marker
@@ -275,6 +322,12 @@ class ShapeDetector:
 
                 # Show color image
                 cv2.imshow('Color', color_image)
+
+                # Decode QR or Bar-Codes
+                decoded_codes = pyzbar.decode(color_image)
+
+                # Detect the board (new solution) and read metadata
+                self.detect_board(decoded_codes)
 
                 # Get the distance to the board (to the middle of the frame)
                 if not clip_dist or not board_detected:

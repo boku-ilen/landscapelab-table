@@ -25,7 +25,6 @@ import requests
 import math
 from shapely import geometry
 import pyzbar.pyzbar as pyzbar
-from QRCodeDetection.QRCodeDetection import QRCodeDetector
 from Tracking.Tracker import Tracker
 #from Tracking.MyTracker import MyTracker
 
@@ -100,9 +99,6 @@ class ShapeDetector:
         depth_sensor = self.profile.get_device().first_depth_sensor()
         self.depth_scale = depth_sensor.get_depth_scale()
         logger.debug("Depth Scale is: {}".format(self.depth_scale))
-
-        # Initialize board detection
-        self.qrcode_detector = QRCodeDetector()
 
         # Initialize the centroid tracker
         self.centroid_tracker = Tracker()
@@ -318,6 +314,8 @@ class ShapeDetector:
         bottom_right_corner = None
         bottom_left_corner = None
         centroids = []
+        board_corners = []
+        all_board_corners_found = False
         all_codes_flag = True
 
         # Check if all codes polygons points are available
@@ -361,8 +359,49 @@ class ShapeDetector:
                 bottom_right_corner is not None and bottom_left_corner is not None:
             board_corners = [top_left_corner, top_right_corner, bottom_right_corner, bottom_left_corner]
             logger.debug("board_corners: {}".format(board_corners))
+            all_board_corners_found = True
 
-        # TODO: rectify with outer_corners = [top left, top right, bottom right, bottom left]
+            return all_board_corners_found, board_corners
+
+        return all_board_corners_found, board_corners
+
+    # Find min and max for x and y position of the board
+    @staticmethod
+    def find_min_max(corners):
+        x = []
+        y = []
+        for corner in corners:
+            x.append(corner[0])
+            y.append(corner[1])
+        return min(x), min(y), max(x), max(y)
+
+    # Wrap the frame perspective to a top-down view (rectangle)
+    def rectify(self, image, corners):
+
+        # Save given corners in a numpy array
+        source_corners = np.zeros((4, 2), dtype="float32")
+        source_corners[0] = corners[0]
+        source_corners[1] = corners[1]
+        source_corners[2] = corners[2]
+        source_corners[3] = corners[3]
+
+        # Compute width and height of the board
+        min_x, min_y, max_x, max_y = self.find_min_max(corners)
+        board_size_width = max_x - min_x
+        board_size_height = max_y - min_y
+
+        # Construct destination points which will be used to map the board to a top-down view
+        destination_corners = np.array([
+            [0, 0],
+            [board_size_width - 1, 0],
+            [board_size_width - 1, board_size_height - 1],
+            [0, board_size_height - 1]], dtype="float32")
+
+        # Calculate the perspective transform matrix
+        matrix = cv2.getPerspectiveTransform(source_corners, destination_corners)
+        rectified_image = cv2.warpPerspective(image, matrix, (board_size_width, board_size_height))
+
+        return rectified_image, board_size_height, board_size_width
 
     # TODO: (0, 1 000 000) or float, compute geographic coordinates
     # Return coordinates of the detected object for (min, max) = (0, 1000)
@@ -385,12 +424,10 @@ class ShapeDetector:
         # Initialize the clipping distance
         clip_dist = 0
 
-        # Initialize board detection and QR-code detector result flags
-        board_detected = False
-        qr_code_detector_result = False
+        # Initialize board detection flag
+        all_board_corners_found = False
 
         # Initialize squared board size and middle of the board
-        board_size = HEIGHT
         middle_x = int(WIDTH/2)
         middle_y = int(HEIGHT/2)
 
@@ -436,51 +473,42 @@ class ShapeDetector:
                 # Show color image
                 cv2.imshow('Color', color_image)
 
-                # Decode QR or Bar-Codes
-                decoded_codes = pyzbar.decode(color_image)
+                # Detect the board using qr-codes polygon data saved in the array -> self.all_codes_polygons_points
+                if not all_board_corners_found:
 
-                # Read codes which were decoded in this frame:
-                # save polygons in the array self.all_codes_polygons_points
-                # and read metadata
-                self.read_codes(decoded_codes)
+                    # Decode QR or Bar-Codes
+                    decoded_codes = pyzbar.decode(color_image)
 
-                # Detect the board (new solution) using the array self.all_codes_polygons_points
-                self.detect_board()
+                    # Read codes which were decoded in this frame:
+                    # save polygons in the array self.all_codes_polygons_points
+                    # and read metadata
+                    self.read_codes(decoded_codes)
+
+                    # Find position of board corners
+                    all_board_corners_found, board_corners = self.detect_board()
 
                 # Get the distance to the board (to the middle of the frame)
-                if not clip_dist or not board_detected:
+                if not clip_dist or not all_board_corners_found:
                     logger.debug("clip_dist_: {}".format(clip_dist))
-                    logger.debug("board detected: {}".format(board_detected))
+                    logger.debug("board detected: {}".format(all_board_corners_found))
                     clip_dist = aligned_depth_frame.get_distance(middle_x, middle_y) / self.depth_scale
                     logger.debug("Distance to the table is: {}".format(clip_dist))
 
-                # Detection of the board with QR-Code Detector, detecting until the board is found
-                # Detect the corners of the board, save position and eliminate perspective transformations
-                # The board must be square, markers should be placed precisely
-                # TODO: if camera is lightly moving position must be updated
-                if not board_detected:
-                    logger.debug("Board detecting")
-                    # Compute True/False result and outer corners of QR-code markers
-                    qr_code_detector_result, markers = self.qrcode_detector.qr_code_outer_corners(color_image)
-
-                if qr_code_detector_result:
+                if all_board_corners_found and clip_dist:
 
                     # Check if found QR-code markers positions are included in the frame size
-                    if all((0, 0) < tuple(marker) < (color_image.shape[1], color_image.shape[0]) for marker in markers):
-
-                        logger.debug("Detecting lego bricks")
-                        # Set board detection flag as True
-                        board_detected = True
-
-                        # Compute board local coordinates
-                        minX, minY, maxX, maxY = self.qrcode_detector.find_minmax(markers)
-                        board_size = maxX-minX
+                    if all([0, 0] < corners < [color_image.shape[1], color_image.shape[0]]
+                           for corners in board_corners):
 
                         # Eliminate perspective transformations and change to square
-                        rectified = self.qrcode_detector.rectify(clipped_color_image, markers, (board_size, board_size))
+                        rectified_image, board_size_height, board_size_width = \
+                            self.rectify(clipped_color_image, board_corners)
+
                         # Set ROI to black and add only the rectified board, where objects are searched
                         region_of_interest[0:HEIGHT, 0:WIDTH] = [0, 0, 0]
-                        region_of_interest[0:board_size, 0:board_size] = rectified
+                        region_of_interest[0:board_size_height, 0:board_size_width] = rectified_image
+
+                        # TODO: else: include positions in the frame?
 
                 else:
                     logger.debug("No QR-code detector result")

@@ -21,6 +21,8 @@ import cv2  # TODO: fix the requirements.txt or provide library
 import colorsys
 import logging.config
 import time
+import requests
+import math
 from shapely import geometry
 import pyzbar.pyzbar as pyzbar
 from QRCodeDetection.QRCodeDetection import QRCodeDetector
@@ -63,6 +65,9 @@ RED_MAX = (1, 1, 255)
 
 class ShapeDetector:
 
+    # Flag for location from request
+    location_json = None
+
     # The centroid tracker instance
     centroid_tracker = None
 
@@ -99,6 +104,11 @@ class ShapeDetector:
         # Initialize the centroid tracker
         self.centroid_tracker = Tracker()
         # centroid_tracker = MyTracker()
+
+        # TODO: read metadata (= 1) from QR-code
+        # Geolocation request
+        self.location_json = requests.get("http://127.0.0.1:8000/location/map/1.json")
+        print(self.location_json)
 
     # Check if the contour is a lego brick
     def detect_lego_brick(self, contour, frame):
@@ -207,49 +217,131 @@ class ShapeDetector:
         # Return the color name
         return color_name
 
-    # Detect the board using four QR-Codes in the board corners
+    # Return pythagoras value
     @staticmethod
-    def detect_board(decoded_codes):
+    def pythagoras(value_x, value_y):
+        value = math.sqrt(value_x ** 2 + value_y ** 2)
+        return value
 
-        board_corners = []
-        upper_left_corner = None
-        upper_right_corner = None
+    # Return distance between two points
+    def calculate_distance(self, value1_x, value1_y, value2_x, value2_y):
+        value_x = value1_x - value2_x
+        value_y = value1_y - value2_y
+        value = self.pythagoras(value_x, value_y)
+        return value
+
+    # Compute position of diagonal board corners, based on position of qr-codes centroids
+    def set_corners(self, centroid1, centroid2, centroid_corner_distance):
+
+        corner1 = [0, 0]
+        corner2 = [0, 0]
+
+        # Compute vector of length 1 for diagonal direction
+        diagonal_distance = self.calculate_distance(centroid1[0], centroid1[1], centroid2[0], centroid2[1])
+        diagonal_vector_x_normal = (centroid1[0] - centroid2[0]) / diagonal_distance
+        diagonal_vector_y_normal = (centroid1[1] - centroid2[1]) / diagonal_distance
+
+        # Compute vectors of length = centroid_corner_distance for diagonal direction
+        diagonal_vector_x = diagonal_vector_x_normal * centroid_corner_distance
+        diagonal_vector_y = diagonal_vector_y_normal * centroid_corner_distance
+
+        # Ensure that vectors are positive in x and y directions
+        diagonal_vector_x = self.pythagoras(diagonal_vector_x, 0)
+        diagonal_vector_y = self.pythagoras(diagonal_vector_y, 0)
+
+        # Compute position of corners (distance between corners must be bigger than between centroids)
+        if centroid1[0] < centroid2[0]:
+            corner1[0] = centroid1[0] - diagonal_vector_x
+            corner2[0] = centroid2[0] + diagonal_vector_x
+        else:
+            corner1[0] = centroid1[0] + diagonal_vector_x
+            corner2[0] = centroid2[0] - diagonal_vector_x
+
+        if centroid1[1] < centroid2[1]:
+            corner1[1] = centroid1[1] - diagonal_vector_y
+            corner2[1] = centroid2[1] + diagonal_vector_y
+        else:
+            corner1[1] = centroid1[1] + diagonal_vector_y
+            corner2[1] = centroid2[1] - diagonal_vector_y
+
+        # Cast to int
+        corner1[0] = int(corner1[0])
+        corner1[1] = int(corner1[1])
+        corner2[0] = int(corner2[0])
+        corner2[1] = int(corner2[1])
+
+        # Do not allow for position lower than 0
+        if corner1[0] < 0:
+            corner1[0] = 0
+        if corner1[1] < 0:
+            corner1[1] = 0
+        if corner2[0] < 0:
+            corner2[0] = 0
+        if corner2[1] < 0:
+            corner2[1] = 0
+
+        return corner1, corner2
+
+    # Detect the board using four QR-Codes in the board corners
+    def detect_board(self, decoded_codes):
+
+        # TODO: save found centroid even if not all 4 qr-codes are found in the same frame
+        top_left_corner = None
+        top_right_corner = None
         bottom_right_corner = None
         bottom_left_corner = None
+        top_left_centroid = None
+        top_right_centroid = None
+        bottom_right_centroid = None
+        bottom_left_centroid = None
+        board_corners = None
 
         # Check all found codes
         for code in decoded_codes:
 
+            # Decode binary data which is saved in QR-code
             code_data = code.data.decode()
 
-            # TODO: rename QR-Codes: "upper left board"
-            # Compute outer corners of the board
-            # TODO: use "board" or "corner" instead of UL/UR/BR/BL
-            # if "board corner" in code_data:
-            if code_data == "UpperLeft" or code_data == "UpperRight" \
-                    or code_data == "BottomRight" or code_data == "BottomLeft":
+            # Compute outer corners of the board and read metadata
+            # All data with corners information start with "C_"
+            if "C_" in code_data:
+
+                # TODO: read metadata
+                # The last part of string "_X" is the number of the map
 
                 # Compute the centroid (middle) of the single code
                 code_polygon = geometry.Polygon([[point.x, point.y] for point in code.polygon])
-                board_corner = int(code_polygon.centroid.x), int(code_polygon.centroid.y)
+                code_centroid = int(code_polygon.centroid.x), int(code_polygon.centroid.y)
+                # Compute the distance between the centroid and one of corners
+                centroid_corner_distance = self.calculate_distance(code.polygon[0].x, code.polygon[0].y,
+                                                                   code_polygon.centroid.x, code_polygon.centroid.y)
+                # Set corners properly
+                if "TL" in code_data:
+                    top_left_centroid = code_centroid
+                elif "TR" in code_data:
+                    top_right_centroid = code_centroid
+                elif "BR" in code_data:
+                    bottom_right_centroid = code_centroid
+                elif "BL" in code_data:
+                    bottom_left_centroid = code_centroid
 
-                if code_data == "UpperLeft":
-                    upper_left_corner = board_corner
-                elif code_data == "UpperRight":
-                    upper_right_corner = board_corner
-                elif code_data == "BottomRight":
-                    bottom_right_corner = board_corner
-                elif code_data == "BottomLeft":
-                    bottom_left_corner = board_corner
+                # If centroids are known, compute corners position
+                # Compute position of the top left and bottom right board corners
+                if top_right_centroid is not None and bottom_left_centroid is not None:
+                    top_right_corner, bottom_left_corner = self.set_corners(
+                        top_right_centroid, bottom_left_centroid, int(centroid_corner_distance))
 
-        # Save corners in the right order
-        board_corners = [upper_left_corner, upper_right_corner, bottom_right_corner, bottom_left_corner]
-        # print(board_corners)
+                # Compute position of the top right and bottom left board corners
+                if top_left_centroid is not None and bottom_right_centroid is not None:
+                    top_left_corner, bottom_right_corner = self.set_corners(
+                        top_left_centroid, bottom_right_centroid, int(centroid_corner_distance))
 
-        # TODO: check if all corners are saved, if so:
-        # TODO: rectify with outer_corners = [upper left, upper right, bottom right, bottom left]
+        # If all corners are found, save them in the right order
+        if top_left_corner is not None and top_right_corner is not None and \
+                bottom_right_corner is not None and bottom_left_corner is not None:
+            board_corners = [top_left_corner, top_right_corner, bottom_right_corner, bottom_left_corner]
 
-        # TODO: read other codes with metadata
+        # TODO: rectify with outer_corners = [top left, top right, bottom right, bottom left]
 
     # TODO: (0, 1 000 000) or float, compute geographic coordinates
     # Return coordinates of the detected object for (min, max) = (0, 1000)
@@ -472,12 +564,16 @@ class ShapeDetector:
                     # item[0] = calculate_coordinates(board_size, item[0])
                     # logger.debug("Detection recalculated:", ID, item)
 
+                # TODO: work with objects
+                # HTTP request with a new object
+                # http://127.0.0.1:8000/assetpos/create/1/10.0/10.0
+                # ID von Instanz in Response: assetpos_id: z.B. 5
+                # lego_id = requests.get("http://127.0.0.1:8000/assetpos/create/"+lego_type+"/"+lego_pos_x+"/"+lego_pos_y)
+                # TODO: Position updaten: http://127.0.0.1:8000/assetpos/set/5/15.0/10.0
+
                 # Write the frame into the file 'output.avi'
                 if record_video:
                     video_handler.write(frame)
-
-                # Prepare json to send
-                # TODO: differ between new, delete, move
 
                 # Render shape detection images
                 cv2.namedWindow('Shape detection', cv2.WINDOW_AUTOSIZE)

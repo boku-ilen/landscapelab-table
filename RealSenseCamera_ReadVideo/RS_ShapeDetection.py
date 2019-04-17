@@ -68,6 +68,9 @@ class ShapeDetector:
     # Flag for location from request
     location_json = None
 
+    # Array with all polygons of QR-Codes for board corners
+    all_codes_polygons_points = [None, None, None, None]
+
     # The centroid tracker instance
     centroid_tracker = None
 
@@ -282,19 +285,11 @@ class ShapeDetector:
 
         return corner1, corner2
 
-    # Detect the board using four QR-Codes in the board corners
-    def detect_board(self, decoded_codes):
+    # Save four polygons of QR-Codes decoded over couple of frames and read metadata
+    def read_codes(self, decoded_codes):
 
-        # TODO: save found centroid even if not all 4 qr-codes are found in the same frame
-        top_left_corner = None
-        top_right_corner = None
-        bottom_right_corner = None
-        bottom_left_corner = None
-        top_left_centroid = None
-        top_right_centroid = None
-        bottom_right_centroid = None
-        bottom_left_centroid = None
-        board_corners = None
+        # TODO: read metadata
+        # The last part of string "_X" is the number of the map
 
         # Check all found codes
         for code in decoded_codes:
@@ -302,44 +297,70 @@ class ShapeDetector:
             # Decode binary data which is saved in QR-code
             code_data = code.data.decode()
 
-            # Compute outer corners of the board and read metadata
-            # All data with corners information start with "C_"
-            if "C_" in code_data:
+            # If data in array with top left, top right, bottom right, bottom left
+            # data is not set yet, add the new found data
+            if "TL" in code_data and self.all_codes_polygons_points[0] is None:
+                self.all_codes_polygons_points[0] = code.polygon
+            if "TR" in code_data and self.all_codes_polygons_points[1] is None:
+                self.all_codes_polygons_points[1] = code.polygon
+            if "BR" in code_data and self.all_codes_polygons_points[2] is None:
+                self.all_codes_polygons_points[2] = code.polygon
+            if "BL" in code_data and self.all_codes_polygons_points[3] is None:
+                self.all_codes_polygons_points[3] = code.polygon
 
-                # TODO: read metadata
-                # The last part of string "_X" is the number of the map
+        logger.debug("All found codes polygon points: ".format(self.all_codes_polygons_points))
+
+    # Detect the board using four QR-Codes in the board corners
+    def detect_board(self):
+
+        top_left_corner = None
+        top_right_corner = None
+        bottom_right_corner = None
+        bottom_left_corner = None
+        centroids = []
+        all_codes_flag = True
+
+        # Check if all codes polygons points are available
+        for code_polygon in self.all_codes_polygons_points:
+            if code_polygon is None:
+                logger.debug("Not all codes polygons for board corners are available")
+                all_codes_flag = False
+
+        # Continue if all needed data is available
+        if all_codes_flag is True:
+            # Iterate through the array with four sets of points for polygons
+            for points_idx in range(len(self.all_codes_polygons_points)):
 
                 # Compute the centroid (middle) of the single code
-                code_polygon = geometry.Polygon([[point.x, point.y] for point in code.polygon])
+                code_polygon = geometry.Polygon([[point.x, point.y]
+                                                 for point in self.all_codes_polygons_points[points_idx]])
                 code_centroid = int(code_polygon.centroid.x), int(code_polygon.centroid.y)
-                # Compute the distance between the centroid and one of corners
-                centroid_corner_distance = self.calculate_distance(code.polygon[0].x, code.polygon[0].y,
+                logger.debug("QR-code centroid found: {}".format(code_centroid))
+
+                # Compute the distance between the centroid and the first of corners
+                centroid_corner_distance = self.calculate_distance(self.all_codes_polygons_points[points_idx][0].x,
+                                                                   self.all_codes_polygons_points[points_idx][0].y,
                                                                    code_polygon.centroid.x, code_polygon.centroid.y)
-                # Set corners properly
-                if "TL" in code_data:
-                    top_left_centroid = code_centroid
-                elif "TR" in code_data:
-                    top_right_centroid = code_centroid
-                elif "BR" in code_data:
-                    bottom_right_centroid = code_centroid
-                elif "BL" in code_data:
-                    bottom_left_centroid = code_centroid
 
-                # If centroids are known, compute corners position
-                # Compute position of the top left and bottom right board corners
-                if top_right_centroid is not None and bottom_left_centroid is not None:
-                    top_right_corner, bottom_left_corner = self.set_corners(
-                        top_right_centroid, bottom_left_centroid, int(centroid_corner_distance))
+                # Save all centroids in an array -> [top left, top right, bottom right, bottom left]
+                centroids.append(code_centroid)
 
-                # Compute position of the top right and bottom left board corners
-                if top_left_centroid is not None and bottom_right_centroid is not None:
-                    top_left_corner, bottom_right_corner = self.set_corners(
-                        top_left_centroid, bottom_right_centroid, int(centroid_corner_distance))
+            # Compute corners position
+            # Compute position of the top right and bottom left board corners
+            top_left_corner, bottom_right_corner = self.set_corners(
+                centroids[0], centroids[2], int(centroid_corner_distance))
+            logger.debug("TL corner: {}, BR corner: {}".format(top_left_corner, bottom_right_corner))
+
+            # Compute position of the top left and bottom right board corners
+            top_right_corner, bottom_left_corner = self.set_corners(
+                centroids[1], centroids[3], int(centroid_corner_distance))
+            logger.debug("TR corner: {}, BL corner: {}".format(top_right_corner, bottom_left_corner))
 
         # If all corners are found, save them in the right order
         if top_left_corner is not None and top_right_corner is not None and \
                 bottom_right_corner is not None and bottom_left_corner is not None:
             board_corners = [top_left_corner, top_right_corner, bottom_right_corner, bottom_left_corner]
+            logger.debug("board_corners: {}".format(board_corners))
 
         # TODO: rectify with outer_corners = [top left, top right, bottom right, bottom left]
 
@@ -418,8 +439,13 @@ class ShapeDetector:
                 # Decode QR or Bar-Codes
                 decoded_codes = pyzbar.decode(color_image)
 
-                # Detect the board (new solution) and read metadata
-                self.detect_board(decoded_codes)
+                # Read codes which were decoded in this frame:
+                # save polygons in the array self.all_codes_polygons_points
+                # and read metadata
+                self.read_codes(decoded_codes)
+
+                # Detect the board (new solution) using the array self.all_codes_polygons_points
+                self.detect_board()
 
                 # Get the distance to the board (to the middle of the frame)
                 if not clip_dist or not board_detected:
@@ -452,7 +478,6 @@ class ShapeDetector:
 
                         # Eliminate perspective transformations and change to square
                         rectified = self.qrcode_detector.rectify(clipped_color_image, markers, (board_size, board_size))
-
                         # Set ROI to black and add only the rectified board, where objects are searched
                         region_of_interest[0:HEIGHT, 0:WIDTH] = [0, 0, 0]
                         region_of_interest[0:board_size, 0:board_size] = rectified

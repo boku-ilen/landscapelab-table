@@ -50,10 +50,10 @@ class Tracker:
     def update(self, objects, length):
         """Update position of the object"""
         # Show LegoBrickCollections
-        logger_tracker.debug("LegoBrickCollections:\nred_sqrs: %s", self.lego_brick_collection.red_sqrs_collection)
-        logger_tracker.debug("red_rcts: %s", self.lego_brick_collection.red_rcts_collection)
-        logger_tracker.debug("blue_sqrs: %s", self.lego_brick_collection.blue_sqrs_collection)
-        logger_tracker.debug("blue_rcts: %s", self.lego_brick_collection.blue_rcts_collection)
+        #logger_tracker.debug("LegoBrickCollections:\nred_sqrs: %s", self.lego_brick_collection.red_sqrs_collection)
+        #logger_tracker.debug("red_rcts: %s", self.lego_brick_collection.red_rcts_collection)
+        #logger_tracker.debug("blue_sqrs: %s", self.lego_brick_collection.blue_sqrs_collection)
+        #logger_tracker.debug("blue_rcts: %s", self.lego_brick_collection.blue_rcts_collection)
         # Check if the list of input bounding box rectangles is empty
         if length == 0:
             # Loop over any existing tracked objects and mark them as disappeared

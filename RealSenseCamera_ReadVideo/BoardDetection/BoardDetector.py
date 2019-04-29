@@ -14,6 +14,9 @@ class BoardDetector:
     # Array with all polygons of QR-Codes for board corners
     all_codes_polygons_points = [None, None, None, None]
 
+    # ID of the map (metadata read from the code)
+    map_id = None
+
     def __init__(self):
         pass
 
@@ -82,17 +85,26 @@ class BoardDetector:
 
         return corner1, corner2
 
+    # Read metadata save at the end of the QR-Code data -> map_id
+    @staticmethod
+    def read_metadata_id(code_data):
+
+        # Split code data of the form: 'C_BL_1'
+        map_id = code_data.split('_')[2]
+        return map_id
+
     # Save four polygons of QR-Codes decoded over couple of frames and read metadata
     def read_codes(self, decoded_codes):
-
-        # TODO: read metadata
-        # The last part of string "_X" is the number of the map
 
         # Check all found codes
         for code in decoded_codes:
 
             # Decode binary data which is saved in QR-code
             code_data = code.data.decode()
+
+            # If map_id is not known yet
+            if self.map_id is None:
+                self.map_id = self.read_metadata_id(code_data)
 
             # If data in array with top left, top right, bottom right, bottom left
             # data is not set yet, add the new found data
@@ -106,6 +118,7 @@ class BoardDetector:
                 self.all_codes_polygons_points[3] = code.polygon
 
         logger_board_detector.debug("All found codes polygon points: ".format(self.all_codes_polygons_points))
+        print(self.all_codes_polygons_points)
 
     # Detect the board using four QR-Codes in the board corners
     def detect_board(self):

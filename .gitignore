@@ -6,3 +6,4 @@ RealSenseCamera_ReadVideo/venv/*
 RealSenseCamera_ReadVideo/QRCodeDetection/__pycache__/*
 RealSenseCamera_ReadVideo/Tracking/__pycache__/*
 RealSenseCamera_ReadVideo/BoardDetection/__pycache__/*
+RealSenseCamera_ReadVideo/ParseJSON/__pycache__/JsonParser.cpython-36.pyc

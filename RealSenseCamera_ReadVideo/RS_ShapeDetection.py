@@ -26,6 +26,7 @@ import pyzbar.pyzbar as pyzbar
 from BoardDetection.BoardDetector import BoardDetector
 from Tracking.Tracker import Tracker
 #from Tracking.MyTracker import MyTracker
+from ParseJSON.JsonParser import JsonParser
 
 
 # configure logging
@@ -59,12 +60,17 @@ BLUE_MIN = (0.53, 0.33, 105)
 BLUE_MAX = (0.65, 1, 255)
 RED_MIN = (0.92, 0.40, 140)
 RED_MAX = (1, 1, 255)
+# Location request URL
+REQUEST_LOCATION = "http://127.0.0.1:8000/location/map"
+REQUEST_LOCATION_EXT = ".json"
+REQUEST_LOCATION_NOCKBERGE = "http://127.0.0.1:8000/location/fixtures/nockberge_maps.json"
 
 
 class ShapeDetector:
 
-    # Flag for location from request
+    # Location data from request
     location_json = None
+    location_data_parsed = None
 
     # The centroid tracker instance
     centroid_tracker = None
@@ -103,10 +109,8 @@ class ShapeDetector:
         self.centroid_tracker = Tracker()
         # centroid_tracker = MyTracker()
 
-        # TODO: read metadata (= 1) from QR-code
-        # Geolocation request
-        self.location_json = requests.get("http://127.0.0.1:8000/location/map/1.json")
-        print(self.location_json)
+        # Initialize json parser
+        self.json_parser = JsonParser()
 
     # Check if the contour is a lego brick
     def detect_lego_brick(self, contour, frame):
@@ -307,13 +311,25 @@ class ShapeDetector:
                     clip_dist = aligned_depth_frame.get_distance(middle_x, middle_y) / self.depth_scale
                     logger.debug("Distance to the table is: {}".format(clip_dist))
 
+                # Request a location of the map
+                if self.board_detector.map_id is not None:
+                    self.location_json = requests.get(REQUEST_LOCATION_NOCKBERGE)
+                    # self.location_json = requests.get(REQUEST_LOCATION + self.board_detector.map_id
+                    #                                  + REQUEST_LOCATION_EXT)
+                    logger.debug("location: {}".format(self.location_json))
+
+                    # TODO: testing parsing with json file, to remove when not needed
+                    # Parse the saved json file (test)
+                    self.location_data_parsed = self.json_parser.parse(self.board_detector.map_id)
+                    logger.debug("location_parsed (from file): {}".format(self.location_data_parsed))
+
                 if all_board_corners_found and clip_dist:
 
                     # Check if found QR-code markers positions are included in the frame size
                     if all([0, 0] < corners < [color_image.shape[1], color_image.shape[0]]
                            for corners in board_corners):
 
-                        # Eliminate perspective transformations and change to square
+                        # Eliminate perspective transformations and show only the board
                         rectified_image, board_size_height, board_size_width = \
                             self.board_detector.rectify(clipped_color_image, board_corners)
 
@@ -375,7 +391,6 @@ class ShapeDetector:
 
                         # Check if the contour is a lego brick
                         # Compute contour name and rotated bounding box of the found contour
-                        # TODO: Error after libraries updating
                         contour_name, bbox = self.detect_lego_brick(contour, frame)
 
                         # If if the contour name is computed (square or rectangle),

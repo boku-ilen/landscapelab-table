@@ -22,7 +22,7 @@ import colorsys
 import logging.config
 import time
 import requests
-import pyzbar.pyzbar as pyzbar
+import pyzbar.pyzbar as pyzbar  # TODO: add to requirements.txt
 from BoardDetection.BoardDetector import BoardDetector
 from Tracking.Tracker import Tracker
 #from Tracking.MyTracker import MyTracker

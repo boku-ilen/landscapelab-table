@@ -1,6 +1,8 @@
+import logging
 from enum import Enum
-#from ..RS_ShapeDetection import ShapeDetector
+# from ..RS_ShapeDetection import ShapeDetector
 
+# FIXME: make the server, port and prefix configurable
 # Assets request URLs (lego bricks position)
 # Create an asset (.../id/pos_x/pos_y), return an instance_id
 REQUEST_CREATE_ASSET = "http://141.244.151.53/landscapelab/assetpos/create/"
@@ -9,6 +11,9 @@ REQUEST_SET_ASSET = "http://141.244.151.53/landscapelab/assetpos/set/"
 # TODO: is it "delete"?
 # Delete an asset (.../instance_id)
 REQUEST_DELETE_ASSET = "http://141.244.151.53/landscapelab/assetpos/delete/"
+
+# configure logging
+logger = logging.getLogger(__name__)
 
 
 # Define lego type ids
@@ -68,19 +73,20 @@ class LegoBrickCollections:
         # TODO: allow for relative import
         # Calculate coordinates for detected lego bricks
         # coordinates = self.calculate_coordinates(centroid)
-        # print("Detection recalculated: id:{}, coordinates:{}".format(coordinates))
+        # logger.debug("Detection recalculated: id:{}, coordinates:{}".format(coordinates))
 
-        print(REQUEST_CREATE_ASSET + str(lego_type_id) + "/" + str(centroid[0]) + "/" + str(centroid[1]))
+        logger.debug(REQUEST_CREATE_ASSET + str(lego_type_id) + "/" + str(centroid[0]) + "/" + str(centroid[1]))
         # lego_instance_id = requests.get(REQUEST_CREATE_ASSET + str(lego_type_id) + "/" + str(centroid[0]) + "/" + str(centroid[1]))
 
         # Look for the related collection and save as dictionary
+        # FIXME: can we use constants for the string identifiers? e.g. COLOR_RED, SHAPE_SQUARE, ..
         if color == "red":
             if shape == "square":
                 self.red_sqrs_collection.append(lego_brick.__dict__)
             elif shape == "rectangle":
                 self.red_rcts_collection.append(lego_brick.__dict__)
                 for lego in self.red_rcts_collection:
-                    print("LegoBrick", lego)
+                    logger.debug("LegoBrick", lego)
         elif color == "blue":
             if shape == "square":
                 self.blue_sqrs_collection.append(lego_brick.__dict__)
@@ -102,15 +108,15 @@ class LegoBrickCollections:
 
         # Look for lego brick id in all collections until found and deleted
         while collection_idx < len(collections_list) and not lego_brick_deleted:
-            print("collection:", collection_idx)
+            logger.debug("collection:", collection_idx)
             lego_idx = 0
 
             # Look for lego brick id in the current collection in the list until found and deleted
             while lego_idx < len(collections_list[collection_idx]) and not lego_brick_deleted:
-                print("len:", len(collections_list[collection_idx]))
-                print("iteration:", lego_idx)
-                print("looked id:", id)
-                print("current id:", collections_list[collection_idx][lego_idx]["id"])
+                logger.debug("len:", len(collections_list[collection_idx]))
+                logger.debug("iteration:", lego_idx)
+                logger.debug("looked id:", id)
+                logger.debug("current id:", collections_list[collection_idx][lego_idx]["id"])
 
                 # If id is found, delete lego brick from related collection and stop searching
                 if collections_list[collection_idx][lego_idx]["id"] == id:
@@ -131,7 +137,7 @@ class LegoBrickCollections:
 
         lego_brick_moved = False
         collection_idx = 0
-        print(id, new_centroid)
+        logger.debug(id, new_centroid)
 
         # Compute a list of all lego brick collections
         collection_list = [self.red_rcts_collection, self.red_sqrs_collection,

@@ -6,7 +6,7 @@ import logging.config
 
 
 # configure logging
-logger_board_detector = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class BoardDetector:
@@ -117,7 +117,7 @@ class BoardDetector:
             if "BL" in code_data and self.all_codes_polygons_points[3] is None:
                 self.all_codes_polygons_points[3] = code.polygon
 
-        logger_board_detector.debug("All found codes polygon points: {}".format(self.all_codes_polygons_points))
+        logger.debug("All found codes polygon points: {}".format(self.all_codes_polygons_points))
 
     # Detect the board using four QR-Codes in the board corners
     def detect_board(self):
@@ -134,7 +134,7 @@ class BoardDetector:
         # Check if all codes polygons points are available
         for code_polygon in self.all_codes_polygons_points:
             if code_polygon is None:
-                logger_board_detector.debug("Not all codes polygons for board corners are available")
+                logger.debug("Not all codes polygons for board corners are available")
                 all_codes_flag = False
 
         # Continue if all needed data is available
@@ -145,7 +145,7 @@ class BoardDetector:
                 code_polygon = geometry.Polygon([[point.x, point.y]
                                                  for point in self.all_codes_polygons_points[points_idx]])
                 code_centroid = int(code_polygon.centroid.x), int(code_polygon.centroid.y)
-                logger_board_detector.debug("QR-code centroid found: {}".format(code_centroid))
+                logger.debug("QR-code centroid found: {}".format(code_centroid))
 
                 # Compute the distance between the centroid and the first of corners
                 centroid_corner_distance = self.calculate_distance(self.all_codes_polygons_points[points_idx][0].x,
@@ -159,18 +159,18 @@ class BoardDetector:
             # Compute position of the top right and bottom left board corners
             top_left_corner, bottom_right_corner = self.set_corners(
                 centroids[0], centroids[2], int(centroid_corner_distance))
-            logger_board_detector.debug("TL corner: {}, BR corner: {}".format(top_left_corner, bottom_right_corner))
+            logger.debug("TL corner: {}, BR corner: {}".format(top_left_corner, bottom_right_corner))
 
             # Compute position of the top left and bottom right board corners
             top_right_corner, bottom_left_corner = self.set_corners(
                 centroids[1], centroids[3], int(centroid_corner_distance))
-            logger_board_detector.debug("TR corner: {}, BL corner: {}".format(top_right_corner, bottom_left_corner))
+            logger.debug("TR corner: {}, BL corner: {}".format(top_right_corner, bottom_left_corner))
 
         # If all corners are found, save them in the right order
         if top_left_corner is not None and top_right_corner is not None and \
                 bottom_right_corner is not None and bottom_left_corner is not None:
             board_corners = [top_left_corner, top_right_corner, bottom_right_corner, bottom_left_corner]
-            logger_board_detector.debug("board_corners: {}".format(board_corners))
+            logger.debug("board_corners: {}".format(board_corners))
             all_board_corners_found = True
 
             return all_board_corners_found, board_corners

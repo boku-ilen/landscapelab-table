@@ -4,14 +4,17 @@ import numpy as np
 # Max distance change without updating the object: abs(x1 - x) & abs(y1 - y)
 MAX_DISTANCE = 6
 
+
+# FIXME: CODE NOT WORKING - MyObject not found!
+# FIXME: replace print() with logging!
 class MyTracker:
     """Initialize the next unique object ID with two ordered dictionaries"""
+
     def __init__(self, maxDisappeared=20):
         self.disappeared = {}
         self.nextObjectID = 0
         # Number of maximum consecutive frames a given object is allowed to be marked as "disappeared"
         self.maxDisappeared = maxDisappeared
-
 
     # TODO: register only if object is longer visible (about 10 frames)
     def register(self, inputObject):

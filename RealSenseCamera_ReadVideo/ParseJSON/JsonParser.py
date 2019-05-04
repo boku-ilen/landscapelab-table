@@ -1,6 +1,8 @@
 import json
 
 
+# FIXME: why is this implemented as class, while all methods are defined
+# FIXME: as static?
 class JsonParser:
 
     def __init__(self):

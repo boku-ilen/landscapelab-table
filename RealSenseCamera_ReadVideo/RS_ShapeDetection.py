@@ -61,16 +61,20 @@ BLUE_MAX = (0.65, 1, 255)
 RED_MIN = (0.92, 0.40, 140)
 RED_MAX = (1, 1, 255)
 # Location request URL
-REQUEST_LOCATION = "http://127.0.0.1:8000/location/map"
-REQUEST_LOCATION_EXT = ".json"
-REQUEST_LOCATION_NOCKBERGE = "http://127.0.0.1:8000/location/fixtures/nockberge_maps.json"
+# REQUEST_LOCATION = "http://127.0.0.1:8000/location/map"
+# REQUEST_LOCATION_EXT = ".json"
+# REQUEST_LOCATION_NOCKBERGE = "http://127.0.0.1:8000/location/fixtures/nockberge_maps.json"
+REQUEST_LOCATION = "http://141.244.151.53/landscapelab/location/scenario/list.json"
 
 
 class ShapeDetector:
 
     # Location data from request
+    requests_json = None
     location_json = None
     location_data_parsed = None
+    geo_board_width = None
+    geo_board_height = None
 
     # The centroid tracker instance
     centroid_tracker = None
@@ -104,6 +108,8 @@ class ShapeDetector:
 
         # Initialize board detection
         self.board_detector = BoardDetector()
+        self.board_size_height = None
+        self.board_size_width = None
 
         # Initialize the centroid tracker
         self.centroid_tracker = Tracker()
@@ -222,10 +228,35 @@ class ShapeDetector:
     # TODO: (0, 1 000 000) or float, compute geographic coordinates
     # Return coordinates of the detected object for (min, max) = (0, 1000)
     # (0, 0) is the outer corner of the middle QR-Code marker
-    @staticmethod
-    def calculate_coordinates(board_size, coordinates, max=1000):
-        return int(coordinates[0] * max / board_size), \
-               int(coordinates[1] * max / board_size)
+
+    def calculate_coordinates(self, lego_brick_position):
+
+        # Calculate width and height in geographical coordinates
+        if self.geo_board_width is None or self.geo_board_height is None:
+
+            self.geo_board_width = self.location_data_parsed['C_TR'][0] - self.location_data_parsed['C_TL'][0]
+            self.geo_board_height = self.location_data_parsed['C_TL'][1] - self.location_data_parsed['C_BL'][1]
+
+        print("geo size", self.geo_board_width, self.geo_board_height)
+        print("board size", self.board_size_width, self.board_size_height)
+
+        # Calculate lego brick x coordinate
+        # Calculate proportions
+        lego_brick_coordinate_x = self.geo_board_width * lego_brick_position[0] / self.board_size_width
+        # Add offset
+        lego_brick_coordinate_x += self.location_data_parsed['C_TL'][0]
+
+        # Calculate lego brick y coordinate
+        # Calculate proportions
+        lego_brick_coordinate_y = self.geo_board_height * lego_brick_position[1] / self.board_size_height
+        # Invert the axis
+        lego_brick_coordinate_y = self.geo_board_height - lego_brick_coordinate_y
+        # Add offset
+        lego_brick_coordinate_y += self.location_data_parsed['C_BL'][1]
+
+        lego_brick_coordinates = int(lego_brick_coordinate_x), int(lego_brick_coordinate_y)
+
+        return lego_brick_coordinates
 
     # Run lego bricks detection and tracking code
     def run(self, record_video=False):
@@ -313,15 +344,21 @@ class ShapeDetector:
 
                 # Request a location of the map
                 if self.board_detector.map_id is not None:
-                    self.location_json = requests.get(REQUEST_LOCATION_NOCKBERGE)
-                    # self.location_json = requests.get(REQUEST_LOCATION + self.board_detector.map_id
-                    #                                  + REQUEST_LOCATION_EXT)
-                    logger.debug("location: {}".format(self.location_json))
 
-                    # TODO: testing parsing with json file, to remove when not needed
-                    # Parse the saved json file (test)
-                    self.location_data_parsed = self.json_parser.parse(self.board_detector.map_id)
-                    logger.debug("location_parsed (from file): {}".format(self.location_data_parsed))
+                    # Request json for the set location
+                    self.requests_json = requests.get(REQUEST_LOCATION)
+
+                    # Check the status code
+                    if self.requests_json.status_code is not 200:
+                        logger.debug("request json status code: {}".format(self.requests_json.status_code))
+                    else:
+                        self.location_json = self.requests_json.json()
+                        logger.debug("location: {}".format(self.location_json))
+
+                        # TODO: testing parsing with json file, to remove when not needed
+                        # TODO: Parse json if the status code is 200
+                        self.location_data_parsed = self.json_parser.parse(self.board_detector.map_id)
+                        logger.debug("location_parsed (from file): {}".format(self.location_data_parsed))
 
                 if all_board_corners_found and clip_dist:
 
@@ -330,12 +367,12 @@ class ShapeDetector:
                            for corners in board_corners):
 
                         # Eliminate perspective transformations and show only the board
-                        rectified_image, board_size_height, board_size_width = \
+                        rectified_image, self.board_size_height, self.board_size_width = \
                             self.board_detector.rectify(clipped_color_image, board_corners)
 
                         # Set ROI to black and add only the rectified board, where objects are searched
                         region_of_interest[0:HEIGHT, 0:WIDTH] = [0, 0, 0]
-                        region_of_interest[0:board_size_height, 0:board_size_width] = rectified_image
+                        region_of_interest[0:self.board_size_height, 0:self.board_size_width] = rectified_image
 
                         # TODO: else: include positions in the frame?
 
@@ -430,27 +467,29 @@ class ShapeDetector:
 
                     # Draw green lego bricks IDs
                     text = "ID {}".format(ID)
+                    tracked_lego_brick_position = tracked_lego_brick[0][0], tracked_lego_brick[0][1]
                     cv2.putText(frame, text, (tracked_lego_brick[0][0] - 10, tracked_lego_brick[0][1] - 10),
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
                     # Draw green lego bricks contour names
-                    cv2.putText(frame, tracked_lego_brick[1], (tracked_lego_brick[0][0], tracked_lego_brick[0][1]),
+                    cv2.putText(frame, tracked_lego_brick[1], tracked_lego_brick_position,
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
 
                     # Draw green lego bricks centroid points
-                    cv2.circle(frame, (tracked_lego_brick[0][0], tracked_lego_brick[0][1]), 4, (0, 255, 0), -1)
+                    cv2.circle(frame, tracked_lego_brick_position, 4, (0, 255, 0), -1)
 
                     logger.debug("Detection: {}, {}".format(ID, tracked_lego_brick))
-                    # Calculate coordinates, but not every frame, only when saving in JSON
-                    # item[0] = calculate_coordinates(board_size, item[0])
-                    # logger.debug("Detection recalculated:", ID, item)
 
-                # TODO: work with objects
-                # HTTP request with a new object
-                # http://127.0.0.1:8000/assetpos/create/1/10.0/10.0
-                # ID von Instanz in Response: assetpos_id: z.B. 5
-                # lego_id = requests.get("http://127.0.0.1:8000/assetpos/create/"+lego_type+"/"+lego_pos_x+"/"+lego_pos_y)
-                # TODO: Position updaten: http://127.0.0.1:8000/assetpos/set/5/15.0/10.0
+                    # Calculate coordinates for detected lego bricks
+                    coordinates = self.calculate_coordinates(tracked_lego_brick_position)
+                    logger.debug("Detection recalculated: id:{}, coordinates:{}".format(ID, coordinates))
+
+                    # TODO: work with objects
+                    # HTTP request with a new object
+                    # http://127.0.0.1:8000/assetpos/create/1/10.0/10.0
+                    # ID von Instanz in Response: assetpos_id: z.B. 5
+                    # lego_id = requests.get("http://127.0.0.1:8000/assetpos/create/"+lego_type+"/"+lego_pos_x+"/"+lego_pos_y)
+                    # TODO: Position updaten: http://127.0.0.1:8000/assetpos/set/5/15.0/10.0
 
                 # Write the frame into the file 'output.avi'
                 if record_video:

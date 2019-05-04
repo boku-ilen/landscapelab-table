@@ -7,6 +7,7 @@ class JsonParser:
         pass
 
     # Convert corner coordinates to int
+    # if given in form: ((1516000 5935000, 1532000 5935000, 1532000 5913000, 1516000 5913000, 1516000 5935000))
     @staticmethod
     def parse_corner_coordinates(corner):
 
@@ -20,26 +21,22 @@ class JsonParser:
 
         return corner_coordinates
 
-    def parse(self, map_id):
+    # Return a dictionary with corners coordinates
+    @staticmethod
+    def parse(location_data):
 
-        # Using file will be removed when json json from the server used
-        with open('./ParseJSON/nockberge_maps.json') as f:
-            location_data = json.load(f)
+        # Extract coordinates
+        bbox = json.loads(location_data['bounding_box'])
+        bbox_coordinates = bbox['coordinates'][0]
 
-        bbox_polygon_dict = None
+        # Save coordinates x, y as (int, int) in a dictionary
+        bbox_polygon_dict = {
+            'C_TL': bbox_coordinates[0],
+            'C_TR': bbox_coordinates[1],
+            'C_BR': bbox_coordinates[2],
+            'C_BL': bbox_coordinates[3]
+        }
 
-        for location_dict in location_data:
-
-            if location_dict['pk'] == int(map_id):
-                bbox = location_dict['fields']['bounding_box']
-                bbox_polygon = bbox.split('((', 1)[1].split(')')[0]
-
-                # Save coordinates x, y as (int, int) in a dictionary
-                bbox_polygon_dict = {
-                    'C_TL': self.parse_corner_coordinates(bbox_polygon.split(', ')[0]),
-                    'C_TR': self.parse_corner_coordinates(bbox_polygon.split(', ')[1]),
-                    'C_BR': self.parse_corner_coordinates(bbox_polygon.split(', ')[2]),
-                    'C_BL': self.parse_corner_coordinates(bbox_polygon.split(', ')[3])
-                }
+        # TODO: check if coordinates matched properly the corners
 
         return bbox_polygon_dict

@@ -61,10 +61,8 @@ BLUE_MAX = (0.65, 1, 255)
 RED_MIN = (0.92, 0.40, 140)
 RED_MAX = (1, 1, 255)
 # Location request URL
-# REQUEST_LOCATION = "http://127.0.0.1:8000/location/map"
-# REQUEST_LOCATION_EXT = ".json"
-# REQUEST_LOCATION_NOCKBERGE = "http://127.0.0.1:8000/location/fixtures/nockberge_maps.json"
-REQUEST_LOCATION = "http://141.244.151.53/landscapelab/location/scenario/list.json"
+REQUEST_LOCATION = "http://141.244.151.53/landscapelab/location/map/"
+REQUEST_LOCATION_EXT = ".json"
 
 
 class ShapeDetector:
@@ -225,10 +223,6 @@ class ShapeDetector:
         # Return the color name
         return color_name
 
-    # TODO: (0, 1 000 000) or float, compute geographic coordinates
-    # Return coordinates of the detected object for (min, max) = (0, 1000)
-    # (0, 0) is the outer corner of the middle QR-Code marker
-
     def calculate_coordinates(self, lego_brick_position):
 
         # Calculate width and height in geographical coordinates
@@ -237,8 +231,8 @@ class ShapeDetector:
             self.geo_board_width = self.location_data_parsed['C_TR'][0] - self.location_data_parsed['C_TL'][0]
             self.geo_board_height = self.location_data_parsed['C_TL'][1] - self.location_data_parsed['C_BL'][1]
 
-        print("geo size", self.geo_board_width, self.geo_board_height)
-        print("board size", self.board_size_width, self.board_size_height)
+        logger.debug("geo size: {}, {}".format(self.geo_board_width, self.geo_board_height))
+        logger.debug("board size: {}, {}".format(self.board_size_width, self.board_size_height))
 
         # Calculate lego brick x coordinate
         # Calculate proportions
@@ -346,7 +340,7 @@ class ShapeDetector:
                 if self.board_detector.map_id is not None:
 
                     # Request json for the set location
-                    self.requests_json = requests.get(REQUEST_LOCATION)
+                    self.requests_json = requests.get(REQUEST_LOCATION + self.board_detector.map_id + REQUEST_LOCATION_EXT)
 
                     # Check the status code
                     if self.requests_json.status_code is not 200:
@@ -355,10 +349,9 @@ class ShapeDetector:
                         self.location_json = self.requests_json.json()
                         logger.debug("location: {}".format(self.location_json))
 
-                        # TODO: testing parsing with json file, to remove when not needed
-                        # TODO: Parse json if the status code is 200
-                        self.location_data_parsed = self.json_parser.parse(self.board_detector.map_id)
-                        logger.debug("location_parsed (from file): {}".format(self.location_data_parsed))
+                        # Parse json if the status code is 200
+                        self.location_data_parsed = self.json_parser.parse(self.location_json)
+                        logger.debug("location_parsed: {}".format(self.location_data_parsed))
 
                 if all_board_corners_found and clip_dist:
 

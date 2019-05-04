@@ -117,8 +117,7 @@ class BoardDetector:
             if "BL" in code_data and self.all_codes_polygons_points[3] is None:
                 self.all_codes_polygons_points[3] = code.polygon
 
-        logger_board_detector.debug("All found codes polygon points: ".format(self.all_codes_polygons_points))
-        print(self.all_codes_polygons_points)
+        logger_board_detector.debug("All found codes polygon points: {}".format(self.all_codes_polygons_points))
 
     # Detect the board using four QR-Codes in the board corners
     def detect_board(self):

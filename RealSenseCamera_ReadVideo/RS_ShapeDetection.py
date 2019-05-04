@@ -28,7 +28,6 @@ from Tracking.Tracker import Tracker
 #from Tracking.MyTracker import MyTracker
 from ParseJSON.JsonParser import JsonParser
 
-
 # configure logging
 logger = logging.getLogger(__name__)
 try:
@@ -60,6 +59,7 @@ BLUE_MIN = (0.53, 0.33, 105)
 BLUE_MAX = (0.65, 1, 255)
 RED_MIN = (0.92, 0.40, 140)
 RED_MAX = (1, 1, 255)
+
 # Location request URL
 REQUEST_LOCATION = "http://141.244.151.53/landscapelab/location/map/"
 REQUEST_LOCATION_EXT = ".json"
@@ -337,7 +337,7 @@ class ShapeDetector:
                     logger.debug("Distance to the table is: {}".format(clip_dist))
 
                 # Request a location of the map
-                if self.board_detector.map_id is not None:
+                if self.board_detector.map_id is not None and self.location_data_parsed is None:
 
                     # Request json for the set location
                     self.requests_json = requests.get(REQUEST_LOCATION + self.board_detector.map_id + REQUEST_LOCATION_EXT)
@@ -449,7 +449,7 @@ class ShapeDetector:
                 for lego_brick in legos_properties_list:
                     logger.debug(lego_brick)
 
-                # TODO: planned to return objects
+                # TODO: work with objects
                 # Compute tracked lego bricks dictionary
                 # using the centroid tracker and set of properties
                 tracked_lego_bricks_dict = \
@@ -473,17 +473,6 @@ class ShapeDetector:
 
                     logger.debug("Detection: {}, {}".format(ID, tracked_lego_brick))
 
-                    # Calculate coordinates for detected lego bricks
-                    coordinates = self.calculate_coordinates(tracked_lego_brick_position)
-                    logger.debug("Detection recalculated: id:{}, coordinates:{}".format(ID, coordinates))
-
-                    # TODO: work with objects
-                    # HTTP request with a new object
-                    # http://127.0.0.1:8000/assetpos/create/1/10.0/10.0
-                    # ID von Instanz in Response: assetpos_id: z.B. 5
-                    # lego_id = requests.get("http://127.0.0.1:8000/assetpos/create/"+lego_type+"/"+lego_pos_x+"/"+lego_pos_y)
-                    # TODO: Position updaten: http://127.0.0.1:8000/assetpos/set/5/15.0/10.0
-
                 # Write the frame into the file 'output.avi'
                 if record_video:
                     video_handler.write(frame)
@@ -504,3 +493,4 @@ class ShapeDetector:
 if __name__ == '__main__':
     my_shape_detector = ShapeDetector()
     my_shape_detector.run()
+

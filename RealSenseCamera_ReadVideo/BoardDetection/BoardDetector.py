@@ -39,6 +39,7 @@ class BoardDetector:
         corner1 = [0, 0]
         corner2 = [0, 0]
 
+        # FIXME: vector for qr_code square diagonal, not board diagonal!
         # Compute vector of length 1 for diagonal direction
         diagonal_distance = self.calculate_distance(centroid1[0], centroid1[1], centroid2[0], centroid2[1])
         diagonal_vector_x_normal = (centroid1[0] - centroid2[0]) / diagonal_distance
@@ -183,8 +184,8 @@ class BoardDetector:
         x = []
         y = []
         for corner in corners:
-            x.append(corner[0])
-            y.append(corner[1])
+            x.append(corner[1])
+            y.append(corner[0])
         return min(x), min(y), max(x), max(y)
 
     # Wrap the frame perspective to a top-down view (rectangle)

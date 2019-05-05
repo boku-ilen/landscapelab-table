@@ -1,6 +1,6 @@
 import logging
 from enum import Enum
-# from ..RS_ShapeDetection import ShapeDetector
+import config
 
 # FIXME: make the server, port and prefix configurable
 # Assets request URLs (lego bricks position)
@@ -19,8 +19,8 @@ logger = logging.getLogger(__name__)
 # Define lego type ids
 class LegoTypeId(Enum):
     SQUARE_RED = 1
-    SQUARE_BLUE = 1
-    RECTANGLE_RED = 2
+    RECTANGLE_RED = 1
+    SQUARE_BLUE = 2
     RECTANGLE_BLUE = 2
 
 
@@ -69,14 +69,14 @@ class LegoBrickCollections:
         # Match a type id based on contour name and color
         lego_type_id = self.match_lego_type_id(shape, color)
 
-        # TODO: geo coordinates from shapeDetection.py!
-        # TODO: allow for relative import
         # Calculate coordinates for detected lego bricks
-        # coordinates = self.calculate_coordinates(centroid)
-        # logger.debug("Detection recalculated: id:{}, coordinates:{}".format(coordinates))
+        coordinates = self.calculate_coordinates(centroid)
 
-        logger.debug(REQUEST_CREATE_ASSET + str(lego_type_id) + "/" + str(centroid[0]) + "/" + str(centroid[1]))
-        # lego_instance_id = requests.get(REQUEST_CREATE_ASSET + str(lego_type_id) + "/" + str(centroid[0]) + "/" + str(centroid[1]))
+        logger.debug("Detection recalculated: coordinates:{}".format(coordinates))
+        logger.debug(REQUEST_CREATE_ASSET + str(lego_type_id) + "/" + str(coordinates[0]) + "/" + str(coordinates[1]))
+        # lego_instance_id = requests.get(REQUEST_CREATE_ASSET + str(lego_type_id) + "/" + str(coordinates[0]) + "/" + str(coordinates[1])))
+
+        # TODO: match lego_id with lego_instance_id
 
         # Look for the related collection and save as dictionary
         # FIXME: can we use constants for the string identifiers? e.g. COLOR_RED, SHAPE_SQUARE, ..
@@ -188,6 +188,37 @@ class LegoBrickCollections:
 
         # Return the lego type id
         return lego_type_id
+
+    # calculate geographical position for lego bricks
+    @staticmethod
+    def calculate_coordinates(lego_brick_position):
+
+        # Calculate width and height in geographical coordinates
+        if config.geo_board_width is None or config.geo_board_height is None:
+
+            config.geo_board_width = config.location_data_parsed['C_TR'][0] - config.location_data_parsed['C_TL'][0]
+            config.geo_board_height = config.location_data_parsed['C_TL'][1] - config.location_data_parsed['C_BL'][1]
+
+        logger.debug("geo size: {}, {}".format(config.geo_board_width, config.geo_board_height))
+        logger.debug("board size: {}, {}".format(config.board_size_width, config.board_size_height))
+
+        # Calculate lego brick x coordinate
+        # Calculate proportions
+        lego_brick_coordinate_x = config.geo_board_width * lego_brick_position[0] / config.board_size_width
+        # Add offset
+        lego_brick_coordinate_x += config.location_data_parsed['C_TL'][0]
+
+        # Calculate lego brick y coordinate
+        # Calculate proportions
+        lego_brick_coordinate_y = config.geo_board_height * lego_brick_position[1] / config.board_size_height
+        # Invert the axis
+        lego_brick_coordinate_y = config.geo_board_height - lego_brick_coordinate_y
+        # Add offset
+        lego_brick_coordinate_y += config.location_data_parsed['C_BL'][1]
+
+        lego_brick_coordinates = int(lego_brick_coordinate_x), int(lego_brick_coordinate_y)
+
+        return lego_brick_coordinates
 
 
 if __name__ == "__main__":

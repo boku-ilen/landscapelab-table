@@ -28,6 +28,10 @@ from Tracking.Tracker import Tracker
 #from Tracking.MyTracker import MyTracker
 from ParseJSON.JsonParser import JsonParser
 
+# TODO: move some other variables to config?
+# Global variables
+import config
+
 # configure logging
 logger = logging.getLogger(__name__)
 try:
@@ -70,9 +74,6 @@ class ShapeDetector:
     # Location data from request
     requests_json = None
     location_json = None
-    location_data_parsed = None
-    geo_board_width = None
-    geo_board_height = None
 
     # The centroid tracker instance
     centroid_tracker = None
@@ -223,35 +224,6 @@ class ShapeDetector:
         # Return the color name
         return color_name
 
-    def calculate_coordinates(self, lego_brick_position):
-
-        # Calculate width and height in geographical coordinates
-        if self.geo_board_width is None or self.geo_board_height is None:
-
-            self.geo_board_width = self.location_data_parsed['C_TR'][0] - self.location_data_parsed['C_TL'][0]
-            self.geo_board_height = self.location_data_parsed['C_TL'][1] - self.location_data_parsed['C_BL'][1]
-
-        logger.debug("geo size: {}, {}".format(self.geo_board_width, self.geo_board_height))
-        logger.debug("board size: {}, {}".format(self.board_size_width, self.board_size_height))
-
-        # Calculate lego brick x coordinate
-        # Calculate proportions
-        lego_brick_coordinate_x = self.geo_board_width * lego_brick_position[0] / self.board_size_width
-        # Add offset
-        lego_brick_coordinate_x += self.location_data_parsed['C_TL'][0]
-
-        # Calculate lego brick y coordinate
-        # Calculate proportions
-        lego_brick_coordinate_y = self.geo_board_height * lego_brick_position[1] / self.board_size_height
-        # Invert the axis
-        lego_brick_coordinate_y = self.geo_board_height - lego_brick_coordinate_y
-        # Add offset
-        lego_brick_coordinate_y += self.location_data_parsed['C_BL'][1]
-
-        lego_brick_coordinates = int(lego_brick_coordinate_x), int(lego_brick_coordinate_y)
-
-        return lego_brick_coordinates
-
     # Run lego bricks detection and tracking code
     def run(self, record_video=False):
 
@@ -337,7 +309,7 @@ class ShapeDetector:
                     logger.debug("Distance to the table is: {}".format(clip_dist))
 
                 # Request a location of the map
-                if self.board_detector.map_id is not None and self.location_data_parsed is None:
+                if self.board_detector.map_id is not None and config.location_data_parsed is None:
 
                     # Request json for the set location
                     self.requests_json = requests.get(REQUEST_LOCATION + self.board_detector.map_id + REQUEST_LOCATION_EXT)
@@ -350,8 +322,8 @@ class ShapeDetector:
                         logger.debug("location: {}".format(self.location_json))
 
                         # Parse json if the status code is 200
-                        self.location_data_parsed = self.json_parser.parse(self.location_json)
-                        logger.debug("location_parsed: {}".format(self.location_data_parsed))
+                        config.location_data_parsed = self.json_parser.parse(self.location_json)
+                        logger.debug("location_parsed: {}".format(config.location_data_parsed))
 
                 if all_board_corners_found and clip_dist:
 
@@ -362,6 +334,8 @@ class ShapeDetector:
                         # Eliminate perspective transformations and show only the board
                         rectified_image, self.board_size_height, self.board_size_width = \
                             self.board_detector.rectify(clipped_color_image, board_corners)
+                        config.board_size_height = self.board_size_height
+                        config.board_size_width = self.board_size_width
 
                         # Set ROI to black and add only the rectified board, where objects are searched
                         region_of_interest[0:HEIGHT, 0:WIDTH] = [0, 0, 0]

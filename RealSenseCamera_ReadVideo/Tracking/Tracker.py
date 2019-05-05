@@ -50,7 +50,7 @@ class Tracker:
     def update(self, objects, length):
         """Update position of the object"""
         # Show LegoBrickCollections
-        logger_tracker.debug("LegoBrickCollections:\n red_sqrs: %s\n red_rcts: %s\n blue_sqrs: %s\n blue_rcts: %s\n",
+        logger_tracker.debug("LegoBrickCollections:\n red_sqrs: %s\n red_rcts: %s\n blue_sqrs: %s\n blue_rcts: %s",
                              self.lego_brick_collection.red_sqrs_collection,
                              self.lego_brick_collection.red_rcts_collection,
                              self.lego_brick_collection.blue_sqrs_collection,

@@ -1,6 +1,9 @@
 import logging
 from enum import Enum
 import config
+import requests
+import json
+
 
 # FIXME: make the server, port and prefix configurable
 # Assets request URLs (lego bricks position)
@@ -8,9 +11,8 @@ import config
 REQUEST_CREATE_ASSET = "http://141.244.151.53/landscapelab/assetpos/create/"
 # Update an asset position (.../instance_id/pos_x/pos_y)
 REQUEST_SET_ASSET = "http://141.244.151.53/landscapelab/assetpos/set/"
-# TODO: is it "delete"?
-# Delete an asset (.../instance_id)
-REQUEST_DELETE_ASSET = "http://141.244.151.53/landscapelab/assetpos/delete/"
+# Remove an asset (.../instance_id)
+REQUEST_REMOVE_ASSET = "http://141.244.151.53/landscapelab/assetpos/remove/"
 
 # configure logging
 logger = logging.getLogger(__name__)
@@ -49,6 +51,10 @@ class LegoBrickCollections:
     blue_rcts_collection = None
     blue_sqrs_collection = None
 
+    # Match between lego instance given in create response
+    # and lego brick id
+    match_collection = None
+
     # Lego brick collections constructor
     def __init__(self):
 
@@ -58,6 +64,7 @@ class LegoBrickCollections:
         self.red_rcts_collection = []
         self.blue_sqrs_collection = []
         self.blue_rcts_collection = []
+        self.match_collection = {}
 
     # Create lego brick with its properties and save in the related collection
     def create_lego_brick(self, id, centroid, shape, color):
@@ -71,12 +78,34 @@ class LegoBrickCollections:
 
         # Calculate coordinates for detected lego bricks
         coordinates = self.calculate_coordinates(centroid)
-
         logger.debug("Detection recalculated: coordinates:{}".format(coordinates))
-        logger.debug(REQUEST_CREATE_ASSET + str(lego_type_id) + "/" + str(coordinates[0]) + "/" + str(coordinates[1]))
-        # lego_instance_id = requests.get(REQUEST_CREATE_ASSET + str(lego_type_id) + "/" + str(coordinates[0]) + "/" + str(coordinates[1])))
 
-        # TODO: match lego_id with lego_instance_id
+        # Send a request to create a lego instance
+        logger.debug(REQUEST_CREATE_ASSET + str(lego_type_id) + "/" + str(coordinates[0]) + "/" + str(coordinates[1]))
+        lego_instance_response = requests.get(REQUEST_CREATE_ASSET + str(lego_type_id) + "/" + str(coordinates[0]) + "/" + str(coordinates[1]))
+
+        # Initialize values which will be given in response
+        lego_instance_creation_success = False
+        lego_instance_id = None
+
+        # Set values given in response
+        if lego_instance_response.status_code is not 200:
+            logger.debug("request create instance status code: {}".format(lego_instance_response.status_code))
+        else:
+            lego_instance_response_text = json.loads(lego_instance_response.text)
+            for key, value in lego_instance_response_text.items():
+                if key == "creation_success":
+                    lego_instance_creation_success = value
+                elif key == "assetpos_id":
+                    lego_instance_id = value
+
+        logger.debug("creation_success: {}, assetpos_id: {}".format(lego_instance_creation_success, lego_instance_id))
+
+        # Match given instance id with lego brick id
+        if lego_instance_id is not None:
+
+            # Add match to the match collection
+            self.match_collection[id] = lego_instance_id
 
         # Look for the related collection and save as dictionary
         # FIXME: can we use constants for the string identifiers? e.g. COLOR_RED, SHAPE_SQUARE, ..
@@ -108,24 +137,33 @@ class LegoBrickCollections:
 
         # Look for lego brick id in all collections until found and deleted
         while collection_idx < len(collections_list) and not lego_brick_deleted:
-            logger.debug("collection:", collection_idx)
+
             lego_idx = 0
 
             # Look for lego brick id in the current collection in the list until found and deleted
             while lego_idx < len(collections_list[collection_idx]) and not lego_brick_deleted:
-                logger.debug("len:", len(collections_list[collection_idx]))
-                logger.debug("iteration:", lego_idx)
-                logger.debug("looked id:", id)
-                logger.debug("current id:", collections_list[collection_idx][lego_idx]["id"])
 
                 # If id is found, delete lego brick from related collection and stop searching
                 if collections_list[collection_idx][lego_idx]["id"] == id:
+
+                    # Check if there is instance of the lego brick in 3D
+                    for key, value in self.match_collection.items():
+                        if key == id:
+
+                            # Match the lego instance id value
+                            lego_instance_id = value
+
+                            # Send a request to remove lego instance in 3D
+                            logger.debug(REQUEST_REMOVE_ASSET + str(lego_instance_id))
+                            lego_remove_instance_response = requests.get(REQUEST_CREATE_ASSET + str(lego_instance_id))
+                            logger.debug("remove_instance_response".format(lego_remove_instance_response))
+
+                    # Remove lego brick id from the related to the shape and color collection
                     del collections_list[collection_idx][lego_idx]
-
-                    # TODO: delete altered instance (URL)
-
                     lego_brick_deleted = True
+
                     # TODO: remove LegoBrick reference?
+
                 lego_idx += 1
             collection_idx += 1
 
@@ -216,7 +254,7 @@ class LegoBrickCollections:
         # Add offset
         lego_brick_coordinate_y += config.location_data_parsed['C_BL'][1]
 
-        lego_brick_coordinates = int(lego_brick_coordinate_x), int(lego_brick_coordinate_y)
+        lego_brick_coordinates = float(lego_brick_coordinate_x), float(lego_brick_coordinate_y)
 
         return lego_brick_coordinates
 

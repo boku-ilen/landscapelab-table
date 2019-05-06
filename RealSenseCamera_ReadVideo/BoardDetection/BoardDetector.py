@@ -20,34 +20,65 @@ class BoardDetector:
     def __init__(self):
         pass
 
-    # Return pythagoras value
+    # Compute pythagoras value
     @staticmethod
     def pythagoras(value_x, value_y):
+
         value = math.sqrt(value_x ** 2 + value_y ** 2)
+
+        # Return pythagoras value
         return value
 
-    # Return distance between two points
+    # Compute distance between two points
     def calculate_distance(self, value1_x, value1_y, value2_x, value2_y):
+
         value_x = value1_x - value2_x
         value_y = value1_y - value2_y
-        value = self.pythagoras(value_x, value_y)
-        return value
+        distance = self.pythagoras(value_x, value_y)
+
+        # Return distance between two points
+        return distance
+
+    # Compute normal vector
+    def normal_vector(self, point1, point2):
+        distance = self.calculate_distance(point1[0], point1[1], point2[0], point2[1])
+        normal_vector_x = (point1[0] - point2[0]) / distance
+        normal_vector_y = (point1[1] - point2[1]) / distance
+
+        # Return normal vector
+        return normal_vector_x, normal_vector_y
 
     # Compute position of diagonal board corners, based on position of qr-codes centroids
-    def set_corners(self, centroid1, centroid2, centroid_corner_distance):
+    def set_corners(self, qrcode_points, centroid1, centroid2, centroid_corner_distance):
 
         corner1 = [0, 0]
         corner2 = [0, 0]
 
-        # FIXME: vector for qr_code square diagonal, not board diagonal!
-        # Compute vector of length 1 for diagonal direction
-        diagonal_distance = self.calculate_distance(centroid1[0], centroid1[1], centroid2[0], centroid2[1])
-        diagonal_vector_x_normal = (centroid1[0] - centroid2[0]) / diagonal_distance
-        diagonal_vector_y_normal = (centroid1[1] - centroid2[1]) / diagonal_distance
+        # TODO: write a function
+        # Compute vector of length 1 for diagonal of board corners (between two centroids)
+        board_diagonal_normal_vector = self.normal_vector(centroid1, centroid2)
+
+        # Compute vector of length 1 for both diagonals of a qr_code square and choose the right one
+        # Compute vector of length 1 for the first diagonal
+        qrcode_diagonal1_normal_vector = self.normal_vector(qrcode_points[0], qrcode_points[2])
+
+        # Compute vector of length 1 for the second diagonal
+        qrcode_diagonal2_normal_vector = self.normal_vector(qrcode_points[1], qrcode_points[3])
+
+        # Choose the right diagonal, must have the same sign as the diagonal of given board corners
+        # Minus * Minus -> Plus
+        # Plus * Plus -> Plus
+        # Plus * Minus -> Minus
+        # If the product is > 0, it is the right diagonal of the qrcode
+        if board_diagonal_normal_vector[0] * qrcode_diagonal1_normal_vector[0] * \
+                board_diagonal_normal_vector[1] * qrcode_diagonal1_normal_vector[1] > 0:
+            diagonal = qrcode_diagonal1_normal_vector
+        else:
+            diagonal = qrcode_diagonal2_normal_vector
 
         # Compute vectors of length = centroid_corner_distance for diagonal direction
-        diagonal_vector_x = diagonal_vector_x_normal * centroid_corner_distance
-        diagonal_vector_y = diagonal_vector_y_normal * centroid_corner_distance
+        diagonal_vector_x = diagonal[0] * centroid_corner_distance
+        diagonal_vector_y = diagonal[1] * centroid_corner_distance
 
         # Ensure that vectors are positive in x and y directions
         diagonal_vector_x = self.pythagoras(diagonal_vector_x, 0)
@@ -131,6 +162,7 @@ class BoardDetector:
         board_corners = []
         all_board_corners_found = False
         all_codes_flag = True
+        centroid_corner_distance = None
 
         # Check if all codes polygons points are available
         for code_polygon in self.all_codes_polygons_points:
@@ -142,6 +174,7 @@ class BoardDetector:
         if all_codes_flag:
             # Iterate through the array with four sets of points for polygons
             for points_idx in range(len(self.all_codes_polygons_points)):
+
                 # Compute the centroid (middle) of the single code
                 code_polygon = geometry.Polygon([[point.x, point.y]
                                                  for point in self.all_codes_polygons_points[points_idx]])
@@ -157,15 +190,21 @@ class BoardDetector:
                 centroids.append(code_centroid)
 
             # Compute corners position
-            # Compute position of the top right and bottom left board corners
-            top_left_corner, bottom_right_corner = self.set_corners(
-                centroids[0], centroids[2], int(centroid_corner_distance))
-            logger.debug("TL corner: {}, BR corner: {}".format(top_left_corner, bottom_right_corner))
+            if centroid_corner_distance is not None:
 
-            # Compute position of the top left and bottom right board corners
-            top_right_corner, bottom_left_corner = self.set_corners(
-                centroids[1], centroids[3], int(centroid_corner_distance))
-            logger.debug("TR corner: {}, BL corner: {}".format(top_right_corner, bottom_left_corner))
+                # Compute position of the top right and bottom left board corners
+                top_left_corner, bottom_right_corner = \
+                    self.set_corners(self.all_codes_polygons_points[0],
+                                     centroids[0], centroids[2], int(centroid_corner_distance))
+
+                logger.debug("TL corner: {}, BR corner: {}".format(top_left_corner, bottom_right_corner))
+
+                # Compute position of the top left and bottom right board corners
+                top_right_corner, bottom_left_corner = \
+                    self.set_corners(self.all_codes_polygons_points[1],
+                                     centroids[1], centroids[3], int(centroid_corner_distance))
+
+                logger.debug("TR corner: {}, BL corner: {}".format(top_right_corner, bottom_left_corner))
 
         # If all corners are found, save them in the right order
         if top_left_corner is not None and top_right_corner is not None and \

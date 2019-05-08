@@ -47,10 +47,10 @@ except:
 WIDTH = int(1280)
 HEIGHT = int(720)
 VIDEO_FILE = 'outpy.avi'
-# Side of lego piece  # TODO: automate
-MIN_LENGTH = 4
+# Side of lego piece bounding box  # TODO: automate
+MIN_LENGTH = 2
 MAX_LENGTH = 35
-MIN_AREA = 70
+MIN_AREA = 10
 # Objects in greater distance to the board than (1 +- CLIP) * x will be excluded from processing
 CLIP = 0.1
 # Aspect ratio for square and rectangle
@@ -58,11 +58,27 @@ MIN_SQ = 0.7
 MAX_SQ = 1.35
 MIN_REC = 0.2
 MAX_REC = 2.5
+# TODO: use only lower, upper arrays
 # Accepted HSV colors
 BLUE_MIN = (0.53, 0.33, 105)
 BLUE_MAX = (0.65, 1, 255)
 RED_MIN = (0.92, 0.40, 140)
 RED_MAX = (1, 1, 255)
+# yellow mask
+lower_yellow = np.array([10, 100, 100])
+upper_yellow = np.array([20, 255, 200])
+# dark green mask
+lower_green = np.array([55, 50, 50])
+upper_green = np.array([95, 255, 255])
+# blue mask
+lower_blue = np.array([95, 150, 50])
+upper_blue = np.array([150, 255, 180])
+# lower red mask (0-10)
+lower_red1 = np.array([0, 120, 120])
+upper_red1 = np.array([10, 255, 255])
+# upper red mask (170-180)
+lower_red2 = np.array([170, 50, 120])
+upper_red2 = np.array([180, 255, 255])
 
 # Location request URL
 REQUEST_LOCATION = "http://141.244.151.53/landscapelab/location/map/"
@@ -143,6 +159,7 @@ class ShapeDetector:
             # Draw a blue bounding box (for testing purposes)
             # cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
 
+            # TODO: check h, w of bbox, not box?
             # Check the size and color of the contour to decide if it is a lego brick
             if (MIN_LENGTH < h < MAX_LENGTH) & (MIN_LENGTH < w < MAX_LENGTH):
                 contour_name = self.check_if_square(rotated_bbox)
@@ -276,9 +293,16 @@ class ShapeDetector:
                 # Change background regarding clip_dist to black
                 # Depth image is 1 channel, color is 3 channels
                 depth_image_3d = np.dstack((depth_image, depth_image, depth_image))
-                clipped_color_image = np.where((depth_image_3d > clip_dist * (1 + CLIP)).all()
-                                               or (depth_image_3d < clip_dist * (1 - CLIP)).all(),
-                                               0, color_image)
+
+                # TODO: find a working pythonic way
+                clipped_color_image = np.where(
+                    (depth_image_3d > clip_dist * (1 + CLIP)) | (depth_image_3d < clip_dist * (1 - CLIP)), 0,
+                    color_image)
+                # not working properly
+                # clipped_color_image = np.where((depth_image_3d > clip_dist * (1 + CLIP)).all()
+                #                               or (depth_image_3d < clip_dist * (1 - CLIP)).all(),
+                #                               0, color_image)
+                # cv2.imshow('Clipped_color', clipped_color_image)
 
                 # Set ROI as the color_image to set the same size
                 region_of_interest = color_image
@@ -333,7 +357,7 @@ class ShapeDetector:
 
                         # Eliminate perspective transformations and show only the board
                         rectified_image, self.board_size_height, self.board_size_width = \
-                            self.board_detector.rectify(clipped_color_image, board_corners)
+                            self.board_detector.rectify(color_image, board_corners)
                         config.board_size_height = self.board_size_height
                         config.board_size_width = self.board_size_width
 
@@ -351,26 +375,41 @@ class ShapeDetector:
                 cv2.imshow('ROI', region_of_interest)
                 frame = region_of_interest
 
-                # TODO: use hierarchy to find contours without changing to black
-                # TODO: or try changing to black only light colors using hsv
-                # Convert the image to grayscale
-                img_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-
-                # Change whiteboard to black (contours are to find from black background)
-                thresh = cv2.threshold(img_gray, 140, 255, cv2.THRESH_BINARY)[1]
-                frame[thresh == 255] = 0
-
-                # TODO: delete this part if black lego bricks should be found
-                # Remove gray/black colors to ignore shadows and QR-code markers
+                # Set red and blue mask
                 frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-                thresh = cv2.inRange(frame_hsv, (0, 0, 0), (255, 255, 120))
-                frame[thresh == 255] = 0
 
-                # Convert the resized image to grayscale, blur it slightly,
-                # and threshold it to optimize searching for contours
-                img_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-                blurred = cv2.GaussianBlur(img_gray, (5, 5), 0)
-                thresh = cv2.threshold(blurred, 55, 255, cv2.THRESH_BINARY)[1]
+                # Set red masks and jojn them
+                mask1 = cv2.inRange(frame_hsv, lower_red1, upper_red1)
+                mask2 = cv2.inRange(frame_hsv, lower_red2, upper_red2)
+                mask_red = mask1 + mask2
+                cv2.imshow("mask_red", mask_red)
+
+                # Set the blue mask
+                mask_blue = cv2.inRange(frame_hsv, lower_blue, upper_blue)
+                cv2.imshow("mask_blue", mask_blue)
+
+                # Set the green mask
+                mask_green = cv2.inRange(frame_hsv, lower_green, upper_green)
+
+                # Set the yellow mask
+                mask_yellow = cv2.inRange(frame_hsv, lower_yellow, upper_yellow)
+
+                # Do some morphological corrections (fill 'holes' in masks)
+                kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+                dilation_blue = cv2.dilate(mask_blue, kernel, iterations=1)
+                # cv2.imshow("dilation_blue", dilation_blue)
+                dilation_red = cv2.dilate(mask_red, kernel, iterations=1)
+                # cv2.imshow("dilation_red", dilation_red)
+                dilation_green = cv2.dilate(mask_green, kernel, iterations=1)
+                # cv2.imshow("dilation_green", dilation_green)
+                dilation_yellow = cv2.dilate(mask_yellow, kernel, iterations=1)
+                # cv2.imshow("dilation_yellow", dilation_yellow)
+
+                # Add mask with all allowed colors (currently red and blue)
+                mask_colors = dilation_red + dilation_blue
+                cv2.imshow("mask_colors", mask_colors)
+
+                thresh = mask_colors
 
                 # Find contours in the thresholded image
 
@@ -404,6 +443,7 @@ class ShapeDetector:
                             # Check color of the lego brick (currently only red and blue accepted)
                             color_name = self.check_color(centroid_x, centroid_y, color_image)
 
+                            # TODO: set color using mask
                             # Eliminate very small contours
                             if color_name != "wrongColor" and cv2.contourArea(contour) > MIN_AREA:
 

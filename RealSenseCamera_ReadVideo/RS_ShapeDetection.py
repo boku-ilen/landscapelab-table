@@ -162,6 +162,7 @@ class ShapeDetector:
             # TODO: check h, w of bbox, not box?
             # Check the size and color of the contour to decide if it is a lego brick
             if (MIN_LENGTH < h < MAX_LENGTH) & (MIN_LENGTH < w < MAX_LENGTH):
+                logger.debug("Bbox height: {}, width: {}".format(h, w))
                 contour_name = self.check_if_square(rotated_bbox)
 
             # return contour name and its bounding box
@@ -173,29 +174,27 @@ class ShapeDetector:
     # Check if the contour has a lego brick shape: square or rectangle
     def check_if_square(self, rotated_bbox):
 
-        # Compute two sides lengths of the contour, which have a common corner
-        length_a, length_b = self.calculate_size(rotated_bbox)
-
         # Compute the aspect ratio of the two lengths
-        aspect_ratio = int(length_a) / int(length_b)
+        aspect_ratio = self.calculate_sides_ratio(rotated_bbox)
         contour_name = "shape"
 
         # Check if aspect ratio is near 1:1
         if MIN_SQ <= aspect_ratio <= MAX_SQ:
             contour_name = "square"
-            logger.debug("Square size: {}, {}".format(length_a, length_b))
+            logger.debug("Square ratio: {}".format(aspect_ratio))
 
         # Check if aspect ratio is near 2:1
         elif MIN_REC < aspect_ratio < MAX_REC:
             contour_name = "rectangle"
-            logger.debug("Rectangle size: {}, {}".format(length_a, length_b))
+            logger.debug("Rectangle ratio: {}".format(aspect_ratio))
 
         # return contour name
         return contour_name
 
+    # TODO: check if size is correct
     # Compute two sides lengths of the contour, which have a common corner
     @staticmethod
-    def calculate_size(rotated_bbox):
+    def calculate_sides_ratio(rotated_bbox):
 
         # Initialize a list for sides lengths of the contour
         sides_lengths_list = []
@@ -209,8 +208,13 @@ class ShapeDetector:
         # Only two sides lengths, which have a common corner, are remaining in the array
         result = np.delete(sides_lengths_list, np.argmax(sides_lengths_list))
 
-        # Return two sides lengths of the rotated bounding box
-        return result
+        logger.debug("Rotated bbox size: {}".format(result))
+
+        # Compute the aspect ratio of the two lengths
+        ratio = int(result[0]) / int(result[1])
+
+        # Return the aspect ratio of two sides lengths of the rotated bounding box
+        return ratio
 
     # Compute the color name of the found lego brick
     @staticmethod
@@ -444,15 +448,20 @@ class ShapeDetector:
                             color_name = self.check_color(centroid_x, centroid_y, color_image)
 
                             # TODO: set color using mask
-                            # Eliminate very small contours
-                            if color_name != "wrongColor" and cv2.contourArea(contour) > MIN_AREA:
+                            # Eliminate wrong colors contours
+                            if color_name == "wrongColor":
+                                logger.debug("Don't draw -> wrong color")
 
+                            # Eliminate very small contours
+                            elif cv2.contourArea(contour) < MIN_AREA:
+                                logger.debug("Don't draw -> contour too small")
+
+                            else:
                                 # Draw green lego bricks contours
                                 cv2.drawContours(frame, [contour], -1, (0, 255, 0), 3)
 
-                                logger.debug("Bounding box: {}".format(bbox))
-                                logger.debug("Center coordinates: {}, {}".format(centroid_x, centroid_y))
-                                logger.debug("Area: {}".format(cv2.contourArea(contour)))
+                                logger.debug("Draw contour:\n Center coordinates: {}, {}\n Contour area: {}".
+                                             format(centroid_x, centroid_y, cv2.contourArea(contour)))
 
                                 # Update the properties list of all lego bricks which are found in the frame
                                 legos_properties_list.append((centroid_x, centroid_y, contour_name, color_name))

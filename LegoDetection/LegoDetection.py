@@ -20,7 +20,7 @@ import pyzbar.pyzbar as pyzbar  # TODO: add to requirements.txt
 from BoardDetection.BoardDetector import BoardDetector
 from Tracking.Tracker import Tracker
 #from Tracking.MyTracker import MyTracker
-from ParseJSON.JsonParser import JsonParser
+import ParseJSON.JsonParser as jsonParser
 
 # TODO: move some other variables to config?
 # Global variables
@@ -123,9 +123,6 @@ class ShapeDetector:
         # Initialize the centroid tracker
         self.centroid_tracker = Tracker()
         # centroid_tracker = MyTracker()
-
-        # Initialize json parser
-        self.json_parser = JsonParser()
 
     # Check if the contour is a lego brick
     def detect_lego_brick(self, contour, frame):
@@ -344,7 +341,7 @@ class ShapeDetector:
                         logger.debug("location: {}".format(self.location_json))
 
                         # Parse json if the status code is 200
-                        config.location_data_parsed = self.json_parser.parse(self.location_json)
+                        config.location_data_parsed = jsonParser.parse(self.location_json)
                         logger.debug("location_parsed: {}".format(config.location_data_parsed))
 
                 if all_board_corners_found and clip_dist:

@@ -1,44 +1,44 @@
 import json
 
 
-# FIXME: why is this implemented as class, while all methods are defined
-# FIXME: as static?
-class JsonParser:
+# Return a dictionary with coordinates of board corners
+# Return example: {'C_TL': [1515720.0, 5957750.0], 'C_TR': [1532280.0, 5957750.0],
+# 'C_BR': [1532280.0, 5934250.0], 'C_BL': [1515720.0, 5934250.0]}
+# Input location_data example:
+# {'identifier': 'Nockberge 1', 'bounding_box': '{ "type": "Polygon",
+# "coordinates": [ [ [ 1515720.0, 5957750.0 ], [ 1532280.0, 5957750.0 ],
+# [ 1532280.0, 5934250.0 ], [ 1515720.0, 5934250.0 ], [ 1515720.0, 5957750.0 ] ] ] }'}
+def parse(location_data):
 
-    def __init__(self):
-        pass
+    # Extract coordinates
+    bbox = json.loads(location_data['bounding_box'])
+    bbox_coordinates = bbox['coordinates'][0]
 
-    # Convert corner coordinates to int
-    # if given in form: ((1516000 5935000, 1532000 5935000, 1532000 5913000, 1516000 5913000, 1516000 5935000))
-    @staticmethod
-    def parse_corner_coordinates(corner):
+    # Save coordinates x, y as (int, int) in a dictionary
+    bbox_polygon_dict = {
+        'C_TL': bbox_coordinates[0],
+        'C_TR': bbox_coordinates[1],
+        'C_BR': bbox_coordinates[2],
+        'C_BL': bbox_coordinates[3]
+    }
 
-        corner_coordinates = corner.split(' ')
+    # TODO: check if coordinates matched properly the corners
 
-        # Convert list into string
-        corner_x = int(''.join(corner_coordinates[0]))
-        corner_y = int(''.join(corner_coordinates[1]))
+    # Return a dictionary with coordinates of board corners
+    return bbox_polygon_dict
 
-        corner_coordinates = corner_x, corner_y
 
-        return corner_coordinates
+# TODO: Remove if not needed anymore
+# Convert corner coordinates to int if given in form:
+# ((1516000 5935000, 1532000 5935000, 1532000 5913000, 1516000 5913000, 1516000 5935000))
+def parse_corner_coordinates(corner):
 
-    # Return a dictionary with corners coordinates
-    @staticmethod
-    def parse(location_data):
+    corner_coordinates = corner.split(' ')
 
-        # Extract coordinates
-        bbox = json.loads(location_data['bounding_box'])
-        bbox_coordinates = bbox['coordinates'][0]
+    # Convert list into string
+    corner_x = int(''.join(corner_coordinates[0]))
+    corner_y = int(''.join(corner_coordinates[1]))
 
-        # Save coordinates x, y as (int, int) in a dictionary
-        bbox_polygon_dict = {
-            'C_TL': bbox_coordinates[0],
-            'C_TR': bbox_coordinates[1],
-            'C_BR': bbox_coordinates[2],
-            'C_BL': bbox_coordinates[3]
-        }
+    corner_coordinates = corner_x, corner_y
 
-        # TODO: check if coordinates matched properly the corners
-
-        return bbox_polygon_dict
+    return corner_coordinates

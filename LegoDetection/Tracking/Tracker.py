@@ -9,6 +9,7 @@ import numpy as np
 import logging.config
 from Tracking.LegoBrick import LegoBrickCollections
 from Tracking.LegoBrick import LegoBrick
+import config
 
 
 # configure logging
@@ -167,3 +168,32 @@ class Tracker:
         # Return the set of trackable objects
         return self.objects
 
+    # Calculate geographical position for lego bricks
+    @staticmethod
+    def calculate_coordinates(lego_brick_position):
+
+        # Calculate width and height in geographical coordinates
+        if config.geo_board_width is None or config.geo_board_height is None:
+            config.geo_board_width = config.location_coordinates['C_TR'][0] - config.location_coordinates['C_TL'][0]
+            config.geo_board_height = config.location_coordinates['C_TL'][1] - config.location_coordinates['C_BL'][1]
+
+        logger_tracker.debug("geo size: {}, {}".format(config.geo_board_width, config.geo_board_height))
+        logger_tracker.debug("board size: {}, {}".format(config.board_size_width, config.board_size_height))
+
+        # Calculate lego brick x coordinate
+        # Calculate proportions
+        lego_brick_coordinate_x = config.geo_board_width * lego_brick_position[0] / config.board_size_width
+        # Add offset
+        lego_brick_coordinate_x += config.location_coordinates['C_TL'][0]
+
+        # Calculate lego brick y coordinate
+        # Calculate proportions
+        lego_brick_coordinate_y = config.geo_board_height * lego_brick_position[1] / config.board_size_height
+        # Invert the axis
+        lego_brick_coordinate_y = config.geo_board_height - lego_brick_coordinate_y
+        # Add offset
+        lego_brick_coordinate_y += config.location_coordinates['C_BL'][1]
+
+        lego_brick_coordinates = float(lego_brick_coordinate_x), float(lego_brick_coordinate_y)
+
+        return lego_brick_coordinates

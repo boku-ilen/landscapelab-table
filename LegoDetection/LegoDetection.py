@@ -328,7 +328,7 @@ class ShapeDetector:
                     logger.debug("Distance to the table is: {}".format(clip_dist))
 
                 # Request a location of the map
-                if self.board_detector.map_id is not None and config.location_data_parsed is None:
+                if self.board_detector.map_id is not None and config.location_coordinates is None:
 
                     # Request json for the set location
                     self.requests_json = requests.get(REQUEST_LOCATION + self.board_detector.map_id + REQUEST_LOCATION_EXT)

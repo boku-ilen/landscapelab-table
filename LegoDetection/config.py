@@ -1,5 +1,12 @@
-# server communication property
-location_data_parsed = None
+# server communication
+location_coordinates = None
+prefix = "http://"
+ip = "141.244.151.53"
+create_asset = "/landscapelab/assetpos/create/"
+set_asset = "/landscapelab/assetpos/set/"
+remove_asset = "/landscapelab/assetpos/remove/"
+get_location = "/landscapelab/location/map/"
+location_extension = ".json"
 
 # tracker property
 geo_board_width = None

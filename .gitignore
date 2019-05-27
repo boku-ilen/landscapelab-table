@@ -2,10 +2,10 @@
 ShapeDetection/venv/*
 ShapeDetection/pyimagesearch/__pycache__/*
 examples/shape-detection/pyimagesearch/__pycache__/*
-RealSenseCamera_ReadVideo/venv/*
-RealSenseCamera_ReadVideo/QRCodeDetection/__pycache__/*
-RealSenseCamera_ReadVideo/Tracking/__pycache__/*
-RealSenseCamera_ReadVideo/BoardDetection/__pycache__/*
-RealSenseCamera_ReadVideo/ParseJSON/__pycache__/JsonParser.cpython-36.pyc
-RealSenseCamera_ReadVideo/__pycache__/config.cpython-36.pyc
-RealSenseCamera_ReadVideo/ParseJSON/__pycache__/__init__.cpython-36.pyc
+LegoDetection/venv/*
+LegoDetection/QRCodeDetection/__pycache__/*
+LegoDetection/Tracking/__pycache__/*
+LegoDetection/BoardDetection/__pycache__/*
+LegoDetection/ParseJSON/__pycache__/JsonParser.cpython-36.pyc
+LegoDetection/__pycache__/config.cpython-36.pyc
+LegoDetection/ParseJSON/__pycache__/__init__.cpython-36.pyc

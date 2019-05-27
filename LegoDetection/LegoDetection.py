@@ -7,14 +7,8 @@
 # IR pattern removal
 
 # Used pyrealsense2 on License: Apache 2.0.
+
 from builtins import staticmethod
-
-# Used libraries versions:
-# python=3.6.8
-# opencv=3.3.1 (opencv=4.1 released, to update when working with python 3.7)
-# pyrelasense=2.20.0.714, not working with python 3.7 yet (https://pypi.org/project/pyrealsense2/)
-# pyzbar=0.1.8
-
 import pyrealsense2 as rs  # TODO: ship a binary build
 import numpy as np
 import cv2  # TODO: fix the requirements.txt or provide library

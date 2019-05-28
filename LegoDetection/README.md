@@ -21,4 +21,5 @@ enum
 
 # Run
 
-connect via vpn with bokuvpn.boku.ac.at to make connection with the server possible
+run the server 
+...

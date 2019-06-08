@@ -95,13 +95,20 @@ class ShapeDetector:
 
     depth_scale = None
 
-    def __init__(self):
+    def __init__(self, use_video=False):
 
-        # Configure depth and color streams
         self.pipeline = rs.pipeline()
         self.realsense_config = rs.config()
-        self.realsense_config.enable_stream(rs.stream.depth, WIDTH, HEIGHT, rs.format.z16, 30)
-        self.realsense_config.enable_stream(rs.stream.color, WIDTH, HEIGHT, rs.format.bgr8, 30)
+
+        # Use recorded depth and color streams and its configuration
+        if use_video:
+            rs.config.enable_device_from_file(self.realsense_config, "lego_detection_test.bag")
+            self.realsense_config.enable_all_streams()
+
+        # Configure depth and color streams
+        else:
+            self.realsense_config.enable_stream(rs.stream.depth, WIDTH, HEIGHT, rs.format.z16, 30)
+            self.realsense_config.enable_stream(rs.stream.color, WIDTH, HEIGHT, rs.format.bgr8, 30)
 
         # Create alignment primitive with color as its target stream:
         self.alignment_stream = rs.align(rs.stream.color)

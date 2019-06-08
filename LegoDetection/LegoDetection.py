@@ -317,7 +317,13 @@ class ShapeDetector:
                 if not all_board_corners_found:
 
                     # Decode QR or Bar-Codes
-                    decoded_codes = pyzbar.decode(color_image)
+                    # Convert to black and white to find QR-Codes
+                    # Threshold image to white in black
+                    mask = cv2.inRange(color_image, (0, 0, 0), (180, 180, 180))
+                    white_in_black = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
+                    # Invert image it to black in white
+                    looking_for_qr_code_image = 255 - white_in_black
+                    decoded_codes = pyzbar.decode(looking_for_qr_code_image)
 
                     # Read codes which were decoded in this frame:
                     # save polygons in the array self.board_detector.all_codes_polygons_points

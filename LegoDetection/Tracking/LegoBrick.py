@@ -69,6 +69,8 @@ class LegoBrickCollections:
     # Create lego brick with its properties and save in the related collection
     def create_lego_brick(self, id, centroid, shape, color):
 
+        # TODO: check if there is some brick with similar position already
+
         # Create lego brick object
         lego_brick = LegoBrick(id, centroid, shape, color)
 
@@ -155,8 +157,8 @@ class LegoBrickCollections:
 
                             # Send a request to remove lego instance in 3D
                             logger.debug(REQUEST_REMOVE_ASSET + str(lego_instance_id))
-                            lego_remove_instance_response = requests.get(REQUEST_CREATE_ASSET + str(lego_instance_id))
-                            logger.debug("remove_instance_response".format(lego_remove_instance_response))
+                            lego_remove_instance_response = requests.get(REQUEST_REMOVE_ASSET + str(lego_instance_id))
+                            logger.debug("remove instance {}, response {}".format(lego_instance_id, lego_remove_instance_response))
 
                     # Remove lego brick id from the related to the shape and color collection
                     del collections_list[collection_idx][lego_idx]

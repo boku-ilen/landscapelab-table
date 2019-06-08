@@ -223,8 +223,10 @@ class BoardDetector:
         x = []
         y = []
         for corner in corners:
-            x.append(corner[1])
-            y.append(corner[0])
+            x.append(corner[0])
+            y.append(corner[1])
+            # x.append(corner[1])
+            # y.append(corner[0])
         return min(x), min(y), max(x), max(y)
 
     # Wrap the frame perspective to a top-down view (rectangle)

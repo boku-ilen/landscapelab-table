@@ -12,7 +12,7 @@ from builtins import staticmethod
 import pyrealsense2 as rs  # TODO: ship a binary build
 import numpy as np
 import cv2  # TODO: fix the requirements.txt or provide library
-import colorsys
+import colorsys # TODO: remove from requirements
 import logging.config
 import time
 import requests
@@ -41,12 +41,12 @@ except:
 WIDTH = int(1280)
 HEIGHT = int(720)
 VIDEO_FILE = 'outpy.avi'
-# Side of lego piece bounding box  # TODO: automate
-MIN_LENGTH = 2
-MAX_LENGTH = 35
-MIN_AREA = 10
+# Side of lego piece rotated bounding box  # TODO: automate
+MIN_ROTATED_LENGTH = 10
+MAX_ROTATED_LENGTH = 35
+MIN_AREA = 70
 # Objects in greater distance to the board than (1 +- CLIP) * x will be excluded from processing
-CLIP = 0.1
+CLIP = 0.3
 # Aspect ratio for square and rectangle
 MIN_SQ = 0.7
 MAX_SQ = 1.35
@@ -132,49 +132,83 @@ class ShapeDetector:
         # centroid_tracker = MyTracker()
 
     # Check if the contour is a lego brick
-    def detect_lego_brick(self, contour, frame):
+    # TODO: remove frame if nothing to draw anymore
+    def detect_lego_brick(self, contour, frame, mask_blue, mask_red):
 
         # Initialize the contour name and approximate the contour
         # with Douglas-Peucker algorithm
         contour_name = "shape"
+        color_name = "wrongColor"
         epsilon = 0.1 * cv2.arcLength(contour, True)
         approx = cv2.approxPolyDP(contour, epsilon, True)
 
         # Check if the contour has 4 vertices
         if len(approx) == 4:
 
-            # Compute the rotated bounding box
-            rect = cv2.minAreaRect(contour)
-            rotated_bbox = np.int0(cv2.boxPoints(rect))
-
-            # Draw red contours for all found contours (for testing purposes)
-            cv2.drawContours(frame, [rotated_bbox], 0, (0, 0, 255), 2)
-
-            # Compute the bounding box of the contour and the aspect ratio
-            (x, y, w, h) = cv2.boundingRect(approx)
-            bbox = (x, y, w, h)
-
+            # Compute the bounding box of the contour
+            # (x, y, w, h) = cv2.boundingRect(approx)
+            # bbox = (x, y, w, h)
             # Draw a blue bounding box (for testing purposes)
             # cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
 
-            # TODO: check h, w of bbox, not box?
-            # Check the size and color of the contour to decide if it is a lego brick
-            if (MIN_LENGTH < h < MAX_LENGTH) & (MIN_LENGTH < w < MAX_LENGTH):
-                logger.debug("Bbox height: {}, width: {}".format(h, w))
-                contour_name = self.check_if_square(rotated_bbox)
+            # Compute contour moments, which include area,
+            # its centroid, and information about its orientation
+            moments_dict = cv2.moments(contour)
 
-            # return contour name and its bounding box
-            return contour_name, bbox
+            # Compute the centroid of the contour (cX, cY)
+            if moments_dict["m00"] != 0:
+                centroid_x = int((moments_dict["m10"] / moments_dict["m00"]))
+                centroid_y = int((moments_dict["m01"] / moments_dict["m00"]))
 
-        # return contour name == "shape" and empty bounding box
-        return contour_name, []
+                # Check color of the lego brick (currently only red and blue accepted)
+                if mask_blue[centroid_y, centroid_x] == 255:
+                    color_name = "blue"
+                elif mask_red[centroid_y, centroid_x] == 255:
+                    color_name = "red"
+
+                # TODO: remove if the above method is sufficient (masks/lower, upper arrays)
+                if color_name == "wrongColor":
+                    color_name = self.check_color(centroid_x, centroid_y, frame)
+
+                # TODO: set color using mask
+                # Eliminate wrong colors contours
+                if color_name == "wrongColor":
+                    logger.debug("Don't draw -> wrong color")
+
+                # Eliminate very small contours
+                elif cv2.contourArea(contour) < MIN_AREA:
+                    logger.debug("Don't draw -> area too small")
+
+                else:
+
+                    # Compute the rotated bounding box
+                    rect = cv2.minAreaRect(contour)
+                    rotated_bbox = np.int0(cv2.boxPoints(rect))
+
+                    # Draw red contours for all found contours (for testing purposes)
+                    # cv2.drawContours(frame, [rotated_bbox], 0, (0, 0, 255), 2)
+
+                    contour_name = self.check_if_square(rotated_bbox)
+
+                    logger.debug("Draw contour:\n Center coordinates: {}, {}\n Contour area: {}".
+                                 format(centroid_x, centroid_y, cv2.contourArea(contour)))
+
+            # return contour name, its centroid and color
+            return contour_name, centroid_x, centroid_y, color_name
+
+        # return contour name == "shape" centroid = 0,0, color == "wrongColor"
+        return contour_name, 0, 0, color_name
 
     # Check if the contour has a lego brick shape: square or rectangle
     def check_if_square(self, rotated_bbox):
 
         # Compute the aspect ratio of the two lengths
+        # Is set to 0, if the size of lego was not correct
         aspect_ratio = self.calculate_sides_ratio(rotated_bbox)
+
         contour_name = "shape"
+        if aspect_ratio == 0:
+            return contour_name
 
         # Check if aspect ratio is near 1:1
         if MIN_SQ <= aspect_ratio <= MAX_SQ:
@@ -189,7 +223,6 @@ class ShapeDetector:
         # return contour name
         return contour_name
 
-    # TODO: check if size is correct
     # Compute two sides lengths of the contour, which have a common corner
     @staticmethod
     def calculate_sides_ratio(rotated_bbox):
@@ -204,12 +237,17 @@ class ShapeDetector:
 
         # Delete the highest length value, which is a diagonal of bounding box
         # Only two sides lengths, which have a common corner, are remaining in the array
-        result = np.delete(sides_lengths_list, np.argmax(sides_lengths_list))
+        rotated_bbox_lengths = np.delete(sides_lengths_list, np.argmax(sides_lengths_list))
+        logger.debug("Rotated bbox size: {}".format(rotated_bbox_lengths))
 
-        logger.debug("Rotated bbox size: {}".format(result))
+        # Check if the lego brick is not too small/large
+        if (MIN_ROTATED_LENGTH > rotated_bbox_lengths[0] > MAX_ROTATED_LENGTH) \
+                | (MIN_ROTATED_LENGTH > rotated_bbox_lengths[1] > MAX_ROTATED_LENGTH):
+            logger.debug("Don't draw -> wrong size")
+            return 0
 
         # Compute the aspect ratio of the two lengths
-        ratio = int(result[0]) / int(result[1])
+        ratio = int(rotated_bbox_lengths[0]) / int(rotated_bbox_lengths[1])
 
         # Return the aspect ratio of two sides lengths of the rotated bounding box
         return ratio
@@ -277,8 +315,8 @@ class ShapeDetector:
                 # Align the depth frame to color frame
                 aligned_frames = self.alignment_stream.process(frames)
 
-                # Get aligned frames
-                aligned_depth_frame = aligned_frames.get_depth_frame()  # aligned_depth_frame is a 640x480 depth image
+                # Get aligned frames (depth images)
+                aligned_depth_frame = aligned_frames.get_depth_frame()
                 color_frame = aligned_frames.get_color_frame()
 
                 # New frame log information
@@ -304,7 +342,7 @@ class ShapeDetector:
                 # clipped_color_image = np.where((depth_image_3d > clip_dist * (1 + CLIP)).all()
                 #                               or (depth_image_3d < clip_dist * (1 - CLIP)).all(),
                 #                               0, color_image)
-                # cv2.imshow('Clipped_color', clipped_color_image)
+                #cv2.imshow('Clipped_color', clipped_color_image)
 
                 # Set ROI as the color_image to set the same size
                 region_of_interest = color_image
@@ -366,6 +404,8 @@ class ShapeDetector:
                         # Eliminate perspective transformations and show only the board
                         rectified_image, self.board_size_height, self.board_size_width = \
                             self.board_detector.rectify(color_image, board_corners)
+                        # rectified_image, self.board_size_height, self.board_size_width = \
+                        #    self.board_detector.rectify(clipped_color_image, board_corners)
                         config.board_size_height = self.board_size_height
                         config.board_size_width = self.board_size_width
 
@@ -386,7 +426,7 @@ class ShapeDetector:
                 # Set red and blue mask
                 frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
-                # Set red masks and jojn them
+                # Set red masks and join them
                 mask1 = cv2.inRange(frame_hsv, lower_red1, upper_red1)
                 mask2 = cv2.inRange(frame_hsv, lower_red2, upper_red2)
                 mask_red = mask1 + mask2
@@ -415,7 +455,7 @@ class ShapeDetector:
 
                 # Add mask with all allowed colors (currently red and blue)
                 mask_colors = dilation_red + dilation_blue
-                cv2.imshow("mask_colors", mask_colors)
+                # cv2.imshow("mask_colors", mask_colors)
 
                 thresh = mask_colors
 
@@ -431,45 +471,29 @@ class ShapeDetector:
                 # Loop over the contours
                 for contour in contours:
 
-                    # Compute contour moments, which include area,
-                    # its centroid, and information about its orientation
-                    moments_dict = cv2.moments(contour)
+                    # Check if the contour is a lego brick
+                    # Compute contour name and rotated bounding box of the found contour
+                    contour_name, centroid_x, centroid_y, color_name \
+                        = self.detect_lego_brick(contour, frame, mask_blue, mask_red)
 
-                    # Compute the centroid of the contour (cX, cY)
-                    if moments_dict["m00"] != 0:
-                        centroid_x = int((moments_dict["m10"] / moments_dict["m00"]))
-                        centroid_y = int((moments_dict["m01"] / moments_dict["m00"]))
+                    # If the contour name is computed (square or rectangle),
+                    # it means the contour has a shape, color and size of lego brick
+                    if contour_name != "shape":
 
-                        # Check if the contour is a lego brick
-                        # Compute contour name and rotated bounding box of the found contour
-                        contour_name, bbox = self.detect_lego_brick(contour, frame)
+                        # Draw green lego bricks contours
+                        cv2.drawContours(frame, [contour], -1, (0, 255, 0), 3)
 
-                        # If if the contour name is computed (square or rectangle),
-                        # it means the contour has a shape and size of lego brick
-                        if contour_name != "shape":
+                        # TODO: TODO: there should be only one contour for one lego piece! implement in the tracker/lego brick
+                        # Skip contour if there are others with almost the same position
+                        # for lego_brick in legos_properties_list:
+                        #    if centroid_x - 6 < lego_brick[0] < centroid_x + 6 \
+                        #            & centroid_y - 6 < lego_brick[1] < centroid_y + 6:
+                        #        print("don't save", centroid_x, centroid_y)
+                        #        break
 
-                            # Check color of the lego brick (currently only red and blue accepted)
-                            color_name = self.check_color(centroid_x, centroid_y, color_image)
-
-                            # TODO: set color using mask
-                            # Eliminate wrong colors contours
-                            if color_name == "wrongColor":
-                                logger.debug("Don't draw -> wrong color")
-
-                            # Eliminate very small contours
-                            elif cv2.contourArea(contour) < MIN_AREA:
-                                logger.debug("Don't draw -> contour too small")
-
-                            else:
-                                # Draw green lego bricks contours
-                                cv2.drawContours(frame, [contour], -1, (0, 255, 0), 3)
-
-                                logger.debug("Draw contour:\n Center coordinates: {}, {}\n Contour area: {}".
-                                             format(centroid_x, centroid_y, cv2.contourArea(contour)))
-
-                                # Update the properties list of all lego bricks which are found in the frame
-                                legos_properties_list.append((centroid_x, centroid_y, contour_name, color_name))
-                                legos_properties_list_length += 1
+                        # Update the properties list of all lego bricks which are found in the frame
+                        legos_properties_list.append((centroid_x, centroid_y, contour_name, color_name))
+                        legos_properties_list_length += 1
 
                 # Log all objects with properties
                 logger.debug("All saved objects with properties:")

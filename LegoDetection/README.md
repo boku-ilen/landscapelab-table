@@ -19,7 +19,19 @@ collections
 math
 enum
 
+for using life stream: 
+	connect realsense camera 
+	LegoDetection/LegoDetection.py: def __init__(self, use_video=False)
+	place four QR-codes to set the lego detection board
+
+for using video (.bag) without camera:
+	LegoDetection/LegoDetection.py: def __init__(self, use_video=True)
+(Note: .bag file can be reocorded with RecordVideo/RecordVideo.py using realsense camera)
+
+for saving the output as .avi file:
+	def run(self, record_video=True):
+
 # Run
 
-run the server 
-...
+run the server
+start LegoDetection/LegoDetection.py

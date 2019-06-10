@@ -78,6 +78,9 @@ upper_red2 = np.array([180, 255, 255])
 REQUEST_LOCATION = "http://141.244.151.53/landscapelab/location/map/"
 REQUEST_LOCATION_EXT = ".json"
 
+# Video-stream filename
+STREAM_NAME = "lego_detection_test3.bag"
+
 
 class ShapeDetector:
 
@@ -102,7 +105,7 @@ class ShapeDetector:
 
         # Use recorded depth and color streams and its configuration
         if use_video:
-            rs.config.enable_device_from_file(self.realsense_config, "lego_detection_test3.bag")
+            rs.config.enable_device_from_file(self.realsense_config, STREAM_NAME)
             self.realsense_config.enable_all_streams()
 
         # Configure depth and color streams

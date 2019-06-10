@@ -26,6 +26,8 @@ for using life stream:
 
 for using video (.bag) without camera:
 	LegoDetection/LegoDetection.py: def __init__(self, use_video=True)
+	update .bag filename in STREAM_NAME variable
+	save .bag file in LegoDetection folder
 (Note: .bag file can be reocorded with RecordVideo/RecordVideo.py using realsense camera)
 
 for saving the output as .avi file:

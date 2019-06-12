@@ -15,12 +15,11 @@ import cv2  # TODO: fix the requirements.txt or provide library
 import colorsys # TODO: remove from requirements
 import logging.config
 import time
-import requests
 import pyzbar.pyzbar as pyzbar  # TODO: add to requirements.txt
 from BoardDetection.BoardDetector import BoardDetector
+from ServerCommunication.ServerCommunication import ServerCommunication
 from Tracking.Tracker import Tracker
 #from Tracking.MyTracker import MyTracker
-import ParseJSON.JsonParser as jsonParser
 
 # TODO: move some other variables to config?
 # Global variables
@@ -73,16 +72,8 @@ upper_red1 = np.array([10, 255, 255])
 lower_red2 = np.array([170, 50, 120])
 upper_red2 = np.array([180, 255, 255])
 
-# Location request URL
-REQUEST_LOCATION = "http://141.244.151.53/landscapelab/location/map/"
-REQUEST_LOCATION_EXT = ".json"
-
 
 class ShapeDetector:
-
-    # Location data from request
-    requests_json = None
-    location_json = None
 
     # The centroid tracker instance
     centroid_tracker = None
@@ -125,6 +116,9 @@ class ShapeDetector:
         self.board_detector = BoardDetector()
         self.board_size_height = None
         self.board_size_width = None
+
+        # Initialize server communication class
+        self.server = ServerCommunication()
 
         # Initialize the centroid tracker
         self.centroid_tracker = Tracker()
@@ -377,22 +371,12 @@ class ShapeDetector:
                     clip_dist = aligned_depth_frame.get_distance(middle_x, middle_y) / self.depth_scale
                     logger.debug("Distance to the table is: {}".format(clip_dist))
 
-                # Request a location of the map
+                # If map_id and location coordinates are available, compute board coordinates
                 if self.board_detector.map_id is not None and config.location_coordinates is None:
 
-                    # Request json for the set location
-                    self.requests_json = requests.get(REQUEST_LOCATION + self.board_detector.map_id + REQUEST_LOCATION_EXT)
-
-                    # Check the status code
-                    if self.requests_json.status_code is not 200:
-                        logger.debug("request json status code: {}".format(self.requests_json.status_code))
-                    else:
-                        self.location_json = self.requests_json.json()
-                        logger.debug("location: {}".format(self.location_json))
-
-                        # Parse json if the status code is 200
-                        config.location_data_parsed = jsonParser.parse(self.location_json)
-                        logger.debug("location_parsed: {}".format(config.location_data_parsed))
+                    # Get location of the map from the server,
+                    # compute board coordinates and save them in config file
+                    self.server.compute_board_coordinates(self.board_detector.map_id)
 
                 if all_board_corners_found and clip_dist:
 

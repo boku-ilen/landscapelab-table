@@ -40,7 +40,6 @@ except:
 # For resolution 1280x720 and distance ~1 meter a short side of lego piece has ~14 px length
 WIDTH = int(1280)
 HEIGHT = int(720)
-VIDEO_FILE = 'outpy.avi'
 # Side of lego piece rotated bounding box  # TODO: automate
 MIN_ROTATED_LENGTH = 10
 MAX_ROTATED_LENGTH = 35
@@ -78,9 +77,6 @@ upper_red2 = np.array([180, 255, 255])
 REQUEST_LOCATION = "http://141.244.151.53/landscapelab/location/map/"
 REQUEST_LOCATION_EXT = ".json"
 
-# Video-stream filename
-STREAM_NAME = "lego_detection_test3.bag"
-
 
 class ShapeDetector:
 
@@ -105,7 +101,7 @@ class ShapeDetector:
 
         # Use recorded depth and color streams and its configuration
         if use_video:
-            rs.config.enable_device_from_file(self.realsense_config, STREAM_NAME)
+            rs.config.enable_device_from_file(self.realsense_config, config.stream_name)
             self.realsense_config.enable_all_streams()
 
         # Configure depth and color streams
@@ -287,11 +283,11 @@ class ShapeDetector:
     # Run lego bricks detection and tracking code
     def run(self, record_video=False):
 
-        # Define the codec and create VideoWriter object. The output is stored in 'outpy.avi' file.
+        # Define the codec and create VideoWriter object. The output is stored in .avi file.
         # Define the fps to be equal to 10. Also frame size is passed.
         video_handler = None
         if record_video:
-            video_handler = cv2.VideoWriter(VIDEO_FILE, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'),
+            video_handler = cv2.VideoWriter(config.video_output_name, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'),
                                             10, (int(WIDTH), int(HEIGHT)))
 
         # Initialize the clipping distance
@@ -534,7 +530,11 @@ class ShapeDetector:
                 # Render shape detection images
                 cv2.namedWindow('Shape detection', cv2.WINDOW_AUTOSIZE)
                 cv2.imshow('Shape detection', frame)
-                cv2.waitKey(1)
+                key = cv2.waitKey(33)
+
+                # Break with Esc
+                if key == 27:
+                    break
 
         finally:
             if record_video:

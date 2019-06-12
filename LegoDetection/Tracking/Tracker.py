@@ -8,6 +8,7 @@ from scipy.spatial import distance as dist
 import numpy as np
 import logging.config
 from Tracking.LegoBrick import LegoBrickCollections
+from enum import Enum
 from Tracking.LegoBrick import LegoBrick
 import config
 
@@ -22,13 +23,24 @@ except:
     logging.info("Could not initialize: logging.conf not found or misconfigured")
 
 
+# Define lego type ids
+class LegoTypeId(Enum):
+    SQUARE_RED = 1
+    RECTANGLE_RED = 1
+    SQUARE_BLUE = 2
+    RECTANGLE_BLUE = 2
+
+
 class Tracker:
     lego_brick_collection = None
+    match_lego_instance_with_id_collection = None
     """Initialize the next unique object ID with two ordered dictionaries"""
-    def __init__(self, maxDisappeared=20):
+    def __init__(self, server, maxDisappeared=20):
         self.nextObjectID = 0
         self.objects = OrderedDict()
         self.disappeared = OrderedDict()
+        self.server = server
+        self.match_lego_instance_with_id_collection = {}
 
         # Number of maximum consecutive frames a given object is allowed to be marked as "disappeared"
         self.maxDisappeared = maxDisappeared
@@ -42,11 +54,25 @@ class Tracker:
         LegoBrickCollections.create_lego_brick(self.lego_brick_collection, self.nextObjectID, (inputObject[0]), inputObject[1], inputObject[2])
         self.nextObjectID += 1
 
+        # Send a request to create a lego instance
+        lego_instance = self.server.create_lego_instance(self.match_lego_type_id(inputObject[1], inputObject[2]), (inputObject[0]))
+
+        # Match lego instance given from server and lego brick id
+        self.match_lego_instance_with_id_collection[self.nextObjectID] = lego_instance
+
     def deregister(self, objectID):
         """When deregistering an object ID delete the object ID from both of dictionaries"""
         LegoBrickCollections.delete_lego_brick(self.lego_brick_collection, objectID)
         del self.objects[objectID]
         del self.disappeared[objectID]
+
+        # Check if there is lego instance matched for current id
+        for key, value in self.match_lego_instance_with_id_collection.items():
+            if key == objectID:
+
+                # Match the lego instance and remove it
+                lego_instance = value
+                self.server.remove_lego_instance(lego_instance)
 
     def update(self, objects, length):
         """Update position of the object"""
@@ -168,32 +194,21 @@ class Tracker:
         # Return the set of trackable objects
         return self.objects
 
-    # Calculate geographical position for lego bricks
+# Match a type id of a lego brick
     @staticmethod
-    def calculate_coordinates(lego_brick_position):
+    def match_lego_type_id(contour_name, color):
 
-        # Calculate width and height in geographical coordinates
-        if config.geo_board_width is None or config.geo_board_height is None:
-            config.geo_board_width = config.location_coordinates['C_TR'][0] - config.location_coordinates['C_TL'][0]
-            config.geo_board_height = config.location_coordinates['C_TL'][1] - config.location_coordinates['C_BL'][1]
+        lego_type_id = 0
 
-        logger_tracker.debug("geo size: {}, {}".format(config.geo_board_width, config.geo_board_height))
-        logger_tracker.debug("board size: {}, {}".format(config.board_size_width, config.board_size_height))
+        # Match the type using the defined Enum
+        if contour_name is "square" and color is "red":
+            lego_type_id = LegoTypeId.SQUARE_RED.value
+        elif contour_name is "square" and color is "blue":
+            lego_type_id = LegoTypeId.SQUARE_BLUE.value
+        elif contour_name is "rectangle" and color is "red":
+            lego_type_id = LegoTypeId.RECTANGLE_RED.value
+        elif contour_name is "rectangle" and color is "blue":
+            lego_type_id = LegoTypeId.RECTANGLE_BLUE.value
 
-        # Calculate lego brick x coordinate
-        # Calculate proportions
-        lego_brick_coordinate_x = config.geo_board_width * lego_brick_position[0] / config.board_size_width
-        # Add offset
-        lego_brick_coordinate_x += config.location_coordinates['C_TL'][0]
-
-        # Calculate lego brick y coordinate
-        # Calculate proportions
-        lego_brick_coordinate_y = config.geo_board_height * lego_brick_position[1] / config.board_size_height
-        # Invert the axis
-        lego_brick_coordinate_y = config.geo_board_height - lego_brick_coordinate_y
-        # Add offset
-        lego_brick_coordinate_y += config.location_coordinates['C_BL'][1]
-
-        lego_brick_coordinates = float(lego_brick_coordinate_x), float(lego_brick_coordinate_y)
-
-        return lego_brick_coordinates
+        # Return the lego type id
+        return lego_type_id

@@ -7,8 +7,10 @@ import config
 logger = logging.getLogger(__name__)
 
 
-# TODO !! Class under construction !!
 class ServerCommunication:
+    """Contains all method which need connection with the server.
+    Requests map location and compute board coordinates.
+    Creates and removes lego instances"""
 
     prefix = None
     ip = None
@@ -69,16 +71,44 @@ class ServerCommunication:
         # Return True if status code is 200
         return True
 
-    # TODO: check code etc., use in Tracker.py
-    # Create lego instance and return response
-    def create_lego_instance(self, lego_type_id, coordinates):
+    # Create lego instance and return lego instance (id)
+    def create_lego_instance(self, lego_type_id, local_coordinates):
+
+        coordinates = self.calculate_coordinates(local_coordinates)
+        logger.debug("Detection recalculated: coordinates:{}".format(coordinates))
 
         # Send request creating lego instance and save the response
-        response = requests.get(self.prefix + self.ip + self.create_asset + str(lego_type_id)
+        lego_instance_response = requests.get(self.prefix + self.ip + self.create_asset + str(lego_type_id)
                                 + "/" + str(coordinates[0]) + "/" + str(coordinates[1]))
+        logger.debug(self.prefix + self.ip + self.create_asset + str(lego_type_id)
+                     + "/" + str(coordinates[0]) + "/" + str(coordinates[1]))
 
-        # Return lego instance response
-        return response
+        # Initialize values given in response
+        lego_instance = None
+
+        # Check if status code is 200
+        if self.check_status_code_200(lego_instance_response.status_code):
+
+            # If status code is 200, save response text
+            lego_instance_response_text = json.loads(lego_instance_response.text)
+
+            # Match given instance id with lego brick id
+            lego_instance_creation_success = lego_instance_response_text.get("creation_success")
+            lego_instance = lego_instance_response_text.get("assetpos_id")
+            logger.debug("creation_success: {}, assetpos_id: {}"
+                         .format(lego_instance_creation_success, lego_instance))
+
+        # Return lego instance (id) given from server,
+        # None if no instance created
+        return lego_instance
+
+    # Remove lego instance
+    def remove_lego_instance(self, lego_instance):
+
+        # Send a request to remove lego instance in 3D
+        logger.debug(self.prefix + self.ip + self.remove_asset + str(lego_instance))
+        lego_remove_instance_response = requests.get(self.prefix + self.ip + self.remove_asset + str(lego_instance))
+        logger.debug("remove instance {}, response {}".format(lego_instance, lego_remove_instance_response))
 
     # Return a dictionary with coordinates of board corners
     # Return example: {'C_TL': [1515720.0, 5957750.0], 'C_TR': [1532280.0, 5957750.0],
@@ -107,3 +137,32 @@ class ServerCommunication:
         # Return a dictionary with coordinates of board corners
         return bbox_polygon_dict
 
+    # Calculate geographical position for lego bricks
+    @staticmethod
+    def calculate_coordinates(lego_brick_position):
+
+        # Calculate width and height in geographical coordinates
+        if config.geo_board_width is None or config.geo_board_height is None:
+            config.geo_board_width = config.location_coordinates['C_TR'][0] - config.location_coordinates['C_TL'][0]
+            config.geo_board_height = config.location_coordinates['C_TL'][1] - config.location_coordinates['C_BL'][1]
+
+        logger.debug("geo size: {}, {}".format(config.geo_board_width, config.geo_board_height))
+        logger.debug("board size: {}, {}".format(config.board_size_width, config.board_size_height))
+
+        # Calculate lego brick x coordinate
+        # Calculate proportions
+        lego_brick_coordinate_x = config.geo_board_width * lego_brick_position[0] / config.board_size_width
+        # Add offset
+        lego_brick_coordinate_x += config.location_coordinates['C_TL'][0]
+
+        # Calculate lego brick y coordinate
+        # Calculate proportions
+        lego_brick_coordinate_y = config.geo_board_height * lego_brick_position[1] / config.board_size_height
+        # Invert the axis
+        lego_brick_coordinate_y = config.geo_board_height - lego_brick_coordinate_y
+        # Add offset
+        lego_brick_coordinate_y += config.location_coordinates['C_BL'][1]
+
+        lego_brick_coordinates = float(lego_brick_coordinate_x), float(lego_brick_coordinate_y)
+
+        return lego_brick_coordinates

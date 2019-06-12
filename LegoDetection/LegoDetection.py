@@ -121,7 +121,7 @@ class ShapeDetector:
         self.server = ServerCommunication()
 
         # Initialize the centroid tracker
-        self.centroid_tracker = Tracker()
+        self.centroid_tracker = Tracker(self.server)
         # centroid_tracker = MyTracker()
 
     # Check if the contour is a lego brick

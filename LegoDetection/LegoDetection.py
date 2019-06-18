@@ -15,12 +15,11 @@ import cv2  # TODO: fix the requirements.txt or provide library
 import colorsys # TODO: remove from requirements
 import logging.config
 import time
-import requests
 import pyzbar.pyzbar as pyzbar  # TODO: add to requirements.txt
 from BoardDetection.BoardDetector import BoardDetector
+from ServerCommunication.ServerCommunication import ServerCommunication
 from Tracking.Tracker import Tracker
-# from Tracking.MyTracker import MyTracker  # TODO: still required?
-import ParseJSON.JsonParser as jsonParser
+#from Tracking.MyTracker import MyTracker
 
 # TODO: move some other variables to config?
 # Global variables
@@ -40,7 +39,6 @@ except:
 # For resolution 1280x720 and distance ~1 meter a short side of lego piece has ~14 px length
 WIDTH = int(1280)
 HEIGHT = int(720)
-VIDEO_FILE = 'outpy.avi'
 # Side of lego piece rotated bounding box  # TODO: automate
 MIN_ROTATED_LENGTH = 10
 MAX_ROTATED_LENGTH = 35
@@ -74,19 +72,8 @@ upper_red1 = np.array([10, 255, 255])
 lower_red2 = np.array([170, 50, 120])
 upper_red2 = np.array([180, 255, 255])
 
-# Location request URL
-REQUEST_LOCATION = "http://141.244.151.53/landscapelab/location/map/"  # FIXME: hardcoded ip
-REQUEST_LOCATION_EXT = ".json"
-
-# Video-stream filename
-STREAM_NAME = "lego_detection_test3.bag"  # FIXME: make this an optional parameter of the program
-
 
 class ShapeDetector:
-
-    # Location data from request
-    requests_json = None
-    location_json = None
 
     # The centroid tracker instance
     centroid_tracker = None
@@ -98,14 +85,14 @@ class ShapeDetector:
 
     depth_scale = None
 
-    def __init__(self, stream_name=None):
+    def __init__(self, use_video=True):
 
         self.pipeline = rs.pipeline()
         self.realsense_config = rs.config()
 
         # Use recorded depth and color streams and its configuration
-        if stream_name:
-            rs.config.enable_device_from_file(self.realsense_config, stream_name)
+        if use_video:
+            rs.config.enable_device_from_file(self.realsense_config, config.stream_name)
             self.realsense_config.enable_all_streams()
 
         # Configure depth and color streams
@@ -130,8 +117,11 @@ class ShapeDetector:
         self.board_size_height = None
         self.board_size_width = None
 
+        # Initialize server communication class
+        self.server = ServerCommunication()
+
         # Initialize the centroid tracker
-        self.centroid_tracker = Tracker()
+        self.centroid_tracker = Tracker(self.server)
         # centroid_tracker = MyTracker()
 
     # Check if the contour is a lego brick
@@ -287,11 +277,11 @@ class ShapeDetector:
     # Run lego bricks detection and tracking code
     def run(self, record_video=False):
 
-        # Define the codec and create VideoWriter object. The output is stored in 'outpy.avi' file.
+        # Define the codec and create VideoWriter object. The output is stored in .avi file.
         # Define the fps to be equal to 10. Also frame size is passed.
         video_handler = None
         if record_video:
-            video_handler = cv2.VideoWriter(VIDEO_FILE, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'),
+            video_handler = cv2.VideoWriter(config.video_output_name, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'),
                                             10, (int(WIDTH), int(HEIGHT)))
 
         # Initialize the clipping distance
@@ -381,22 +371,12 @@ class ShapeDetector:
                     clip_dist = aligned_depth_frame.get_distance(middle_x, middle_y) / self.depth_scale
                     logger.debug("Distance to the table is: {}".format(clip_dist))
 
-                # Request a location of the map
+                # If map_id and location coordinates are available, compute board coordinates
                 if self.board_detector.map_id is not None and config.location_coordinates is None:
 
-                    # Request json for the set location
-                    self.requests_json = requests.get(REQUEST_LOCATION + self.board_detector.map_id + REQUEST_LOCATION_EXT)
-
-                    # Check the status code
-                    if self.requests_json.status_code is not 200:
-                        logger.debug("request json status code: {}".format(self.requests_json.status_code))
-                    else:
-                        self.location_json = self.requests_json.json()
-                        logger.debug("location: {}".format(self.location_json))
-
-                        # Parse json if the status code is 200
-                        config.location_data_parsed = jsonParser.parse(self.location_json)
-                        logger.debug("location_parsed: {}".format(config.location_data_parsed))
+                    # Get location of the map from the server,
+                    # compute board coordinates and save them in config file
+                    self.server.compute_board_coordinates(self.board_detector.map_id)
 
                 if all_board_corners_found and clip_dist:
 
@@ -534,7 +514,11 @@ class ShapeDetector:
                 # Render shape detection images
                 cv2.namedWindow('Shape detection', cv2.WINDOW_AUTOSIZE)
                 cv2.imshow('Shape detection', frame)
-                cv2.waitKey(1)
+                key = cv2.waitKey(33)
+
+                # Break with Esc
+                if key == 27:
+                    break
 
         finally:
             if record_video:
@@ -545,8 +529,6 @@ class ShapeDetector:
 
 # Example usage is run if file is executed directly
 if __name__ == '__main__':
-    # FIXME: make this an optional parameter using argparse std library
-    my_shape_detector = ShapeDetector(STREAM_NAME)
-    # my_shape_detector = ShapeDetector()
+    my_shape_detector = ShapeDetector()
     my_shape_detector.run()
 

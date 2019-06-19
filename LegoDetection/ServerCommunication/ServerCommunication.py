@@ -15,18 +15,24 @@ class ServerCommunication:
     prefix = None
     ip = None
 
-    # Get location of the map
+    # Get location of the map (from config)
     get_location = None
     location_extension = None
 
     # Create, edit, remove
-    # lego instance in godot
+    # lego instance in godot (from config)
     create_asset = None
     set_asset = None
     remove_asset = None
 
-    def __init__(self):
-        self.prefix = config.prefix
+    location_coordinates = None
+    geo_board_width = None
+    geo_board_height = None
+
+    def __init__(self, prefix=config.prefix):
+
+        # TODO: use config variables directly?
+        self.prefix = prefix
         self.ip = config.ip
         self.create_asset = config.create_asset
         self.set_asset = config.set_asset
@@ -34,7 +40,7 @@ class ServerCommunication:
         self.get_location = config.get_location
         self.location_extension = config.location_extension
 
-    # TODO: check connection
+    # TODO: check connection?
 
     # Get location of the map and save in config a dictionary
     # with coordinates of board corners (map corners)
@@ -54,8 +60,8 @@ class ServerCommunication:
             logger.debug("location: {}".format(location_json))
 
             # Compute a dictionary with coordinates of board corners (map corners)
-            config.location_coordinates = self.extract_board_coordinate(location_json)
-            logger.debug("location_parsed: {}".format(config.location_coordinates))
+            self.location_coordinates = self.extract_board_coordinate(location_json)
+            logger.debug("location_parsed: {}".format(self.location_coordinates))
 
     # Check status code of the response
     # Return True if 200, else return False
@@ -138,30 +144,29 @@ class ServerCommunication:
         return bbox_polygon_dict
 
     # Calculate geographical position for lego bricks
-    @staticmethod
-    def calculate_coordinates(lego_brick_position):
+    def calculate_coordinates(self, lego_brick_position):
 
         # Calculate width and height in geographical coordinates
-        if config.geo_board_width is None or config.geo_board_height is None:
-            config.geo_board_width = config.location_coordinates['C_TR'][0] - config.location_coordinates['C_TL'][0]
-            config.geo_board_height = config.location_coordinates['C_TL'][1] - config.location_coordinates['C_BL'][1]
+        if self.geo_board_width is None or self.geo_board_height is None:
+            self.geo_board_width = self.location_coordinates['C_TR'][0] - self.location_coordinates['C_TL'][0]
+            self.geo_board_height = self.location_coordinates['C_TL'][1] - self.location_coordinates['C_BL'][1]
 
-        logger.debug("geo size: {}, {}".format(config.geo_board_width, config.geo_board_height))
+        logger.debug("geo size: {}, {}".format(self.geo_board_width, self.geo_board_height))
         logger.debug("board size: {}, {}".format(config.board_size_width, config.board_size_height))
 
         # Calculate lego brick x coordinate
         # Calculate proportions
-        lego_brick_coordinate_x = config.geo_board_width * lego_brick_position[0] / config.board_size_width
+        lego_brick_coordinate_x = self.geo_board_width * lego_brick_position[0] / config.board_size_width
         # Add offset
-        lego_brick_coordinate_x += config.location_coordinates['C_TL'][0]
+        lego_brick_coordinate_x += self.location_coordinates['C_TL'][0]
 
         # Calculate lego brick y coordinate
         # Calculate proportions
-        lego_brick_coordinate_y = config.geo_board_height * lego_brick_position[1] / config.board_size_height
+        lego_brick_coordinate_y = self.geo_board_height * lego_brick_position[1] / config.board_size_height
         # Invert the axis
-        lego_brick_coordinate_y = config.geo_board_height - lego_brick_coordinate_y
+        lego_brick_coordinate_y = self.geo_board_height - lego_brick_coordinate_y
         # Add offset
-        lego_brick_coordinate_y += config.location_coordinates['C_BL'][1]
+        lego_brick_coordinate_y += self.location_coordinates['C_BL'][1]
 
         lego_brick_coordinates = float(lego_brick_coordinate_x), float(lego_brick_coordinate_y)
 

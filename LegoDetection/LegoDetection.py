@@ -15,6 +15,7 @@ import cv2  # TODO: fix the requirements.txt or provide library
 import colorsys # TODO: remove from requirements
 import logging.config
 import time
+import argparse
 import pyzbar.pyzbar as pyzbar  # TODO: add to requirements.txt
 from BoardDetection.BoardDetector import BoardDetector
 from ServerCommunication.ServerCommunication import ServerCommunication
@@ -44,7 +45,7 @@ MIN_ROTATED_LENGTH = 10
 MAX_ROTATED_LENGTH = 35
 MIN_AREA = 70
 # Objects in greater distance to the board than (1 +- CLIP) * x will be excluded from processing
-CLIP = 0.3
+CLIP = 0.1
 # Aspect ratio for square and rectangle
 MIN_SQ = 0.7
 MAX_SQ = 1.35
@@ -85,13 +86,23 @@ class ShapeDetector:
 
     depth_scale = None
 
+    # FIXME: make this an optional parameter using argparse std library
     def __init__(self, use_video=True):
+    #def __init__(self):
 
         self.pipeline = rs.pipeline()
         self.realsense_config = rs.config()
 
+        #parser = argparse.ArgumentParser()
+        #parser.add_argument("--usestream", help="path and name of the file with saved .bag stream")
+        #video_stream = parser.parse_args()
+        #print("video: ", vars(video_stream).values())
+
+        # FIXME: missing frames when using videostream or too slow processing
+        # https://github.com/IntelRealSense/librealsense/issues/2216
         # Use recorded depth and color streams and its configuration
         if use_video:
+        # if video_stream is not None:
             rs.config.enable_device_from_file(self.realsense_config, config.stream_name)
             self.realsense_config.enable_all_streams()
 
@@ -335,13 +346,17 @@ class ShapeDetector:
                 # clipped_color_image = np.where((depth_image_3d > clip_dist * (1 + CLIP)).all()
                 #                               or (depth_image_3d < clip_dist * (1 - CLIP)).all(),
                 #                               0, color_image)
-                #cv2.imshow('Clipped_color', clipped_color_image)
+                # cv2.imshow('Clipped_color', clipped_color_image)
 
                 # Set ROI as the color_image to set the same size
                 region_of_interest = color_image
 
                 # Show color image
                 cv2.imshow('Color', color_image)
+
+                # TODO: automaticaly change contrast!
+                #color_image = cv2.convertScaleAbs(color_image, 2.2, 2)
+                #cv2.imshow("mask", color_image)
 
                 # Detect the board using qr-codes polygon data saved in the array
                 # -> self.board_detector.all_codes_polygons_points
@@ -350,7 +365,8 @@ class ShapeDetector:
                     # Decode QR or Bar-Codes
                     # Convert to black and white to find QR-Codes
                     # Threshold image to white in black
-                    mask = cv2.inRange(color_image, (0, 0, 0), (180, 180, 180))
+
+                    mask = cv2.inRange(color_image, (0, 0, 0), (140, 140, 140))
                     white_in_black = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
                     # Invert image it to black in white
                     looking_for_qr_code_image = 255 - white_in_black
@@ -372,7 +388,7 @@ class ShapeDetector:
                     logger.debug("Distance to the table is: {}".format(clip_dist))
 
                 # If map_id and location coordinates are available, compute board coordinates
-                if self.board_detector.map_id is not None and config.location_coordinates is None:
+                if self.board_detector.map_id is not None and self.server.location_coordinates is None:
 
                     # Get location of the map from the server,
                     # compute board coordinates and save them in config file
@@ -388,7 +404,7 @@ class ShapeDetector:
                         rectified_image, self.board_size_height, self.board_size_width = \
                             self.board_detector.rectify(color_image, board_corners)
                         # rectified_image, self.board_size_height, self.board_size_width = \
-                        #    self.board_detector.rectify(clipped_color_image, board_corners)
+                            #    self.board_detector.rectify(clipped_color_image, board_corners)
                         config.board_size_height = self.board_size_height
                         config.board_size_width = self.board_size_width
 
@@ -413,11 +429,11 @@ class ShapeDetector:
                 mask1 = cv2.inRange(frame_hsv, lower_red1, upper_red1)
                 mask2 = cv2.inRange(frame_hsv, lower_red2, upper_red2)
                 mask_red = mask1 + mask2
-                cv2.imshow("mask_red", mask_red)
+                # cv2.imshow("mask_red", mask_red)
 
                 # Set the blue mask
                 mask_blue = cv2.inRange(frame_hsv, lower_blue, upper_blue)
-                cv2.imshow("mask_blue", mask_blue)
+                # cv2.imshow("mask_blue", mask_blue)
 
                 # Set the green mask
                 mask_green = cv2.inRange(frame_hsv, lower_green, upper_green)

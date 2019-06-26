@@ -1,8 +1,17 @@
-python>=3.6.8  # FIXME: why do we need a specific python version?
+python=3.6.8  (or 3.6.7 if corrupted, pyrelasense does not work with python 3.7 yet)
 cv2=3.3.1  # opencv
-pyrelasense=2.20.0.714  # (https://pypi.org/project/pyrealsense2/) on License: Apache 2.0.
+pyrelasense  # (https://pypi.org/project/pyrealsense2/) on License: Apache 2.0.
 pyzbar=0.1.8  # (https://pypi.org/project/pyzbar/)
 numpy
+colorsys
+logging
+time
 requests
+config
 shapely
+json
 scipy
+collections
+math
+enum
+argparse

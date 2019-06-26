@@ -1,10 +1,10 @@
 # Setup
 
-install python 3.6.8
+install python 3.6.8 (or 3.6.7 if corrupted)
 
 install libraries if missing (see requirements.txt):
 cv2=3.3.1 (opencv)
-pyrelasense=2.20.0.714 (https://pypi.org/project/pyrealsense2/) on License: Apache 2.0.
+pyrelasense (https://pypi.org/project/pyrealsense2/) on License: Apache 2.0.
 pyzbar=0.1.8 (https://pypi.org/project/pyzbar/)
 numpy
 colorsys
@@ -14,10 +14,11 @@ requests
 config
 shapely
 json
-scipy.spatial
+scipy
 collections
 math
 enum
+argparse
 
 for using life stream: 
 	connect realsense camera 

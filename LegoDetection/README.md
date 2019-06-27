@@ -22,14 +22,11 @@ argparse
 
 for using life stream: 
 	connect realsense camera 
-	LegoDetection/LegoDetection.py: def __init__(self, use_video=False)
 	place four QR-codes to set the lego detection board
 
 for using video (.bag) without camera:
-	LegoDetection/LegoDetection.py: def __init__(self, use_video=True)
-	update .bag stream_name in config file
-	save .bag file in LegoDetection folder
-(Note: .bag file can be reocorded with RecordVideo/RecordVideo.py using realsense camera)
+	use an optional parameter 'usestream' with the .bag file name
+(Note: .bag file can be recorded with RecordVideo/RecordVideo.py using realsense camera)
 
 for saving the output as .avi file:
 	def run(self, record_video=True):
@@ -38,3 +35,7 @@ for saving the output as .avi file:
 
 run the server
 start LegoDetection/LegoDetection.py
+
+# Examples
+python.exe (...)/LegoDetection/LegoDetection.py
+(...)/python.exe (...)/LegoDetection/LegoDetection.py --usestream=stream.bag

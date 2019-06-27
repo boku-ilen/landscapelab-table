@@ -87,23 +87,20 @@ class ShapeDetector:
     depth_scale = None
 
     # FIXME: make this an optional parameter using argparse std library
-    def __init__(self, use_video=True):
-    #def __init__(self):
+    def __init__(self):
 
         self.pipeline = rs.pipeline()
         self.realsense_config = rs.config()
 
-        #parser = argparse.ArgumentParser()
-        #parser.add_argument("--usestream", help="path and name of the file with saved .bag stream")
-        #video_stream = parser.parse_args()
-        #print("video: ", vars(video_stream).values())
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--usestream", help="path and name of the file with saved .bag stream")
+        video_stream = parser.parse_args()
 
         # FIXME: missing frames when using videostream or too slow processing
         # https://github.com/IntelRealSense/librealsense/issues/2216
         # Use recorded depth and color streams and its configuration
-        if use_video:
-        # if video_stream is not None:
-            rs.config.enable_device_from_file(self.realsense_config, config.stream_name)
+        if video_stream is not None:
+            rs.config.enable_device_from_file(self.realsense_config, vars(video_stream)['usestream'])
             self.realsense_config.enable_all_streams()
 
         # Configure depth and color streams

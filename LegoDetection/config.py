@@ -1,6 +1,3 @@
-# Video-stream filename
-stream_name = "lego_detection_test3.bag"
-
 # Save video with shape detection output
 video_output_name = "shape_detection_output.avi"
 

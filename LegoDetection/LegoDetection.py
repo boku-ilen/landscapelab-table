@@ -99,7 +99,7 @@ class ShapeDetector:
         # FIXME: missing frames when using videostream or too slow processing
         # https://github.com/IntelRealSense/librealsense/issues/2216
         # Use recorded depth and color streams and its configuration
-        if video_stream is not None:
+        if vars(video_stream)['usestream'] is not None:
             rs.config.enable_device_from_file(self.realsense_config, vars(video_stream)['usestream'])
             self.realsense_config.enable_all_streams()
 

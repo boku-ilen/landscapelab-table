@@ -357,9 +357,6 @@ class ShapeDetector:
                 # Set ROI as the color_image to set the same size
                 region_of_interest = color_image
 
-                # Show color image
-                cv2.imshow('Color', color_image)
-
                 # TODO: automaticaly change contrast!
                 #color_image = cv2.convertScaleAbs(color_image, 2.2, 2)
                 #cv2.imshow("mask", color_image)
@@ -379,6 +376,12 @@ class ShapeDetector:
                     looking_for_qr_code_image = 255 - white_in_black
                     decoded_codes = pyzbar.decode(looking_for_qr_code_image)
 
+                    # Mark found QR-codes on the color image
+                    self.board_detector.display_found_codes(color_image, decoded_codes)
+
+                    # Show mask for finding qr-codes
+                    # cv2.imshow('finding qr-codes', white_in_black)
+
                     # Read codes which were decoded in this frame:
                     # save polygons in the array self.board_detector.all_codes_polygons_points
                     # and read metadata
@@ -386,6 +389,9 @@ class ShapeDetector:
 
                     # Find position of board corners
                     all_board_corners_found, board_corners = self.board_detector.detect_board()
+
+                # Show color image
+                cv2.imshow('Color', color_image)
 
                 # Get the distance to the board (to the middle of the frame)
                 if not clip_dist or not all_board_corners_found:

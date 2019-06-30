@@ -86,6 +86,10 @@ class ShapeDetector:
 
     depth_scale = None
 
+    # Threshold for finding QR-Codes
+    # To change the threshold use an optional parameter
+    threshold_qrcode = None
+
     # FIXME: make this an optional parameter using argparse std library
     def __init__(self):
 
@@ -93,14 +97,19 @@ class ShapeDetector:
         self.realsense_config = rs.config()
 
         parser = argparse.ArgumentParser()
+        parser.add_argument("--threshold", type=int, default=140,
+                            help="set the threshold for black-white image to recognize qr-codes")
         parser.add_argument("--usestream", help="path and name of the file with saved .bag stream")
-        video_stream = parser.parse_args()
+        parser_arguments = parser.parse_args()
+
+        if parser_arguments.threshold is not None:
+            self.threshold_qrcode = parser_arguments.threshold
 
         # FIXME: missing frames when using videostream or too slow processing
         # https://github.com/IntelRealSense/librealsense/issues/2216
         # Use recorded depth and color streams and its configuration
-        if vars(video_stream)['usestream'] is not None:
-            rs.config.enable_device_from_file(self.realsense_config, vars(video_stream)['usestream'])
+        if parser_arguments.usestream is not None:
+            rs.config.enable_device_from_file(self.realsense_config, parser_arguments.usestream)
             self.realsense_config.enable_all_streams()
 
         # Configure depth and color streams
@@ -363,7 +372,8 @@ class ShapeDetector:
                     # Convert to black and white to find QR-Codes
                     # Threshold image to white in black
 
-                    mask = cv2.inRange(color_image, (0, 0, 0), (140, 140, 140))
+                    mask = cv2.inRange(color_image, (0, 0, 0),
+                                       (self.threshold_qrcode, self.threshold_qrcode, self.threshold_qrcode))
                     white_in_black = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
                     # Invert image it to black in white
                     looking_for_qr_code_image = 255 - white_in_black

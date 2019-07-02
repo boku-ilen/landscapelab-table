@@ -143,7 +143,7 @@ class ShapeDetector:
 
     # Check if the contour is a lego brick
     # TODO: remove frame if nothing to draw anymore
-    def detect_lego_brick(self, contour, frame, mask_blue, mask_red):
+    def detect_lego_brick(self, contour, frame, mask_blue, mask_red, mask_green):
 
         # Initialize the contour name and approximate the contour
         # with Douglas-Peucker algorithm
@@ -170,11 +170,13 @@ class ShapeDetector:
                 centroid_x = int((moments_dict["m10"] / moments_dict["m00"]))
                 centroid_y = int((moments_dict["m01"] / moments_dict["m00"]))
 
-                # Check color of the lego brick (currently only red and blue accepted)
+                # Check color of the lego brick (currently only red, blue and green accepted)
                 if mask_blue[centroid_y, centroid_x] == 255:
                     color_name = "blue"
                 elif mask_red[centroid_y, centroid_x] == 255:
                     color_name = "red"
+                elif mask_green[centroid_y, centroid_x] == 255:
+                    color_name = "green"
 
                 # TODO: remove if the above method is sufficient (masks/lower, upper arrays)
                 if color_name == "wrongColor":
@@ -352,7 +354,7 @@ class ShapeDetector:
                 # clipped_color_image = np.where((depth_image_3d > clip_dist * (1 + CLIP)).all()
                 #                               or (depth_image_3d < clip_dist * (1 - CLIP)).all(),
                 #                               0, color_image)
-                # cv2.imshow('Clipped_color', clipped_color_image)
+                cv2.imshow('Clipped_color', clipped_color_image)
 
                 # Set ROI as the color_image to set the same size
                 region_of_interest = color_image
@@ -380,7 +382,7 @@ class ShapeDetector:
                     self.board_detector.display_found_codes(color_image, decoded_codes)
 
                     # Show mask for finding qr-codes
-                    # cv2.imshow('finding qr-codes', white_in_black)
+                    cv2.imshow('finding qr-codes', white_in_black)
 
                     # Read codes which were decoded in this frame:
                     # save polygons in the array self.board_detector.all_codes_polygons_points
@@ -466,7 +468,7 @@ class ShapeDetector:
                 # cv2.imshow("dilation_yellow", dilation_yellow)
 
                 # Add mask with all allowed colors (currently red and blue)
-                mask_colors = dilation_red + dilation_blue
+                mask_colors = dilation_red + dilation_blue + dilation_green
                 # cv2.imshow("mask_colors", mask_colors)
 
                 thresh = mask_colors
@@ -486,7 +488,7 @@ class ShapeDetector:
                     # Check if the contour is a lego brick
                     # Compute contour name and rotated bounding box of the found contour
                     contour_name, centroid_x, centroid_y, color_name \
-                        = self.detect_lego_brick(contour, frame, mask_blue, mask_red)
+                        = self.detect_lego_brick(contour, frame, mask_blue, mask_red, mask_green)
 
                     # If the contour name is computed (square or rectangle),
                     # it means the contour has a shape, color and size of lego brick
@@ -525,7 +527,7 @@ class ShapeDetector:
                     text = "ID {}".format(ID)
                     tracked_lego_brick_position = tracked_lego_brick[0][0], tracked_lego_brick[0][1]
                     cv2.putText(frame, text, (tracked_lego_brick[0][0] - 10, tracked_lego_brick[0][1] - 10),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
 
                     # Draw green lego bricks contour names
                     cv2.putText(frame, tracked_lego_brick[1], tracked_lego_brick_position,

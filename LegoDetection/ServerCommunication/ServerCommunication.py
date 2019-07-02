@@ -146,6 +146,14 @@ class ServerCommunication:
     # Calculate geographical position for lego bricks
     def calculate_coordinates(self, lego_brick_position):
 
+        # TODO: remove when maps on the server are loaded
+        self.location_coordinates = {
+            'C_TL': [5957750, 1515720],
+            'C_TR': [5957750, 1532280],
+            'C_BR': [5934250, 1532280],
+            'C_BL': [5934250, 1515720]
+        }
+
         # Calculate width and height in geographical coordinates
         if self.geo_board_width is None or self.geo_board_height is None:
             self.geo_board_width = self.location_coordinates['C_TR'][0] - self.location_coordinates['C_TL'][0]

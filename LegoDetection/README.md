@@ -36,6 +36,13 @@ for saving the output as .avi file:
 run the server
 start LegoDetection/LegoDetection.py
 
+# Paramaters
+Optional:
+--threshold 
+  set another then default threshold for black-white image to recognize qr-codes
+--usestream USESTREAM
+  path and name of the file with saved .bag stream
+
 # Examples
 python.exe (...)/LegoDetection/LegoDetection.py
-(...)/python.exe (...)/LegoDetection/LegoDetection.py --usestream=stream.bag
+(...)/python.exe (...)/LegoDetection/LegoDetection.py --usestream=stream.bag --threshold=155

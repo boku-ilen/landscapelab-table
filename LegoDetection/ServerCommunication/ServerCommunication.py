@@ -1,5 +1,6 @@
 import logging
 import requests
+from requests.exceptions import HTTPError
 import json
 import config
 
@@ -29,39 +30,50 @@ class ServerCommunication:
     geo_board_width = None
     geo_board_height = None
 
-    def __init__(self, prefix=config.prefix):
+    def __init__(self, prefix=config.prefix, ip=config.ip, create_asset=config.create_asset,
+                 set_asset=config.set_asset, remove_asset=config.remove_asset,
+                 get_location=config.get_location, location_extension=config.location_extension):
 
-        # TODO: use config variables directly?
         self.prefix = prefix
-        self.ip = config.ip
-        self.create_asset = config.create_asset
-        self.set_asset = config.set_asset
-        self.remove_asset = config.remove_asset
-        self.get_location = config.get_location
-        self.location_extension = config.location_extension
-
-    # TODO: check connection?
+        self.ip = ip
+        self.create_asset = create_asset
+        self.set_asset = set_asset
+        self.remove_asset = remove_asset
+        self.get_location = get_location
+        self.location_extension = location_extension
 
     # Get location of the map and save in config a dictionary
     # with coordinates of board corners (map corners)
-    # TODO: save coordinates in the class instead of config
     def compute_board_coordinates(self, map_id):
 
-        # Send request getting location map and save the response (json)
-        location_json = requests.get(self.prefix + self.ip + self.get_location
-                                     + map_id + self.location_extension)
+        try:
+            # Send request getting location map and save the response (json)
+            location_json = requests.get(
+                self.prefix + self.ip + self.get_location + map_id + self.location_extension)
+            location_json.raise_for_status()
 
-        # Check if status code is 200
-        if self.check_status_code_200(location_json.status_code):
+        except HTTPError as http_err:
+            logger.debug("HTTP error occurred: {}".format(http_err))
+            logger.debug("Updating ip...")
+            self.ip = config.ip
 
-            # If status code is 200
-            # Parse JSON
-            location_json = location_json.json()
-            logger.debug("location: {}".format(location_json))
+        except Exception as err:
+            logger.debug("Other error occurred: {}".format(err))
+            logger.debug("Updating ip...")
+            self.ip = config.ip
 
-            # Compute a dictionary with coordinates of board corners (map corners)
-            self.location_coordinates = self.extract_board_coordinate(location_json)
-            logger.debug("location_parsed: {}".format(self.location_coordinates))
+        else:
+            # Check if status code is 200
+            if self.check_status_code_200(location_json.status_code):
+
+                # If status code is 200
+                # Parse JSON
+                location_json = location_json.json()
+                logger.debug("location: {}".format(location_json))
+
+                # Compute a dictionary with coordinates of board corners (map corners)
+                self.location_coordinates = self.extract_board_coordinate(location_json)
+                logger.debug("location_parsed: {}".format(self.location_coordinates))
 
     # Check status code of the response
     # Return True if 200, else return False

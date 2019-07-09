@@ -90,16 +90,17 @@ class ShapeDetector:
     # To change the threshold use an optional parameter
     threshold_qrcode = None
 
-    # FIXME: make this an optional parameter using argparse std library
     def __init__(self):
 
         self.pipeline = rs.pipeline()
         self.realsense_config = rs.config()
 
+        # Parse optional parameters
         parser = argparse.ArgumentParser()
         parser.add_argument("--threshold", type=int, default=140,
                             help="set the threshold for black-white image to recognize qr-codes")
         parser.add_argument("--usestream", help="path and name of the file with saved .bag stream")
+        parser.add_argument("--ip", default="127.0.0.1", help="local ip, if other than localhost")
         parser_arguments = parser.parse_args()
 
         if parser_arguments.threshold is not None:
@@ -111,6 +112,9 @@ class ShapeDetector:
         if parser_arguments.usestream is not None:
             rs.config.enable_device_from_file(self.realsense_config, parser_arguments.usestream)
             self.realsense_config.enable_all_streams()
+
+        if parser_arguments.ip is not None:
+            config.ip = parser_arguments.ip
 
         # Configure depth and color streams
         else:

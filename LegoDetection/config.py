@@ -3,8 +3,7 @@ video_output_name = "shape_detection_output.avi"
 
 # Server communication settings
 prefix = "http://"
-# ip = "127.0.0.1"
-ip = "141.244.151.53"
+ip = "127.0.0.1"
 create_asset = "/landscapelab/assetpos/create/"
 set_asset = "/landscapelab/assetpos/set/"
 remove_asset = "/landscapelab/assetpos/remove/"

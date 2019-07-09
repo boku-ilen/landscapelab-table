@@ -14,6 +14,7 @@ class ListenerThread(threading.Thread):
         self.cv_controller = cv_controller
 
     def run(self):
+        print("starting to listen for messages")
         while True:
             data, addr = self.sock.recvfrom(1024)
 

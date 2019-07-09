@@ -1,9 +1,13 @@
+# NOTE since this script is executed in the QGIS-Python environment
+#  PyCharm might wrongfully mark some libraries/classes as unknown
 import os
 from powerpan.power_pan_dockwidget import PowerPanDockWidget
 from qgis.core import *
 from qgis.utils import *
 from functools import partial
 import socket
+from QGIS_UTILITY_FUNCTIONS import render_image
+
 
 """
 NOTE: in order for this script to work, the QGIS plugin PowerPan has to be installed
@@ -22,7 +26,7 @@ UDP_BUFFER_SIZE = 1024
 PAN_JUMP_SIZE = 80
 
 
-class Task(QgsTask):
+class RemoteRendering(QgsTask):
 
     def __init__(self):
         super().__init__('remote control listener task', QgsTask.CanCancel)
@@ -41,21 +45,33 @@ class Task(QgsTask):
         self.ppdw.txt_hoverlap.setText('{}'.format(PAN_JUMP_SIZE))
         self.ppdw.txt_voverlap.setText('{}'.format(PAN_JUMP_SIZE))
 
+        # set canvas
+        self.canvas = iface.mapCanvas()
+
         # setup command_list
-        command_list = {b'pan_up': [self.ppdw.btn_up_pressed, "panning up"],
-                        b'pan_down': [self.ppdw.btn_down_pressed, "panning down"],
-                        b'pan_left': [self.ppdw.btn_left_pressed, "panning left"],
-                        b'pan_right': [self.ppdw.btn_right_pressed, "panning right"]}
-        self.command_list = command_list
+        self.command_list = {
+            b'pan_up': [self.ppdw.btn_up_pressed, "panning up"],
+            b'pan_down': [self.ppdw.btn_down_pressed, "panning down"],
+            b'pan_left': [self.ppdw.btn_left_pressed, "panning left"],
+            b'pan_right': [self.ppdw.btn_right_pressed, "panning right"],
+            b'zoom_in': [self.canvas.zoomIn, "zooming in"],
+            b'zoom_out': [self.canvas.zoomOut, "zooming out"]
+        }
 
         # every time the map has finished rendering call save_image()
-        self.canvas = iface.mapCanvas()
-        self.canvas.mapCanvasRefreshed.connect(partial(self.save_image))
+        self.canvas.mapCanvasRefreshed.connect(partial(self.keep_task_alive))
+        # TODO  ^
+        #       |   Yes, Officer, this line right here!!
+        #       |   If there was a king of bad smell, this line would probably be it
+        #       |   I don't know why, but when this line gets removed, the Task does not show up in the Task list
+        #       |   This might have to do with garbage collection? Since the Task is stored nowhere else?
+        #       |   Just a guess though...
 
     # listens on socket for commands and
     def run(self):
 
         try:
+            QgsMessageLog.logMessage('starting to listen for messages')
             while True:
                 # wait for msg
                 data, addr = self.read_socket.recvfrom(UDP_BUFFER_SIZE)
@@ -72,6 +88,7 @@ class Task(QgsTask):
 
         finally:
             self.read_socket.close()
+            self.write_socket.close()
 
     # check if command is known and execute it
     def act(self, command: bytes):
@@ -80,12 +97,18 @@ class Task(QgsTask):
             self.command_list[command][0]()
             QgsMessageLog.logMessage(self.command_list[command][1])
 
-    # saves the current viewport to an image
-    # then notifies lego client to update
-    def save_image(self):
+            # save image and notify lego client
+            render_image(self.canvas, self.image_location)
+            self.write_socket.sendto(b'update', (UDP_IP, UDP_PORT + 1))
+            # TODO include corner positions in update message
 
-        self.canvas.saveAsImage(self.image_location, None, "PNG")
-        self.write_socket.sendto(b'update', (UDP_IP, UDP_PORT + 1))
-        # TODO include corner positions in update message
+    def keep_task_alive(self):
+        pass
+        # TODO remove as soon as bad smell in __init__ is cleared
 
-QgsApplication.taskManager().addTask(Task())
+
+def start_remote_rendering_task():
+    QgsApplication.taskManager().addTask(RemoteRendering())
+
+
+start_remote_rendering_task()

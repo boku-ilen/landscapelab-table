@@ -7,6 +7,12 @@ from functools import partial
 IMAGE_PATH = 'E:/Users/rotzr/Documents/Desktoperweiterungen/desktop/Arbeit/BOKU_2018/TestProjekte/QGIS_Remote/outputImage.png'
 # TODO read image path from config file
 
+# TODO define extent via lego-client
+#      rewrite the render_image function in QGIS_UTILITY_FUNCTIONS so that it does not rely on the canvas anymore
+#      and let the lego client directly request a rendered image for a given extent
+#      this would circumvent the need for the PowerPan plugin and solve current visualisation issues in QGIS
+#      it would also probably make it possible to run QGIS headless
+
 
 class StopCVControllerException(Exception):
     pass
@@ -29,6 +35,8 @@ class CVController(threading.Thread):
             ord('s'): partial(self.send, b'pan_down'),
             ord('a'): partial(self.send, b'pan_left'),
             ord('d'): partial(self.send, b'pan_right'),
+            ord('q'): partial(self.send, b'zoom_in'),
+            ord('e'): partial(self.send, b'zoom_out'),
             ord('x'): partial(self.quit)
         }
 
@@ -42,6 +50,7 @@ class CVController(threading.Thread):
     # registers keyboard input and displays the current image
     def run(self):
 
+        print("starting display session")
         cv.namedWindow("Display", cv.WINDOW_AUTOSIZE)
         try:
             while True:
@@ -62,9 +71,11 @@ class CVController(threading.Thread):
 
     # sends a message to qgis
     def send(self, msg: bytes):
+        print('sending: {}'.format(msg))
         self.sock.sendto(msg, self.addr)
 
     # sends a message to exit and then proceeds to quit out of the thread
     def quit(self):
         self.sock.sendto(b'exit', self.addr)
+        # TODO find a way to kill listener thread with this... relying on QGIS to respond with exit is bad practice
         raise StopCVControllerException()

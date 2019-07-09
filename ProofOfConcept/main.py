@@ -20,6 +20,7 @@ def main():
     cv_c = CVController(write_socket, (UDP_IP, UDP_PORT))
     listener = ListenerThread(read_socket, UDP_BUFFER_SIZE, cv_c)
 
+    # starting
     cv_c.start()
     listener.start()
 

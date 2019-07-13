@@ -2,6 +2,7 @@ import socket
 from CVController import CVController
 from ListenerThread import ListenerThread
 
+# TODO
 
 # setup UDP socket config
 UDP_IP = "127.0.0.1"
@@ -17,7 +18,7 @@ write_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
 def main():
     # create and start the threads
-    cv_c = CVController(write_socket, (UDP_IP, UDP_PORT))
+    cv_c = CVController(write_socket, (UDP_IP, UDP_PORT))       # todo consistent naming conventions class name
     listener = ListenerThread(read_socket, UDP_BUFFER_SIZE, cv_c)
 
     # starting

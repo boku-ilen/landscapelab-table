@@ -22,6 +22,6 @@ class ListenerThread(threading.Thread):
             if data == b'update':
                 self.cv_controller.refresh()
 
-            if data == b'exit':
+            if data == b'exit':     # todo ctrl-c capturen
                 self.sock.close()
                 break

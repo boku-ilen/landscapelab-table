@@ -14,6 +14,10 @@ IMAGE_PATH = 'E:/Users/rotzr/Documents/Desktoperweiterungen/desktop/Arbeit/BOKU_
 #      it would also probably make it possible to run QGIS headless
 
 
+# NOTE one loading and one saving cycle may hamper performance
+
+# TODO logging instead of print even in prototypes
+
 class StopCVControllerException(Exception):
     pass
 

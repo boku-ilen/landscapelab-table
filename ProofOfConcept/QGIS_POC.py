@@ -6,6 +6,7 @@ from qgis.core import *
 from qgis.utils import *
 from functools import partial
 import socket
+import numpy as np
 from QGIS_UTILITY_FUNCTIONS import render_image
 
 
@@ -25,6 +26,8 @@ UDP_BUFFER_SIZE = 1024
 # define how much percent of the previous map-viewport should still be visible after panning in one direction
 PAN_JUMP_SIZE = 80
 
+RENDER_KEYWORD = 'render '
+
 
 class RemoteRendering(QgsTask):
 
@@ -38,25 +41,10 @@ class RemoteRendering(QgsTask):
         self.read_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.read_socket.bind((UDP_IP, UDP_PORT))
         self.write_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-
-        # setup power pan plugin
-        self.ppdw = PowerPanDockWidget(iface)
-        # define how far the view should move when panning in one direction
-        self.ppdw.txt_hoverlap.setText('{}'.format(PAN_JUMP_SIZE))
-        self.ppdw.txt_voverlap.setText('{}'.format(PAN_JUMP_SIZE))
+        self.write_target = (UDP_IP, UDP_PORT + 1)
 
         # set canvas
         self.canvas = iface.mapCanvas()
-
-        # setup command_list
-        self.command_list = {
-            b'pan_up': [self.ppdw.btn_up_pressed, "panning up"],
-            b'pan_down': [self.ppdw.btn_down_pressed, "panning down"],
-            b'pan_left': [self.ppdw.btn_left_pressed, "panning left"],
-            b'pan_right': [self.ppdw.btn_right_pressed, "panning right"],
-            b'zoom_in': [self.canvas.zoomIn, "zooming in"],
-            b'zoom_out': [self.canvas.zoomOut, "zooming out"]
-        }
 
         # every time the map has finished rendering call save_image()
         self.canvas.mapCanvasRefreshed.connect(partial(self.keep_task_alive))
@@ -77,30 +65,29 @@ class RemoteRendering(QgsTask):
                 data, addr = self.read_socket.recvfrom(UDP_BUFFER_SIZE)
                 QgsMessageLog.logMessage('got message {} from address {}'.format(data, addr))
 
+                decoded_msg = data.decode()
+
                 # if msg is exit stop
-                if data == b'exit':
-                    self.write_socket.sendto(b'exit', (UDP_IP, UDP_PORT + 1))
+                if decoded_msg == 'exit':
+                    self.write_socket.sendto(b'exit', self.write_target)
                     QgsMessageLog.logMessage('stop listening')
                     return True
 
-                # else try executing the command
-                self.act(data)
+                if decoded_msg.startswith(RENDER_KEYWORD):
+                    extent_info = decoded_msg[len(RENDER_KEYWORD):]
+                    extent = extent_info.split(' ')
+
+                    extent = QgsRectangle(float(extent[0]), float(extent[1]), float(extent[2]), float(extent[3]))
+
+                    render_image(extent, self.image_location)
+                    self.write_socket.sendto(
+                        'update {}'.format(extent_info).encode(),
+                        self.write_target
+                    )
 
         finally:
             self.read_socket.close()
             self.write_socket.close()
-
-    # check if command is known and execute it
-    def act(self, command: bytes):
-        
-        if command in self.command_list:
-            self.command_list[command][0]()
-            QgsMessageLog.logMessage(self.command_list[command][1])
-
-            # save image and notify lego client
-            render_image(self.canvas, self.image_location)
-            self.write_socket.sendto(b'update', (UDP_IP, UDP_PORT + 1))
-            # TODO include corner positions in update message
 
     def keep_task_alive(self):
         pass

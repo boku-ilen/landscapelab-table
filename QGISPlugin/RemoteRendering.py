@@ -1,14 +1,12 @@
 # NOTE since this script is executed in the QGIS-Python environment
 #  PyCharm might wrongfully mark some libraries/classes as unknown
 import os
-from powerpan.power_pan_dockwidget import PowerPanDockWidget
+import socket
+from functools import partial
 from qgis.core import *
 from qgis.utils import *
-from functools import partial
-import socket
-import numpy as np
-from QGIS_UTILITY_FUNCTIONS import render_image
-
+from UtilityFunctions import render_image
+import config
 
 """
 NOTE: in order for this script to work, the QGIS plugin PowerPan has to be installed
@@ -16,17 +14,6 @@ NOTE: in order for this script to work, the QGIS plugin PowerPan has to be insta
 To run this make sure that the path to this file is included in sys.path
 then call 'import QGIS_POC1' in the QGIS pyton console
 """
-
-# setup UDP socket config
-UDP_IP = "127.0.0.1"
-UDP_PORT = 5005
-UDP_BUFFER_SIZE = 1024
-# TODO read from config file
-
-# define how much percent of the previous map-viewport should still be visible after panning in one direction
-PAN_JUMP_SIZE = 80
-
-RENDER_KEYWORD = 'render '
 
 
 class RemoteRendering(QgsTask):
@@ -39,9 +26,9 @@ class RemoteRendering(QgsTask):
 
         # setup UDP socket
         self.read_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.read_socket.bind((UDP_IP, UDP_PORT))
+        self.read_socket.bind((config.QGIS_IP, config.QGIS_READ_PORT))
         self.write_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.write_target = (UDP_IP, UDP_PORT + 1)
+        self.write_target = (config.QGIS_IP, config.LEGO_READ_PORT)
 
         # set canvas
         self.canvas = iface.mapCanvas()
@@ -62,7 +49,7 @@ class RemoteRendering(QgsTask):
             QgsMessageLog.logMessage('starting to listen for messages')
             while True:
                 # wait for msg
-                data, addr = self.read_socket.recvfrom(UDP_BUFFER_SIZE)
+                data, addr = self.read_socket.recvfrom(config.UDP_BUFFER_SIZE)
                 QgsMessageLog.logMessage('got message {} from address {}'.format(data, addr))
 
                 decoded_msg = data.decode()
@@ -73,15 +60,15 @@ class RemoteRendering(QgsTask):
                     QgsMessageLog.logMessage('stop listening')
                     return True
 
-                if decoded_msg.startswith(RENDER_KEYWORD):
-                    extent_info = decoded_msg[len(RENDER_KEYWORD):]
+                if decoded_msg.startswith(config.RENDER_KEYWORD):
+                    extent_info = decoded_msg[len(config.RENDER_KEYWORD):]
                     extent = extent_info.split(' ')
 
                     extent = QgsRectangle(float(extent[0]), float(extent[1]), float(extent[2]), float(extent[3]))
 
                     render_image(extent, self.image_location)
                     self.write_socket.sendto(
-                        'update {}'.format(extent_info).encode(),
+                        '{}{}'.format(config.UPDATE_KEYWORD, extent_info).encode(),
                         self.write_target
                     )
 

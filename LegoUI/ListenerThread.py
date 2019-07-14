@@ -1,9 +1,12 @@
 import socket
+import logging
 import threading
 import numpy as np
+import LegoDetection.config as config
 from CVControllerThread import CVControllerThread
 
-UPDATE_KEYWORD = 'update '
+# Configure logger
+logger = logging.getLogger(__name__)
 
 
 class ListenerThread(threading.Thread):
@@ -17,16 +20,16 @@ class ListenerThread(threading.Thread):
         self.cv_controller = cv_controller
 
     def run(self):
-        print("starting to listen for messages")
+        logger.info("starting to listen for messages")
         while True:
             data, addr = self.sock.recvfrom(1024)
 
             data = data.decode()
-            print(data)
-            if data.startswith(UPDATE_KEYWORD):
+            logger.debug(data)
+            if data.startswith(config.UPDATE_KEYWORD):
 
                 # convert extent to numpy array
-                extent_info = data[len(UPDATE_KEYWORD):]
+                extent_info = data[len(config.UPDATE_KEYWORD):]
                 extent = extent_info.split(' ')
                 extent = np.array([float(extent[0]), float(extent[1]), float(extent[2]), float(extent[3])])
 

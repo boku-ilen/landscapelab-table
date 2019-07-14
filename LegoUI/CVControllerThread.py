@@ -3,13 +3,14 @@ import socket
 import threading
 import numpy as np
 from functools import partial
-
-IMAGE_PATH = 'E:/Users/rotzr/Documents/Desktoperweiterungen/desktop/Arbeit/BOKU_2018/TestProjekte/QGIS_Remote/outputImage.png'
-# TODO read image path from config file
+import LegoDetection.config as config
+import logging
 
 # NOTE one loading and one saving cycle may hamper performance
 
-# TODO logging instead of print even in prototypes
+# Configure Logger
+logger = logging.getLogger(__name__)
+
 
 class StopCVControllerException(Exception):
     pass
@@ -17,7 +18,7 @@ class StopCVControllerException(Exception):
 
 class CVControllerThread(threading.Thread):
 
-    def __init__(self, sock: socket, addr: (str, int), start_extent):
+    def __init__(self, sock: socket, addr: (str, int)):
         threading.Thread.__init__(self)
 
         # initialize two black images
@@ -28,17 +29,17 @@ class CVControllerThread(threading.Thread):
         self.current_image = 0
 
         # set extents
-        self.current_extent = start_extent
-        self.next_extent = start_extent
+        self.current_extent = config.start_extent
+        self.next_extent = config.start_extent
 
         # set socket info
         self.sock = sock
         self.addr = addr
 
+        # request first render
+        self.request_render(self.current_extent)
+
         # set extent modifiers
-        pan_power = 0.1
-        zoom_power = 0.2
-        # TODO read from config
         pan_up_modifier = np.array([0, 1, 0, 1])
         pan_down_modifier = np.array([0, -1, 0, -1])
         pan_left_modifier = np.array([-1, 0, -1, 0])
@@ -48,12 +49,12 @@ class CVControllerThread(threading.Thread):
 
         # set up button map
         self.button_map = {
-            ord('w'): partial(self.init_render, pan_up_modifier, pan_power),
-            ord('s'): partial(self.init_render, pan_down_modifier, pan_power),
-            ord('a'): partial(self.init_render, pan_left_modifier, pan_power),
-            ord('d'): partial(self.init_render, pan_right_modifier, pan_power),
-            ord('q'): partial(self.init_render, zoom_in_modifier, zoom_power),
-            ord('e'): partial(self.init_render, zoom_out_modifier, zoom_power),
+            ord('w'): partial(self.init_render, pan_up_modifier, config.PAN_DISTANCE),
+            ord('s'): partial(self.init_render, pan_down_modifier, config.PAN_DISTANCE),
+            ord('a'): partial(self.init_render, pan_left_modifier, config.PAN_DISTANCE),
+            ord('d'): partial(self.init_render, pan_right_modifier, config.PAN_DISTANCE),
+            ord('q'): partial(self.init_render, zoom_in_modifier, config.ZOOM_STRENGTH),
+            ord('e'): partial(self.init_render, zoom_out_modifier, config.ZOOM_STRENGTH),
             ord('x'): partial(self.quit)
         }
 
@@ -61,14 +62,14 @@ class CVControllerThread(threading.Thread):
     def refresh(self, extent):
         unused_slot = (self.current_image + 1) % 2
 
-        self.qgis_image[unused_slot] = cv.imread(IMAGE_PATH, 0)
+        self.qgis_image[unused_slot] = cv.imread(config.QGIS_IMAGE_PATH, 0)
         self.current_image = unused_slot
         self.current_extent = extent
 
     # registers keyboard input and displays the current image
     def run(self):
 
-        print("starting display session")
+        logger.info("starting display session")
         cv.namedWindow("Display", cv.WINDOW_AUTOSIZE)
         try:
             while True:
@@ -102,14 +103,17 @@ class CVControllerThread(threading.Thread):
         next_extent = np.add(self.current_extent, move_extent)
 
         # request render
+        self.request_render(next_extent)
+
+    def request_render(self, extent):
         self.send(
-            'render {} {} {} {}'.format(next_extent[0], next_extent[1], next_extent[2], next_extent[3])
+            '{}{} {} {} {}'.format(config.RENDER_KEYWORD, extent[0], extent[1], extent[2], extent[3])
             .encode()
         )
 
     # sends a message to qgis
     def send(self, msg: bytes):
-        print('sending: {}'.format(msg))
+        logger.debug('sending: {}'.format(msg))
         self.sock.sendto(msg, self.addr)
 
     # sends a message to exit and then proceeds to quit out of the thread

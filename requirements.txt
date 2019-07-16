@@ -1,7 +1,7 @@
 python=3.6.8  (or 3.6.7 if corrupted, pyrelasense does not work with python 3.7 yet)
 cv2=3.3.1  # opencv
 pyrealsense2  # (https://pypi.org/project/pyrealsense2/) on License: Apache 2.0.
-pyzbar=0.1.8  # (https://pypi.org/project/pyzbar/)
+pyzbar  # (https://pypi.org/project/pyzbar/)
 numpy
 shapely
 scipy

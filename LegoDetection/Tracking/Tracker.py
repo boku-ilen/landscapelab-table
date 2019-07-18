@@ -32,6 +32,10 @@ class Tracker:
             # FIXME: CG: implement
             pass
 
+            # check if a tracked candidate reappears and remove it from the tracked_candidates list for now
+
+            # check if a tracked candidate disapeared and add it to the watchlist for disappearing bricks
+
             # if still a valid candidate add it to the tracking list
             self.tracked_candidates[candidate] = 0
 
@@ -48,11 +52,11 @@ class Tracker:
         for candidate, amount in self.tracked_candidates:
             # check for the threshold value
             if amount > self.max_disappeared:  # FIXME: other name or different variable
-                # FIXME: MORITZ: should we check here for the actual status?
-                candidate.status = LegoBrick.status.EXTERNAL_BRICK  # FIXME: we don't know the status yet - maybe CONFIRMED?
+                # FIXME: add here a hook for the detection of the status INTERNAL or EXTERNAL
+                candidate.status = LegoBrick.status.EXTERNAL_BRICK  # FIXME: remove as soon as hook is available
                 self.confirmed_bricks.append(candidate)
                 # if the brick is associated with an asset also send a create request to the server
-                if candidate.status == LegoBrick.status.EXTERNAL_BRICK:  # FIXME: currently all bricks are external bricks
+                if candidate.status == LegoBrick.status.EXTERNAL_BRICK:
                     self.server_communicator.create_lego_instance(candidate)
 
         # finally return the updated list of confirmed bricks

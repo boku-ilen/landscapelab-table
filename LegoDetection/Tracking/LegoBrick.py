@@ -53,3 +53,17 @@ class LegoBrick:
         self.centroid_y = centroid_y
         self.shape = shape
         self.color = color
+
+    def __eq__(self, other):
+        # FIXME: what about close by coordinates of the centroid?
+        if self.centroid_x == other.centroid_x and \
+                self.centroid_y == other.centroid_y and \
+                self.shape == other.shape and \
+                self.color == other.color:
+            return True
+        else:
+            return False
+
+    def __str__(self):
+        return "LegoBrick ({}, {}) [{}|{}|{}] {}".format(self.centroid_x, self.centroid_y,
+                                                         self.color, self.shape, self.status, self.asset_id)

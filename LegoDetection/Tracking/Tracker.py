@@ -28,13 +28,18 @@ class Tracker:
         # iterate through all candidates
         for candidate in lego_bricks_candidates:
 
-            # check if this candidate is already in the list (within min_distance to prevent jumping)
-            # FIXME: CG: implement
-            pass
+            # check if this candidate is already in the list
+            if candidate not in self.confirmed_bricks:
+                # create or add a tick
+                self.tracked_candidates[candidate] += 1
+            else:
+                # if the brick reappeared stop tracking it
+                if candidate in self.tracked_disappeared:
+                    del self.tracked_disappeared[candidate]
 
             # check if a tracked candidate reappears and remove it from the tracked_candidates list for now
 
-            # check if a tracked candidate disapeared and add it to the watchlist for disappearing bricks
+            # check if a tracked candidate disappeared and add it to the watchlist for disappearing bricks
 
             # if still a valid candidate add it to the tracking list
             self.tracked_candidates[candidate] = 0
@@ -47,9 +52,6 @@ class Tracker:
                 # if the brick is associated with an asset also send a remove request to the server
                 if brick.status == LegoBrick.status.EXTERNAL_BRICK:
                     self.server_communicator.remove_lego_instance(brick)
-            # or add a tick
-            else:
-                amount += 1
 
         # add the qualified candidates to the confirmed list
         for candidate, amount in self.tracked_candidates:
@@ -61,9 +63,6 @@ class Tracker:
                 # if the brick is associated with an asset also send a create request to the server
                 if candidate.status == LegoBrick.status.EXTERNAL_BRICK:
                     self.server_communicator.create_lego_instance(candidate)
-            # or add a tick
-            else:
-                amount += 1
 
         # finally return the updated list of confirmed bricks
         return self.confirmed_bricks

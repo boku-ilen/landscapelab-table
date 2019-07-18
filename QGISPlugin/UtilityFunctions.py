@@ -1,12 +1,9 @@
-# NOTE since this script is executed in the QGIS-Python environment
-#  PyCharm might wrongfully mark some libraries/classes as unknown
 from PyQt5.QtGui import *
 from PyQt5.QtCore import QSize
-from qgis.core import *     # unsure if necessary
-from qgis.utils import *    # unsure if necessary
+from qgis.core import *
 
 
-# code from https://github.com/opensourceoptions/pyqgis-tutorials/blob/master/015_render-map-layer.py
+# code mainly from https://github.com/opensourceoptions/pyqgis-tutorials/blob/master/015_render-map-layer.py
 def render_image(extent, image_location):
 
     ratio = extent.width() / extent.height()
@@ -16,34 +13,31 @@ def render_image(extent, image_location):
     img = QImage(QSize(image_width, image_width / ratio), QImage.Format_ARGB32_Premultiplied)
 
     # set background color
-    color = QColor(255, 255, 255, 255)
+    color = QColor(255, 255, 255, 0)
     img.fill(color.rgba())
-
-    # create painter
-    p = QPainter()
-    p.begin(img)
-    p.setRenderHint(QPainter.Antialiasing)
 
     # create map settings
     ms = QgsMapSettings()
     ms.setBackgroundColor(color)
 
     # set layers to render
-    layer = QgsProject.instance().mapLayersByName('Oesterreich_BEV_VGD_LAM')
-    ms.setLayers([layer[0]])
-    # TODO: set correct layers
+    layers = QgsProject.instance().layerTreeRoot().layerOrder()
+    ms.setLayers(layers)
+    # TODO: define layers via parameters
 
     # set extent
     ms.setExtent(extent)
+    ms.setDestinationCrs(layers[0].crs())
+    # QApplication.processEvents()
 
     # set output size
     ms.setOutputSize(img.size())
 
     # setup qgis map renderer
-    render = QgsMapRendererCustomPainterJob(ms, p)
+    render = QgsMapRendererParallelJob(ms)
     render.start()
     render.waitForFinished()
-    p.end()
+    img = render.renderedImage()
 
     # save the image
     img.save(image_location)

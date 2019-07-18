@@ -26,9 +26,17 @@ UPDATE_KEYWORD = 'update '
 RENDER_KEYWORD = 'render '
 
 # UI settings
+"""" # full extent
 start_extent = np.array([
-    112518.16800000000512227, 275472.02100000000791624,
-    685444.46299999998882413, 570431.06900000001769513
+    9.2, 45.3,
+    17.5, 49.9
 ])
+"""
+# bisamberg
+start_extent = np.array([
+    16.31177944684454, 48.30538963724319,
+    16.403183681038215, 48.35604740559146
+])
+
 PAN_DISTANCE = 0.1
 ZOOM_STRENGTH = 0.2     # TODO replace with arrays for different increments

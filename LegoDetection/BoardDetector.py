@@ -1,4 +1,4 @@
-import pyzbar
+import pyzbar.pyzbar as pyzbar
 import config
 import cv2
 import numpy as np
@@ -35,8 +35,8 @@ class BoardDetector:
     # To change the threshold use an optional parameter
     threshold_qrcode = None
 
-    def __init__(self):
-        pass
+    def __init__(self, threshold_qrcode):
+        self.threshold_qrcode = threshold_qrcode
 
     # Compute pythagoras value
     @staticmethod
@@ -327,16 +327,21 @@ class BoardDetector:
 
         # clipping the color image to the area with the right distance values
         # TODO: find a working pythonic way
-        clipped_color_image = np.where(
-            (depth_image_3d > self.clipping_distance * (1 + CLIP)) |
-            (depth_image_3d < self.clipping_distance * (1 - CLIP)),
+        if self.clipping_distance:
+            clipped_color_image = np.where(
+                (depth_image_3d > self.clipping_distance * (1 + CLIP)) |
+                (depth_image_3d < self.clipping_distance * (1 - CLIP)),
             0, color_image)
+        else:
+            clipped_color_image = color_image
         # not working properly  # FIXME: why is this then still here?
         # clipped_color_image = np.where((depth_image_3d > clip_dist * (1 + CLIP)).all()
         #                               or (depth_image_3d < clip_dist * (1 - CLIP)).all(),
         #                               0, color_image)
         # FIXME: manage cv output
         cv2.imshow('Clipped_color', clipped_color_image)
+
+        return clipped_color_image
 
     def rectify_image(self, region_of_interest, color_image, ):
         # Check if found QR-code markers positions are included in the frame size

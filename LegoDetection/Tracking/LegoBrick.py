@@ -12,6 +12,7 @@ class LegoColor(Enum):
     BLUE_BRICK = 1
     GREEN_BRICK = 2
     UNKNOWN_COLOR = 3
+    YELLOW_BRICK = 4
 
 
 # constants for shape

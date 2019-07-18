@@ -17,12 +17,15 @@ location_extension = ".json"
 WIDTH: int = 1280
 HEIGHT: int = 720
 
+# settings for QRcode detection
+THRESHOLD_QRCODE = 10  # FIXME: 10 is currently a random number - set it to something meaningful as default
+
 # QGIS interaction info
 QGIS_IP = "127.0.0.1"
 QGIS_READ_PORT = 5005
 LEGO_READ_PORT = 5006
 UDP_BUFFER_SIZE = 1024
-QGIS_IMAGE_PATH = 'E:/Users/rotzr/Documents/Desktoperweiterungen/desktop/Arbeit/BOKU_2018/TestProjekte/QGIS_Remote/outputImage.png'
+QGIS_IMAGE_PATH = 'E:/Users/rotzr/Documents/Desktoperweiterungen/desktop/Arbeit/BOKU_2018/TestProjekte/QGIS_Remote/outputImage.png'  # FIXME: a generic default path
 UPDATE_KEYWORD = 'update '
 RENDER_KEYWORD = 'render '
 
@@ -33,3 +36,4 @@ start_extent = np.array([
 ])
 PAN_DISTANCE = 0.1
 ZOOM_STRENGTH = 0.2     # TODO replace with arrays for different increments
+

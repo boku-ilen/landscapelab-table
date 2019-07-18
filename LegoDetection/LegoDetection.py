@@ -34,21 +34,23 @@ BLUE_MIN = (0.53, 0.33, 105)
 BLUE_MAX = (0.65, 1, 255)
 RED_MIN = (0.92, 0.40, 140)
 RED_MAX = (1, 1, 255)
-# yellow mask
-lower_yellow = np.array([10, 100, 100])
-upper_yellow = np.array([20, 255, 200])
-# dark green mask
-lower_green = np.array([55, 50, 50])
-upper_green = np.array([95, 255, 255])
-# blue mask
-lower_blue = np.array([95, 150, 50])
-upper_blue = np.array([150, 255, 180])
-# lower red mask (0-10)
-lower_red1 = np.array([0, 120, 120])
-upper_red1 = np.array([10, 255, 255])
-# upper red mask (170-180)
-lower_red2 = np.array([170, 50, 120])
-upper_red2 = np.array([180, 255, 255])
+
+# TODO: make masks configurable ?
+masks_configuration = {
+    LegoColor.YELLOW_BRICK: [
+        (np.array([10, 100, 100]), np.array([20, 255, 200])),
+    ],
+    LegoColor.GREEN_BRICK: [
+        (np.array([55, 50, 50]), np.array([95, 255, 255])),
+    ],
+    LegoColor.BLUE_BRICK: [
+        (np.array([95, 150, 50]), np.array([150, 255, 180])),
+    ],
+    LegoColor.RED_BRICK: [
+        (np.array([0, 120, 120]), np.array([10, 255, 255])),
+        (np.array([170, 50, 120]), np.array([180, 255, 255])),
+    ]
+}
 
 
 class ShapeDetector:
@@ -60,7 +62,7 @@ class ShapeDetector:
 
     # Check if the contour is a lego brick
     # TODO: remove frame if nothing to draw anymore
-    def detect_lego_brick(self, contour, frame, mask_blue, mask_red, mask_green) -> LegoBrick:
+    def detect_lego_brick(self, contour, frame, color_masks) -> LegoBrick:
 
         # Initialize the contour name and approximate the contour
         # with Douglas-Peucker algorithm
@@ -88,13 +90,10 @@ class ShapeDetector:
                 centroid_y = int((moments_dict["m01"] / moments_dict["m00"]))
 
                 # Check color of the lego brick (currently only red, blue and green accepted)
-                # FIXME: CG: make this more generalized (multiple colors)
-                if mask_blue[centroid_y, centroid_x] == 255:
-                    detected_color = LegoColor.BLUE_BRICK
-                elif mask_red[centroid_y, centroid_x] == 255:
-                    detected_color = LegoColor.RED_BRICK
-                elif mask_green[centroid_y, centroid_x] == 255:
-                    detected_color = LegoColor.GREEN_BRICK
+                for color, mask in color_masks:
+                    if mask[centroid_y, centroid_x] == 255:
+                        detected_color = color
+                        break
 
                 # TODO: remove if the above method is sufficient (masks/lower, upper arrays)
                 if detected_color == LegoColor.UNKNOWN_COLOR:
@@ -180,6 +179,7 @@ class ShapeDetector:
 
     # Compute the color name of the found lego brick
     @staticmethod
+    # FIXME: this might be deprecated anyways?
     def check_color(x, y, color_image) -> LegoColor:
 
         # Calculate the mean color (RGB) in the middle of the found lego brick
@@ -214,42 +214,21 @@ class ShapeDetector:
         # Set red and blue mask
         frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
-        # Set red masks and join them
-        mask1 = cv2.inRange(frame_hsv, lower_red1, upper_red1)
-        mask2 = cv2.inRange(frame_hsv, lower_red2, upper_red2)
-        mask_red = mask1 + mask2
-        # cv2.imshow("mask_red", mask_red)
-
-        # Set the blue mask
-        mask_blue = cv2.inRange(frame_hsv, lower_blue, upper_blue)
-        # cv2.imshow("mask_blue", mask_blue)
-
-        # Set the green mask
-        mask_green = cv2.inRange(frame_hsv, lower_green, upper_green)
-
-        # Set the yellow mask
-        mask_yellow = cv2.inRange(frame_hsv, lower_yellow, upper_yellow)
-
         # Do some morphological corrections (fill 'holes' in masks)
         kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
-        dilation_blue = cv2.dilate(mask_blue, kernel, iterations=1)
-        # cv2.imshow("dilation_blue", dilation_blue)
-        dilation_red = cv2.dilate(mask_red, kernel, iterations=1)
-        # cv2.imshow("dilation_red", dilation_red)
-        dilation_green = cv2.dilate(mask_green, kernel, iterations=1)
-        # cv2.imshow("dilation_green", dilation_green)
-        dilation_yellow = cv2.dilate(mask_yellow, kernel, iterations=1)
-        # cv2.imshow("dilation_yellow", dilation_yellow)
 
-        # Add mask with all allowed colors (currently red and blue)
-        mask_colors = dilation_red + dilation_blue + dilation_green
-        # cv2.imshow("mask_colors", mask_colors)
-
-        thresh = mask_colors
+        mask_colors = None
+        color_masks = {}
+        for mask_config in masks_configuration:
+            masks = None
+            for entry in mask_config.value:
+                mask = cv2.inRange(frame_hsv, entry[0], entry[1])
+                masks = masks + mask  # TODO: might have an issue with None + mask
+            mask_colors = mask_colors + cv2.dilate(masks, kernel, iterations=1)
+            color_masks[mask_config] = mask_colors
 
         # Find contours in the thresholded image
-
         # Retrieve all of the contours without establishing any hierarchical relationships (RETR_LIST)
-        _, contours, hierarchy = cv2.findContours(thresh.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+        _, contours, hierarchy = cv2.findContours(mask_colors.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
 
-        return contours
+        return contours, color_masks

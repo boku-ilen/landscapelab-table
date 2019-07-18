@@ -55,6 +55,7 @@ class ServerCommunication:
         except HTTPError as http_err:
             logger.debug("HTTP error occurred: {}".format(http_err))
             logger.debug("Updating ip...")
+            # FIXME: why do we need to overwrite ip?
             self.ip = config.ip
 
         except Exception as err:
@@ -128,7 +129,6 @@ class ServerCommunication:
         lego_remove_instance_response = requests.get(self.prefix + self.ip + self.remove_asset + str(lego_instance))
         logger.debug("remove instance {}, response {}".format(lego_instance, lego_remove_instance_response))
 
-
     # Return a dictionary with coordinates of board corners
     # Return example: {'C_TL': [1515720.0, 5957750.0], 'C_TR': [1532280.0, 5957750.0],
     # 'C_BR': [1532280.0, 5934250.0], 'C_BL': [1515720.0, 5934250.0]}
@@ -155,7 +155,6 @@ class ServerCommunication:
 
         # Return a dictionary with coordinates of board corners
         return bbox_polygon_dict
-
 
     # Calculate geographical position for lego bricks
     def calculate_coordinates(self, lego_brick_position):

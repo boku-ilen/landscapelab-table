@@ -33,6 +33,7 @@ class LegoInputStream:
         # FIXME: missing frames when using videostream or too slow processing
         # https://github.com/IntelRealSense/librealsense/issues/2216
         # Use recorded depth and color streams and its configuration
+
         if usestream is not None:
             rs.config.enable_device_from_file(self.realsense_config, usestream)
             self.realsense_config.enable_all_streams()
@@ -47,6 +48,7 @@ class LegoInputStream:
 
         # Start streaming
         # TODO: optionally rename variable to a more speaking one
+        # FIXME: program ends here without further message
         self.profile = self.pipeline.start(self.realsense_config)
 
         # Getting the depth sensor's depth scale
@@ -76,8 +78,8 @@ class LegoInputStream:
             color_image = np.asanyarray(self.color_frame.get_data())
 
             # TODO: automatically change contrast!
-            #color_image = cv2.convertScaleAbs(color_image, 2.2, 2)
-            #cv2.imshow("mask", color_image)
+            # color_image = cv2.convertScaleAbs(color_image, 2.2, 2)
+            # cv2.imshow("mask", color_image)
 
             # Change background regarding clip_dist to black
             # Depth image is 1 channel, color is 3 channels
@@ -89,7 +91,6 @@ class LegoInputStream:
             return None, None
 
     def get_distance_to_table(self):
-        logger.debug("board detected: {}".format(all_board_corners_found))
         clipping_distance = self.aligned_depth_frame.get_distance(self.middle_x, self.middle_y) / self.depth_scale
         logger.debug("Distance to the table is: {}".format(clipping_distance))
 

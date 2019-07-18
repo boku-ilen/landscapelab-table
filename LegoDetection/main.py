@@ -14,6 +14,7 @@ from Tracking.Tracker import Tracker
 logger = logging.getLogger(__name__)
 try:
     logging.config.fileConfig('logging.conf')
+    logger.info("Logging initialized")
 except:
     logging.basicConfig(level=logging.INFO)
     logging.info("Could not initialize: logging.conf not found or misconfigured")
@@ -42,13 +43,15 @@ class Main:
         parser_arguments = parser.parse_args()
 
         if parser_arguments.threshold is not None:
-            self.threshold_qrcode = parser_arguments.threshold
+            threshold_qrcode = parser_arguments.threshold
+        else:
+            threshold_qrcode = config.THRESHOLD_QRCODE
 
         if parser_arguments.ip is not None:
             config.ip = parser_arguments.ip
 
         # Initialize board detection
-        self.board_detector = BoardDetector()
+        self.board_detector = BoardDetector(threshold_qrcode)
         self.board_size_height = None
         self.board_size_width = None
 
@@ -74,7 +77,14 @@ class Main:
         all_board_corners_found = False
 
         # initialize the input stream
-        self.input_stream = LegoInputStream()
+        try:
+            self.input_stream = LegoInputStream(usestream=self.used_stream)
+        except RuntimeError:
+            logger.error("Could not initialize Lego Input Stream")
+            print("Input Stream could not be initialized - terminating.")
+            return
+
+        logger.info("initialized lego input stream")
 
         try:
 
@@ -85,14 +95,14 @@ class Main:
                 depth_image_3d, color_image = self.input_stream.get_frame()
 
                 # Set ROI as the color_image to set the same size
-                region_of_interest = BoardDetector.clip_board(color_image, depth_image_3d)
+                region_of_interest = self.board_detector.clip_board(color_image, depth_image_3d)
 
                 # Detect the board using qr-codes polygon data saved in the array
                 # -> self.board_detector.all_codes_polygons_points
                 if not all_board_corners_found:
 
                     # Find position of board corners
-                    all_board_corners_found, board_corners = self.board_detector.detect_board()
+                    all_board_corners_found, board_corners = self.board_detector.detect_board(color_image)
 
                 # Show color image
                 self.output_stream.write_to_window(LegoOutputStream.WINDOW_NAME_COLOR, color_image)
@@ -125,15 +135,13 @@ class Main:
                 potential_lego_bricks_list = []
 
                 # detect contours in area of interest
-                contours = self.shape_detector.detect_contours(region_of_interest)
+                contours, color_masks = self.shape_detector.detect_contours(region_of_interest)
 
                 # Loop over the contours
                 for contour in contours:
 
                     # Check if the contour is a lego brick candidate (shape and color can be detected)
-                    #FIXME: masks are defined in detect contours
-                    brick_candidate = self.shape_detector.detect_lego_brick(contour, region_of_interest,
-                                                                            mask_blue, mask_red, mask_green)
+                    brick_candidate = self.shape_detector.detect_lego_brick(contour, region_of_interest, color_masks)
 
                     if brick_candidate:
                         # Update the properties list of all potential lego bricks which are found in the frame
@@ -162,3 +170,9 @@ class Main:
 
             # make sure the stream ends correctly
             self.input_stream.close()
+
+
+# execute the main class  ' TODO: meaningful rename
+if __name__ == '__main__':
+    main = Main()
+    main.run()

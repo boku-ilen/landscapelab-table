@@ -121,3 +121,12 @@ class MyTracker:
                     input += 1
 
             # TODO: register new objects / remove old using idsToUpdate[] and inputToRegister[]
+
+
+            # TODO: there should be only one contour for one lego piece! implement in the tracker/lego brick
+            # Skip contour if there are others with almost the same position
+            # for lego_brick in legos_properties_list:
+            #    if centroid_x - 6 < lego_brick[0] < centroid_x + 6 \
+            #            & centroid_y - 6 < lego_brick[1] < centroid_y + 6:
+            #        print("don't save", centroid_x, centroid_y)
+            #        break

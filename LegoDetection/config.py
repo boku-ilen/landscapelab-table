@@ -12,9 +12,10 @@ remove_asset = "/landscapelab/assetpos/remove/"
 get_location = "/landscapelab/location/map/"
 location_extension = ".json"
 
-# Get board detection property
-board_size_width = None
-board_size_height = None
+# Max RGB resolution: 1920 x 1080 at 30 fps, depth: up to 1280 x 720, up to 90 fps
+# For resolution 1280x720 and distance ~1 meter a short side of lego piece has ~14 px length
+WIDTH: int = 1280
+HEIGHT: int = 720
 
 # QGIS interaction info
 QGIS_IP = "127.0.0.1"

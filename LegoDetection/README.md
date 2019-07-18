@@ -1,24 +1,7 @@
 # Setup
 
 install python 3.6.8 (or 3.6.7 if corrupted)
-
-install libraries if missing (see requirements.txt):
-cv2=3.3.1 (opencv)
-pyrelasense (https://pypi.org/project/pyrealsense2/) on License: Apache 2.0.
-pyzbar=0.1.8 (https://pypi.org/project/pyzbar/)
-numpy
-colorsys
-logging
-time
-requests
-config
-shapely
-json
-scipy
-collections
-math
-enum
-argparse
+install libraries if missing (see requirements.txt)
 
 for using life stream: 
 	connect realsense camera 
@@ -33,6 +16,7 @@ for saving the output as .avi file:
 
 # Run
 
+DEPRECATED
 run the server
 start LegoDetection/LegoDetection.py
 

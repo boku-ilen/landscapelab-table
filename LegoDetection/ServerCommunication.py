@@ -128,6 +128,7 @@ class ServerCommunication:
         lego_remove_instance_response = requests.get(self.prefix + self.ip + self.remove_asset + str(lego_instance))
         logger.debug("remove instance {}, response {}".format(lego_instance, lego_remove_instance_response))
 
+
     # Return a dictionary with coordinates of board corners
     # Return example: {'C_TL': [1515720.0, 5957750.0], 'C_TR': [1532280.0, 5957750.0],
     # 'C_BR': [1532280.0, 5934250.0], 'C_BL': [1515720.0, 5934250.0]}
@@ -154,6 +155,7 @@ class ServerCommunication:
 
         # Return a dictionary with coordinates of board corners
         return bbox_polygon_dict
+
 
     # Calculate geographical position for lego bricks
     def calculate_coordinates(self, lego_brick_position):

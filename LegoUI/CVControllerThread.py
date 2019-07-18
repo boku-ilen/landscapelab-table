@@ -62,7 +62,7 @@ class CVControllerThread(threading.Thread):
     def refresh(self, extent):
         unused_slot = (self.current_image + 1) % 2
 
-        self.qgis_image[unused_slot] = cv.imread(config.QGIS_IMAGE_PATH, 0)
+        self.qgis_image[unused_slot] = cv.imread(config.QGIS_IMAGE_PATH, 1)
         self.current_image = unused_slot
         self.current_extent = extent
 

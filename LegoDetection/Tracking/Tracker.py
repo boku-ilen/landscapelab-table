@@ -33,7 +33,7 @@ class Tracker:
             pass
 
             # if still a valid candidate add it to the tracking list
-            self.tracked_candidates.append((candidate, 0))
+            self.tracked_candidates[candidate] = 0
 
         # remove the disappeared elements from the confirmed list
         for brick, amount in self.tracked_disappeared:

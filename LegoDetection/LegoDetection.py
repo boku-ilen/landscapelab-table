@@ -90,7 +90,7 @@ class ShapeDetector:
                 centroid_y = int((moments_dict["m01"] / moments_dict["m00"]))
 
                 # Check color of the lego brick (currently only red, blue and green accepted)
-                for color, mask in color_masks:
+                for color, mask in color_masks.items():
                     if mask[centroid_y, centroid_x] == 255:
                         detected_color = color
                         break
@@ -215,20 +215,31 @@ class ShapeDetector:
         frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
         # Do some morphological corrections (fill 'holes' in masks)
-        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))  # FIXME: make it configurable
 
         mask_colors = None
         color_masks = {}
-        for mask_config in masks_configuration:
+        for mask_color, mask_config in masks_configuration.items():
             masks = None
-            for entry in mask_config.value:
+            for entry in mask_config:
                 mask = cv2.inRange(frame_hsv, entry[0], entry[1])
-                masks = masks + mask  # TODO: might have an issue with None + mask
-            mask_colors = mask_colors + cv2.dilate(masks, kernel, iterations=1)
-            color_masks[mask_config] = mask_colors
+                if masks is None:
+                    masks = mask
+                else:
+                    masks = masks + mask
+            dilate = cv2.dilate(masks, kernel, iterations=1)
+            if mask_colors is None:
+                mask_colors = dilate
+            else:
+                mask_colors = mask_colors + dilate
+            color_masks[mask_color] = mask_colors
 
         # Find contours in the thresholded image
         # Retrieve all of the contours without establishing any hierarchical relationships (RETR_LIST)
-        _, contours, hierarchy = cv2.findContours(mask_colors.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+        major = cv2.__version__.split('.')[0]
+        if major == '3':
+            _, contours, hierarchy = cv2.findContours(mask_colors.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+        else:
+            contours, hierarchy = cv2.findContours(mask_colors.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
 
         return contours, color_masks

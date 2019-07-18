@@ -30,6 +30,7 @@ class Main:
     server = None
     shape_detector = None
     board_detector = None
+    used_stream = "/home/graf/Downloads/lego_detection_test3.bag"  # FIXME: replace: None
 
     def __init__(self):
 

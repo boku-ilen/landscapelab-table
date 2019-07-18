@@ -47,6 +47,9 @@ class Tracker:
                 # if the brick is associated with an asset also send a remove request to the server
                 if brick.status == LegoBrick.status.EXTERNAL_BRICK:
                     self.server_communicator.remove_lego_instance(brick)
+            # or add a tick
+            else:
+                amount += 1
 
         # add the qualified candidates to the confirmed list
         for candidate, amount in self.tracked_candidates:
@@ -58,6 +61,9 @@ class Tracker:
                 # if the brick is associated with an asset also send a create request to the server
                 if candidate.status == LegoBrick.status.EXTERNAL_BRICK:
                     self.server_communicator.create_lego_instance(candidate)
+            # or add a tick
+            else:
+                amount += 1
 
         # finally return the updated list of confirmed bricks
         return self.confirmed_bricks

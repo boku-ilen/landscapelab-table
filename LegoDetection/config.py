@@ -18,7 +18,7 @@ WIDTH: int = 1280
 HEIGHT: int = 720
 
 # settings for QRcode detection
-THRESHOLD_QRCODE = 10  # FIXME: 10 is currently a random number - set it to something meaningful as default
+THRESHOLD_QRCODE = 140
 
 # QGIS interaction info
 QGIS_IP = "127.0.0.1"

@@ -2,6 +2,7 @@
 
 install python 3.6.8 (or 3.6.7 if corrupted)
 install libraries if missing (see requirements.txt)
+* at least at windows it is required to install libzbar0
 
 for using life stream: 
 	connect realsense camera 

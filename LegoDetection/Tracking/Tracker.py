@@ -25,27 +25,37 @@ class Tracker:
 
     def update(self, lego_bricks_candidates: typing.List[LegoBrick]) -> typing.List[LegoBrick]:
 
+        # copy the confirmed bricks
+        possible_removed_bricks = self.confirmed_bricks.copy()
+
         # iterate through all candidates
         for candidate in lego_bricks_candidates:
 
+            # remove the candidate from the possible removed bricks
+            if candidate in possible_removed_bricks:
+                possible_removed_bricks.remove(candidate)
+
             # check if this candidate is already in the list
             if candidate not in self.confirmed_bricks:
-                # create or add a tick
-                self.tracked_candidates[candidate] += 1
+                # create or add a tick if it's not yet confirmed
+                if candidate in self.tracked_candidates:
+                    self.tracked_candidates[candidate] += 1
+                else:
+                    self.tracked_candidates[candidate] = 0
             else:
                 # if the brick reappeared stop tracking it
                 if candidate in self.tracked_disappeared:
                     del self.tracked_disappeared[candidate]
 
-            # check if a tracked candidate reappears and remove it from the tracked_candidates list for now
-
-            # check if a tracked candidate disappeared and add it to the watchlist for disappearing bricks
-
-            # if still a valid candidate add it to the tracking list
-            self.tracked_candidates[candidate] = 0
+        # start tracking the not reappeared bricks as possible removed
+        for possible_removed_brick in possible_removed_bricks:
+            if possible_removed_brick in self.tracked_disappeared:
+                self.tracked_disappeared[possible_removed_brick] += 1
+            else:
+                self.tracked_disappeared[possible_removed_brick] = 0
 
         # remove the disappeared elements from the confirmed list
-        for brick, amount in self.tracked_disappeared:
+        for brick, amount in self.tracked_disappeared.items():
             # check for the threshold value
             if amount > self.max_disappeared:
                 self.confirmed_bricks.remove(brick)
@@ -54,7 +64,7 @@ class Tracker:
                     self.server_communicator.remove_lego_instance(brick)
 
         # add the qualified candidates to the confirmed list
-        for candidate, amount in self.tracked_candidates:
+        for candidate, amount in self.tracked_candidates.items():
             # check for the threshold value
             if amount > self.max_disappeared:  # FIXME: other name or different variable
                 # FIXME: add here a hook for the detection of the status INTERNAL or EXTERNAL

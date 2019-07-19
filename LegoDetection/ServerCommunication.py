@@ -5,6 +5,8 @@ import json
 import config
 
 # Configure logging
+from Tracking.LegoBrick import LegoBrick
+
 logger = logging.getLogger(__name__)
 
 
@@ -91,15 +93,15 @@ class ServerCommunication:
         return True
 
     # Create lego instance and return lego instance (id)
-    def create_lego_instance(self, lego_type_id, local_coordinates):
+    def create_lego_instance(self, lego_brick: LegoBrick):
 
-        coordinates = self.calculate_coordinates(local_coordinates)
+        coordinates = self.calculate_coordinates((lego_brick.centroid_x, lego_brick.centroid_y))
         logger.debug("Detection recalculated: coordinates:{}".format(coordinates))
 
         # Send request creating lego instance and save the response
-        lego_instance_response = requests.get(self.prefix + self.ip + self.create_asset + str(lego_type_id)
+        lego_instance_response = requests.get(self.prefix + self.ip + self.create_asset + str(lego_brick.asset_id)
                                 + "/" + str(coordinates[0]) + "/" + str(coordinates[1]))
-        logger.debug(self.prefix + self.ip + self.create_asset + str(lego_type_id)
+        logger.debug(self.prefix + self.ip + self.create_asset + str(lego_brick.asset_id)
                      + "/" + str(coordinates[0]) + "/" + str(coordinates[1]))
 
         # Initialize values given in response

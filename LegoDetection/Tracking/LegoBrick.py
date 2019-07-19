@@ -55,14 +55,16 @@ class LegoBrick:
         self.color = color
 
     def __eq__(self, other):
+        # (type) safety first
+        if type(self) is not type(other):
+            return NotImplemented
         # FIXME: what about close by coordinates of the centroid?
-        if self.centroid_x == other.centroid_x and \
-                self.centroid_y == other.centroid_y and \
-                self.shape == other.shape and \
-                self.color == other.color:
-            return True
-        else:
-            return False
+        # FIXME: what about the status? do we consider them equal?
+        return (self.centroid_x, self.centroid_y, self.color, self.shape) == \
+               (other.centroid_x, other.centroid_y, other.color, other.shape)
+
+    def __hash__(self):
+        return hash((self.centroid_y, self.centroid_x, self.color, self.shape))
 
     def __str__(self):
         return "LegoBrick ({}, {}) [{}|{}|{}] {}".format(self.centroid_x, self.centroid_y,

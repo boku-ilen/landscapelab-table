@@ -30,7 +30,7 @@ class Main:
     server = None
     shape_detector = None
     board_detector = None
-    used_stream = "/home/graf/Downloads/lego_detection_test3.bag"  # FIXME: replace: None
+    used_stream = None
 
     def __init__(self):
 
@@ -47,6 +47,9 @@ class Main:
             threshold_qrcode = parser_arguments.threshold
         else:
             threshold_qrcode = config.THRESHOLD_QRCODE
+
+        if parser_arguments.usestream is not None:
+            self.used_stream = parser_arguments.usestream
 
         if parser_arguments.ip is not None:
             config.ip = parser_arguments.ip

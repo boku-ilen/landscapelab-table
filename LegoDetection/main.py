@@ -5,7 +5,7 @@ import config
 from BoardDetector import BoardDetector
 from LegoDetection import ShapeDetector
 from LegoInputStream import LegoInputStream
-from LegoOutputStream import LegoOutputStream
+from LegoOutputStream import LegoOutputStream, LegoOutputChannel
 from ServerCommunication import ServerCommunication
 from Tracking.Tracker import Tracker
 
@@ -51,8 +51,11 @@ class Main:
         if parser_arguments.ip is not None:
             config.ip = parser_arguments.ip
 
+        # initialize the output stream
+        self.output_stream = LegoOutputStream()
+
         # Initialize board detection
-        self.board_detector = BoardDetector(threshold_qrcode)
+        self.board_detector = BoardDetector(threshold_qrcode, self.output_stream)
         self.board_size_height = None
         self.board_size_width = None
 
@@ -64,9 +67,6 @@ class Main:
 
         # initialize the lego detector
         self.shape_detector = ShapeDetector()
-
-        # initialize the output stream
-        self.output_stream = LegoOutputStream()
 
     # Run lego bricks detection and tracking code
     def run(self):
@@ -90,7 +90,7 @@ class Main:
         try:
 
             # main loop which handles each frame
-            while not LegoOutputStream.update():
+            while not self.output_stream.update():
 
                 # get the next frame
                 depth_image_3d, color_image = self.input_stream.get_frame()
@@ -106,7 +106,7 @@ class Main:
                     all_board_corners_found, board_corners = self.board_detector.detect_board(color_image)
 
                 # Show color image
-                self.output_stream.write_to_window(LegoOutputStream.WINDOW_NAME_COLOR, color_image)
+                self.output_stream.write_to_channel(LegoOutputChannel.CHANNEL_COLOR, color_image)
 
                 # Get the distance to the board (to the middle of the frame)
                 # TODO: CG: why is this handled this way?
@@ -130,7 +130,7 @@ class Main:
                     region_of_interest[0:config.HEIGHT, 0:config.WIDTH] = [0, 0, 0]
 
                 # Show the board (region of interest)
-                self.output_stream.write_to_window(LegoOutputStream.WINDOW_NAME_ROI, region_of_interest)
+                self.output_stream.write_to_channel(LegoOutputChannel.CHANNEL_ROI, region_of_interest)
 
                 # Initialize legos brick properties list
                 potential_lego_bricks_list = []
@@ -163,7 +163,7 @@ class Main:
                 self.output_stream.write_to_file(region_of_interest)
 
                 # Render shape detection images
-                LegoOutputStream.write_to_window(LegoOutputStream.WINDOW_NAME_SHAPE_DETECTION, region_of_interest)
+                self.output_stream.write_to_channel(LegoOutputChannel.CHANNEL_SHAPE_DETECTION, region_of_interest)
 
         finally:
             # handle the output stream correctly

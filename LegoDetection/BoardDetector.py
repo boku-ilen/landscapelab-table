@@ -8,6 +8,8 @@ import logging.config
 
 
 # configure logging
+from LegoOutputStream import LegoOutputStream, LegoOutputChannel
+
 logger = logging.getLogger(__name__)
 
 # Objects in greater distance to the board than (1 +- CLIP) * x will be excluded from processing
@@ -35,8 +37,12 @@ class BoardDetector:
     # To change the threshold use an optional parameter
     threshold_qrcode = None
 
-    def __init__(self, threshold_qrcode):
+    # the outputstream
+    output_stream: LegoOutputStream = None
+
+    def __init__(self, threshold_qrcode, output_stream):
         self.threshold_qrcode = threshold_qrcode
+        self.output_stream = output_stream
 
     # Compute pythagoras value
     @staticmethod
@@ -189,8 +195,7 @@ class BoardDetector:
         self.display_found_codes(color_image, decoded_codes)
 
         # Show mask for finding qr-codes
-        # FIXME: CG: cv output
-        cv2.imshow('finding qr-codes', white_in_black)
+        self.output_stream.write_to_channel(LegoOutputChannel.CHANNEL_WHITE_BLACK, white_in_black)
 
         # Read codes which were decoded in this frame:
         # save polygons in the array self.board_detector.all_codes_polygons_points
@@ -338,8 +343,7 @@ class BoardDetector:
         # clipped_color_image = np.where((depth_image_3d > clip_dist * (1 + CLIP)).all()
         #                               or (depth_image_3d < clip_dist * (1 - CLIP)).all(),
         #                               0, color_image)
-        # FIXME: manage cv output
-        cv2.imshow('Clipped_color', clipped_color_image)
+        self.output_stream.write_to_channel(LegoOutputChannel.CHANNEL_CLIPPED_COLOR, clipped_color_image)
 
         return clipped_color_image
 

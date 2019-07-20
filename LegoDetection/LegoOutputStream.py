@@ -1,22 +1,33 @@
+from enum import Enum
+
 import cv2
 import config
+
+
+class LegoOutputChannel(Enum):
+    CHANNEL_SHAPE_DETECTION = 1
+    CHANNEL_BOARD_DETECTION = 2
+    CHANNEL_ROI = 3
+    CHANNEL_COLOR = 4
+    CHANNEL_CLIPPED_COLOR = 5
+    CHANNEL_WHITE_BLACK = 6
 
 
 # this class handles the output video streams
 class LegoOutputStream:
 
-    WINDOW_NAME_SHAPE_DETECTION = 'Shape detection'
-    WINDOW_NAME_COLOR = 'Color'
-    WINDOW_NAME_ROI = 'Region of Interest'
+    WINDOW_NAME_DEBUG = 'DEBUG WINDOW'
+    WINDOW_NAME_BEAMER = 'BEAMER WINDOW'
 
+    active_channel = LegoOutputChannel.CHANNEL_COLOR
+    active_window = WINDOW_NAME_DEBUG  # TODO: implement window handling
     video_handler = None
 
     def __init__(self, video_output_name=None, width=config.WIDTH, height=config.HEIGHT):
 
         # create output windows
-        cv2.namedWindow(LegoOutputStream.WINDOW_NAME_SHAPE_DETECTION, cv2.WINDOW_AUTOSIZE)
-        cv2.namedWindow(LegoOutputStream.WINDOW_NAME_COLOR, cv2.WINDOW_AUTOSIZE)
-        cv2.namedWindow(LegoOutputStream.WINDOW_NAME_ROI, cv2.WINDOW_AUTOSIZE)
+        cv2.namedWindow(LegoOutputStream.WINDOW_NAME_DEBUG, cv2.WINDOW_AUTOSIZE)
+        cv2.namedWindow(LegoOutputStream.WINDOW_NAME_BEAMER, cv2.WINDOW_AUTOSIZE)
 
         if video_output_name:
             # Define the codec and create VideoWriter object. The output is stored in .avi file.
@@ -27,13 +38,20 @@ class LegoOutputStream:
 
     # Write the frame into the file
     def write_to_file(self, frame):
+        # TODO: shouldn't we be able to select which channel we want to write to the file?
         if self.video_handler:
             self.video_handler.write(frame)
 
     # write the frame into a window
-    @staticmethod
-    def write_to_window(window, frame):
-        cv2.imshow(window, frame)
+    def write_to_channel(self, channel, frame):
+        # TODO: currently everything not written to the active channel is dropped
+        if channel == self.active_channel:
+            cv2.imshow(self.active_window, frame)
+
+    # change the active channel, which is displayed in the window
+    def set_active_channel(self, channel):
+        if channel in (item.value for item in LegoOutputChannel):
+            self.active_channel = channel
 
     # mark the candidate in given frame
     @staticmethod
@@ -58,9 +76,18 @@ class LegoOutputStream:
         # Draw green lego bricks centroid points
         cv2.circle(frame, tracked_lego_brick_position, 4, (0, 255, 0), -1)
 
-    @staticmethod
-    def update() -> bool:
-        key = cv2.waitKey(1)
+    def update(self) -> bool:
+        key = cv2.waitKeyEx(1)
+
+        # simple switch of the channel
+        if key > 0:
+            print(key)
+        if key == 97:
+            print("UP")
+            self.set_active_channel(self.active_channel.value + 1)
+        if key == 113:
+            print("DOWN")
+            self.set_active_channel(self.active_channel.value - 1)
 
         # Break with Esc  # FIXME: CG: keyboard might not be available - use signals?
         if key == 27:

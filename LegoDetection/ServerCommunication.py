@@ -175,17 +175,17 @@ class ServerCommunication:
             self.geo_board_height = self.location_coordinates['C_TL'][1] - self.location_coordinates['C_BL'][1]
 
         logger.debug("geo size: {}, {}".format(self.geo_board_width, self.geo_board_height))
-        logger.debug("board size: {}, {}".format(config.board_size_width, config.board_size_height))
+        logger.debug("board size: {}, {}".format(self.board_size_width, self.board_size_height))
 
         # Calculate lego brick x coordinate
         # Calculate proportions
-        lego_brick_coordinate_x = self.geo_board_width * lego_brick_position[0] / config.board_size_width
+        lego_brick_coordinate_x = self.geo_board_width * lego_brick_position[0] / self.board_size_width
         # Add offset
         lego_brick_coordinate_x += self.location_coordinates['C_TL'][0]
 
         # Calculate lego brick y coordinate
         # Calculate proportions
-        lego_brick_coordinate_y = self.geo_board_height * lego_brick_position[1] / config.board_size_height
+        lego_brick_coordinate_y = self.geo_board_height * lego_brick_position[1] / self.board_size_height
         # Invert the axis
         lego_brick_coordinate_y = self.geo_board_height - lego_brick_coordinate_y
         # Add offset

@@ -49,8 +49,9 @@ class Main:
         if parser_arguments.ip is not None:
             self.config.set("server", "ip", parser_arguments.ip)
 
-        # initialize the output stream
+        # initialize the input and output stream
         self.output_stream = LegoOutputStream()
+        self.input_stream = LegoInputStream()
 
         # Initialize board detection
         self.board_detector = BoardDetector(threshold_qrcode, self.output_stream)

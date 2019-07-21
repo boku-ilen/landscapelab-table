@@ -69,7 +69,7 @@ class LegoInputStream:
         self.color_frame = aligned_frames.get_color_frame()
 
         # New frame log information
-        logger.debug("!! new frame started")
+        logger.info("!! new frame started")
 
         # Validate that both frames are valid
         if self.aligned_depth_frame and self.color_frame:
@@ -92,7 +92,7 @@ class LegoInputStream:
 
     def get_distance_to_table(self):
         clipping_distance = self.aligned_depth_frame.get_distance(self.middle_x, self.middle_y) / self.depth_scale
-        logger.debug("Distance to the table is: {}".format(clipping_distance))
+        logger.info("Distance to the board is: {}".format(clipping_distance))
 
         return clipping_distance
 

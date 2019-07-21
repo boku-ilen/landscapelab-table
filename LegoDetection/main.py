@@ -1,13 +1,13 @@
 import argparse
 import logging.config
 
-import config
 from BoardDetector import BoardDetector
 from LegoDetection import ShapeDetector
 from LegoInputStream import LegoInputStream
 from LegoOutputStream import LegoOutputStream, LegoOutputChannel
 from ServerCommunication import ServerCommunication
 from Tracking.Tracker import Tracker
+from ConfigManager import ConfigManager
 
 
 # configure logging
@@ -26,22 +26,28 @@ class Main:
 
     def __init__(self):
 
+        # Initialize config manager
+        self.config = ConfigManager()
+
         # Parse optional parameters
         # FIXME: CG: parameters have to be handled in the main method?
         parser = argparse.ArgumentParser()
-        parser.add_argument("--threshold", type=int, default=140,
+        parser.add_argument("--threshold", type=int,
                             help="set the threshold for black-white image to recognize qr-codes")
         parser.add_argument("--usestream", help="path and name of the file with saved .bag stream")
-        parser.add_argument("--ip", default="127.0.0.1", help="local ip, if other than localhost")
+        parser.add_argument("--ip", help="local ip, if other than localhost")
         parser_arguments = parser.parse_args()
 
         if parser_arguments.threshold is not None:
             threshold_qrcode = parser_arguments.threshold
         else:
-            threshold_qrcode = config.THRESHOLD_QRCODE
+            threshold_qrcode = self.config.get("qr_code", "threshold")
+
+        if parser_arguments.usestream is not None:
+            self.used_stream = parser_arguments.usestream
 
         if parser_arguments.ip is not None:
-            config.ip = parser_arguments.ip
+            self.config.set("server", "ip", parser_arguments.ip)
 
         # initialize the output stream
         self.output_stream = LegoOutputStream()
@@ -50,7 +56,7 @@ class Main:
         self.board_detector = BoardDetector(threshold_qrcode, self.output_stream)
 
         # Initialize server communication class
-        self.server = ServerCommunication()
+        self.server = ServerCommunication(self.config, self.board_detector)
 
         # Initialize the centroid tracker
         self.tracker = Tracker(self.server)
@@ -68,7 +74,6 @@ class Main:
         all_board_corners_found = False
 
         # initialize the input stream
-        self.used_stream = "/home/graf/Downloads/lego_detection_test3.bag"  # FIXME: replace: None
         try:
             self.input_stream = LegoInputStream(usestream=self.used_stream)
         except RuntimeError:
@@ -118,7 +123,9 @@ class Main:
 
                 else:
                     logger.debug("No QR-code detector result")
-                    region_of_interest[0:config.HEIGHT, 0:config.WIDTH] = [0, 0, 0]
+                    height = self.config.get("resolution", "height")
+                    width = self.config.get("resolution", "width")
+                    region_of_interest[0:height, 0:width] = [0, 0, 0]
 
                 # Show the board (region of interest)
                 self.output_stream.write_to_channel(LegoOutputChannel.CHANNEL_ROI, region_of_interest)

@@ -4,6 +4,8 @@ import threading
 import numpy as np
 from functools import partial
 import LegoDetection.config as config
+from LegoDetection.Tracking.LegoBrick import LegoBrick, LegoStatus
+from LegoUI.UIElements import UIElement, Button, UIStructureBlock
 import logging
 
 # NOTE one loading and one saving cycle may hamper performance
@@ -115,6 +117,12 @@ class CVControllerThread(threading.Thread):
     def send(self, msg: bytes):
         logger.debug('sending: {}'.format(msg))
         self.sock.sendto(msg, self.addr)
+
+    # determines if a given lego brick is placed on an UI element (internal brick) or not (external brick)
+    # also calls UI callback functions if brick is internal
+    def classify_brick_type(self, brick: LegoBrick):
+
+        pass
 
     # sends a message to exit and then proceeds to quit out of the thread
     def quit(self):

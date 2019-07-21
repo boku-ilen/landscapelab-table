@@ -24,14 +24,6 @@ except:
 # this class manages the base workflow and handles the main loop
 class Main:
 
-    output_stream = None
-    input_stream = None
-    tracker = None
-    server = None
-    shape_detector = None
-    board_detector = None
-    used_stream = "/home/graf/Downloads/lego_detection_test3.bag"  # FIXME: replace: None
-
     def __init__(self):
 
         # Parse optional parameters
@@ -56,8 +48,6 @@ class Main:
 
         # Initialize board detection
         self.board_detector = BoardDetector(threshold_qrcode, self.output_stream)
-        self.board_size_height = None
-        self.board_size_width = None
 
         # Initialize server communication class
         self.server = ServerCommunication()
@@ -78,6 +68,7 @@ class Main:
         all_board_corners_found = False
 
         # initialize the input stream
+        self.used_stream = "/home/graf/Downloads/lego_detection_test3.bag"  # FIXME: replace: None
         try:
             self.input_stream = LegoInputStream(usestream=self.used_stream)
         except RuntimeError:

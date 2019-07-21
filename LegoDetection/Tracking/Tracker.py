@@ -1,6 +1,6 @@
 import logging
 import typing
-from Tracking.LegoBrick import LegoBrick
+from Tracking.LegoBrick import LegoBrick, LegoStatus
 
 # configure logging
 logger = logging.getLogger(__name__)
@@ -60,7 +60,7 @@ class Tracker:
             if amount > self.max_disappeared:
                 self.confirmed_bricks.remove(brick)
                 # if the brick is associated with an asset also send a remove request to the server
-                if brick.status == LegoBrick.status.EXTERNAL_BRICK:
+                if brick.status == LegoStatus.EXTERNAL_BRICK:
                     self.server_communicator.remove_lego_instance(brick)
 
         # add the qualified candidates to the confirmed list
@@ -68,10 +68,10 @@ class Tracker:
             # check for the threshold value
             if amount > self.max_disappeared:  # FIXME: other name or different variable
                 # FIXME: add here a hook for the detection of the status INTERNAL or EXTERNAL
-                candidate.status = LegoBrick.status.EXTERNAL_BRICK  # FIXME: remove as soon as hook is available
+                candidate.status = LegoStatus.EXTERNAL_BRICK  # FIXME: remove as soon as hook is available
                 self.confirmed_bricks.append(candidate)
                 # if the brick is associated with an asset also send a create request to the server
-                if candidate.status == LegoBrick.status.EXTERNAL_BRICK:
+                if candidate.status == LegoStatus.EXTERNAL_BRICK:
                     self.server_communicator.create_lego_instance(candidate)
 
         # finally return the updated list of confirmed bricks

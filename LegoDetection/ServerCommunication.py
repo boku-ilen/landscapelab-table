@@ -3,10 +3,9 @@ import requests
 from requests.exceptions import HTTPError
 import json
 import config
-
-# Configure logging
 from Tracking.LegoBrick import LegoBrick
 
+# Configure logging
 logger = logging.getLogger(__name__)
 
 
@@ -15,26 +14,10 @@ class ServerCommunication:
     Requests map location and compute board coordinates.
     Creates and removes lego instances"""
 
-    prefix = None
-    ip = None
-
-    # Get location of the map (from config)
-    get_location = None
-    location_extension = None
-
-    # Create, edit, remove
-    # lego instance in godot (from config)
-    create_asset = None
-    set_asset = None
-    remove_asset = None
-
-    location_coordinates = None
-    geo_board_width = None
-    geo_board_height = None
-
     def __init__(self, prefix=config.prefix, ip=config.ip, create_asset=config.create_asset,
                  set_asset=config.set_asset, remove_asset=config.remove_asset,
-                 get_location=config.get_location, location_extension=config.location_extension):
+                 get_location=config.get_location, location_extension=config.location_extension,
+                 board_detector=None):
 
         self.prefix = prefix
         self.ip = ip
@@ -43,6 +26,11 @@ class ServerCommunication:
         self.remove_asset = remove_asset
         self.get_location = get_location
         self.location_extension = location_extension
+        self.board_detector = board_detector
+        self.location_coordinates = None
+        self.geo_board_width = None
+        self.geo_board_height = None
+
 
     # Get location of the map and save in config a dictionary
     # with coordinates of board corners (map corners)
@@ -175,17 +163,18 @@ class ServerCommunication:
             self.geo_board_height = self.location_coordinates['C_TL'][1] - self.location_coordinates['C_BL'][1]
 
         logger.debug("geo size: {}, {}".format(self.geo_board_width, self.geo_board_height))
-        logger.debug("board size: {}, {}".format(self.board_size_width, self.board_size_height))
+        board_size_width, board_size_height = self.board_detector.get_board_size()
+        logger.debug("board size: {}, {}".format(board_size_width, board_size_height))
 
         # Calculate lego brick x coordinate
         # Calculate proportions
-        lego_brick_coordinate_x = self.geo_board_width * lego_brick_position[0] / self.board_size_width
+        lego_brick_coordinate_x = self.geo_board_width * lego_brick_position[0] / board_size_width
         # Add offset
         lego_brick_coordinate_x += self.location_coordinates['C_TL'][0]
 
         # Calculate lego brick y coordinate
         # Calculate proportions
-        lego_brick_coordinate_y = self.geo_board_height * lego_brick_position[1] / self.board_size_height
+        lego_brick_coordinate_y = self.geo_board_height * lego_brick_position[1] / board_size_height
         # Invert the axis
         lego_brick_coordinate_y = self.geo_board_height - lego_brick_coordinate_y
         # Add offset

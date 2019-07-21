@@ -35,24 +35,20 @@ class LegoStatus(Enum):
 # this class represents a lego brick and holds related properties
 class LegoBrick:
 
-    # the asset_id which the brick has on the server. this needs to be
-    # available if it is not a candidate and not internal
-    asset_id = None
-
-    # the x and y coordinates locally (in stream coordinates)
-    # of the center of the detected shape
-    centroid_x: int = None
-    centroid_y: int = None
-
-    shape: LegoShape = None
-    color: LegoColor = None
-    status: LegoStatus = LegoStatus.CANDIDATE_BRICK
-
     def __init__(self, centroid_x: int, centroid_y: int, shape: LegoShape, color: LegoColor):
-        self.centroid_x = centroid_x
-        self.centroid_y = centroid_y
-        self.shape = shape
-        self.color = color
+
+        # the asset_id which the brick has on the server. this needs to be
+        # available if it is not a candidate and not internal
+        self.asset_id = None
+
+        # the x and y coordinates locally (in stream coordinates)
+        # of the center of the detected shape
+        self.centroid_x: int = centroid_x
+        self.centroid_y: int = centroid_y
+
+        self.shape: LegoShape = shape
+        self.color: LegoColor = color
+        self.status: LegoStatus = LegoStatus.CANDIDATE_BRICK
 
     def __eq__(self, other):
         # (type) safety first

@@ -20,29 +20,27 @@ CLIP = 0.1
 # the board related to the video stream
 class BoardDetector:
 
-    # Get board detection property
-    board_size_width = None
-    board_size_height = None
-
-    # the distance to the board
-    clipping_distance = None
-
-    # Array with all polygons of QR-Codes for board corners
-    all_codes_polygons_points = [None, None, None, None]
-
-    # ID of the map (metadata read from the code)
-    map_id = None
-
-    # Threshold for finding QR-Codes
-    # To change the threshold use an optional parameter
-    threshold_qrcode = None
-
-    # the outputstream
-    output_stream: LegoOutputStream = None
-
     def __init__(self, threshold_qrcode, output_stream):
+
+        # Threshold for finding QR-Codes
+        # To change the threshold use an optional parameter
         self.threshold_qrcode = threshold_qrcode
+
+        # the outputstream
         self.output_stream = output_stream
+
+        # Get board detection property
+        self.board_size_width = None
+        self.board_size_height = None
+
+        # the distance to the board
+        self.clipping_distance = None
+
+        # Array with all polygons of QR-Codes for board corners
+        self.all_codes_polygons_points = [None, None, None, None]
+
+        # ID of the map (metadata read from the code)
+        self.map_id = None
 
     # Compute pythagoras value
     @staticmethod
@@ -258,6 +256,7 @@ class BoardDetector:
         # If all corners are found, save them in the right order
         if top_left_corner is not None and top_right_corner is not None and \
                 bottom_right_corner is not None and bottom_left_corner is not None:
+
             self.board_corners = [top_left_corner, top_right_corner, bottom_right_corner, bottom_left_corner]
             logger.debug("board_corners: {}".format(board_corners))
             all_board_corners_found = True
@@ -365,3 +364,6 @@ class BoardDetector:
             # TODO: else: include positions in the frame?
 
         return region_of_interest
+
+    def get_board_size(self):
+        return self.board_size_width, self.board_size_height

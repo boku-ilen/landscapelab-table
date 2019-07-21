@@ -2,15 +2,33 @@ from enum import Enum
 
 import cv2
 import config
+import logging
+
+
+# enable logger
+logger = logging.getLogger(__name__)
 
 
 class LegoOutputChannel(Enum):
+
     CHANNEL_SHAPE_DETECTION = 1
     CHANNEL_BOARD_DETECTION = 2
     CHANNEL_ROI = 3
     CHANNEL_COLOR = 4
     CHANNEL_CLIPPED_COLOR = 5
     CHANNEL_WHITE_BLACK = 6
+
+    def next(self):
+        value = self.value + 1
+        if value > 6:
+            value = 6
+        return LegoOutputChannel(value)
+
+    def prev(self):
+        value = self.value - 1
+        if value < 1:
+            value = 1
+        return LegoOutputChannel(value)
 
 
 # this class handles the output video streams
@@ -19,11 +37,10 @@ class LegoOutputStream:
     WINDOW_NAME_DEBUG = 'DEBUG WINDOW'
     WINDOW_NAME_BEAMER = 'BEAMER WINDOW'
 
-    active_channel = LegoOutputChannel.CHANNEL_COLOR
-    active_window = WINDOW_NAME_DEBUG  # TODO: implement window handling
-    video_handler = None
-
     def __init__(self, video_output_name=None, width=config.WIDTH, height=config.HEIGHT):
+
+        self.active_channel = LegoOutputChannel.CHANNEL_COLOR
+        self.active_window = LegoOutputStream.WINDOW_NAME_DEBUG  # TODO: implement window handling
 
         # create output windows
         cv2.namedWindow(LegoOutputStream.WINDOW_NAME_DEBUG, cv2.WINDOW_AUTOSIZE)
@@ -35,6 +52,8 @@ class LegoOutputStream:
             self.video_handler = cv2.VideoWriter(video_output_name,
                                                  cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'),
                                                  10, (width, height))
+        else:
+            self.video_handler = None
 
     # Write the frame into the file
     def write_to_file(self, frame):
@@ -50,8 +69,7 @@ class LegoOutputStream:
 
     # change the active channel, which is displayed in the window
     def set_active_channel(self, channel):
-        if channel in (item.value for item in LegoOutputChannel):
-            self.active_channel = channel
+        self.active_channel = channel
 
     # mark the candidate in given frame
     @staticmethod
@@ -80,14 +98,12 @@ class LegoOutputStream:
         key = cv2.waitKeyEx(1)
 
         # simple switch of the channel
-        if key > 0:
-            print(key)
-        if key == 97:
-            print("UP")
-            self.set_active_channel(self.active_channel.value + 1)
-        if key == 113:
-            print("DOWN")
-            self.set_active_channel(self.active_channel.value - 1)
+        if key == 97:  # 'a'
+            logger.info("changed active channel one up")
+            self.set_active_channel(self.active_channel.next())
+        if key == 113:  # 'q'
+            logger.info("changed active channel one down")
+            self.set_active_channel(self.active_channel.prev())
 
         # Break with Esc  # FIXME: CG: keyboard might not be available - use signals?
         if key == 27:

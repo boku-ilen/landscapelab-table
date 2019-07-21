@@ -20,6 +20,7 @@ HEIGHT: int = 720
 # settings for QRcode detection
 THRESHOLD_QRCODE = 140
 
+# FIXME: use config.json for all configurations
 # QGIS interaction info
 QGIS_IP = "127.0.0.1"
 QGIS_READ_PORT = 5005

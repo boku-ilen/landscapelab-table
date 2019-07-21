@@ -1,0 +1,30 @@
+{
+  "video_output": {
+    "name": "shape_detection_output.avi"
+  },
+
+  "server": {
+    "prefix": "http://",
+    "ip": "127.0.0.1"
+  },
+
+  "asset": {
+    "create": "/landscapelab/assetpos/create/",
+    "set": "/landscapelab/assetpos/set/",
+    "remove": "/landscapelab/assetpos/remove/"
+  },
+
+  "location": {
+    "get": "/landscapelab/location/map/",
+    "extension": ".json"
+  },
+
+  "resolution": {
+    "width": 1280,
+    "height": 720
+  },
+
+  "qr_code": {
+    "threshold": 140
+  }
+}

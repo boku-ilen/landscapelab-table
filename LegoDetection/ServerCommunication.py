@@ -2,7 +2,6 @@ import logging
 import requests
 from requests.exceptions import HTTPError
 import json
-import config
 
 # Configure logging
 from Tracking.LegoBrick import LegoBrick
@@ -32,17 +31,15 @@ class ServerCommunication:
     geo_board_width = None
     geo_board_height = None
 
-    def __init__(self, prefix=config.prefix, ip=config.ip, create_asset=config.create_asset,
-                 set_asset=config.set_asset, remove_asset=config.remove_asset,
-                 get_location=config.get_location, location_extension=config.location_extension):
+    def __init__(self, config):
 
-        self.prefix = prefix
-        self.ip = ip
-        self.create_asset = create_asset
-        self.set_asset = set_asset
-        self.remove_asset = remove_asset
-        self.get_location = get_location
-        self.location_extension = location_extension
+        self.prefix = config.get("server", "prefix")
+        self.ip = config.get("server", "ip")
+        self.create_asset = config.get("asset", "create")
+        self.set_asset = config.get("asset", "set")
+        self.remove_asset = config.get("asset", "remove")
+        self.get_location = config.get("location", "get")
+        self.location_extension = config.get("location", "extension")
 
     # Get location of the map and save in config a dictionary
     # with coordinates of board corners (map corners)
@@ -55,15 +52,10 @@ class ServerCommunication:
             location_json.raise_for_status()
 
         except HTTPError as http_err:
-            logger.debug("HTTP error occurred: {}".format(http_err))
-            logger.debug("Updating ip...")
-            # FIXME: why do we need to overwrite ip?
-            self.ip = config.ip
+            logger.error("HTTP error occurred: {}".format(http_err))
 
         except Exception as err:
-            logger.debug("Other error occurred: {}".format(err))
-            logger.debug("Updating ip...")
-            self.ip = config.ip
+            logger.error("Other error occurred: {}".format(err))
 
         else:
             # Check if status code is 200

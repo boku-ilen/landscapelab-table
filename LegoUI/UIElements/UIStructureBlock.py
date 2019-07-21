@@ -16,24 +16,28 @@ class UIStructureBlock(UIElement):
         self.size = np.array(size)
 
         # set block color
-        self.color = np.array((204, 204, 204))
+        self.color = (204, 204, 204)
 
     # draws the block onto an image
     def draw(self, img):
-        # get bounds
-        x_min, y_min, x_max, y_max = self.get_bounds()
 
-        # draw the button
-        cv.rectangle(img, (x_min, y_min), (x_max, y_max), self.color, cv.FILLED)
+        if self.visible:
+            # get bounds
+            x_min, y_min, x_max, y_max = self.get_bounds()
 
-        # draw hierarchy
-        super().draw(img)
+            # draw the button
+            cv.rectangle(img, (x_min, y_min), (x_max, y_max), self.color, cv.FILLED)
+
+            # draw hierarchy
+            super().draw(img)
 
     # checks if a given brick lies on top of the block
     def brick_on_element(self, brick: LegoBrick) -> bool:
-        x, y = (brick.centroid_x, brick.centroid_y)
+        if self.visible:
+            x, y = (brick.centroid_x, brick.centroid_y)
 
-        return self.pos_on_block(x, y) or super().brick_on_element(brick)
+            return super().brick_on_element(brick) or self.pos_on_block(x, y)
+        return False
 
     # checks if any screen coordinate lies on top of
     def pos_on_block(self, x: float, y: float) -> bool:

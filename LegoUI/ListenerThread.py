@@ -35,6 +35,6 @@ class ListenerThread(threading.Thread):
 
                 self.cv_controller.refresh(extent)
 
-            if data == 'exit':     # todo ctrl-c capturen
+            if data == 'exit':
                 self.sock.close()
                 break

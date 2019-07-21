@@ -20,6 +20,11 @@ class UIElement:
                 return True
         return False
 
+    # call once all bricks in a frame have been processed so that e.g. buttons can call their release action
+    def finished_checking(self):
+        for child in self.children:
+            child.finished_checking()
+
     # displays this element and all it's children
     def draw(self, img):
         if self.visible:
@@ -37,6 +42,9 @@ class UIElement:
     def add_child(self, child):
         self.children.append(child)
         child.parent = self
+
+    def set_visible(self, visible: bool):
+        self.visible = visible
 
 
 # used for buttons etc

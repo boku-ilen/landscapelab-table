@@ -114,18 +114,16 @@ class ShapeDetector:
                     rect = cv2.minAreaRect(contour)
                     rotated_bbox = np.int0(cv2.boxPoints(rect))
 
-                    # Draw red contours for all found contours (for testing purposes)
-                    # cv2.drawContours(frame, [rotated_bbox], 0, (0, 0, 255), 2)
-
                     contour_shape = self.check_if_square(rotated_bbox)
 
-                    logger.debug("Draw contour:\n Center coordinates: {}, {}\n Contour area: {}".
-                                 format(centroid_x, centroid_y, cv2.contourArea(contour)))
+                    logger.debug("Draw contour:\n Shape: {}\n Color: {}\n "
+                                 "Center coordinates: {}, {}\n Contour area: {}".
+                                 format(contour_shape, detected_color,
+                                        centroid_x, centroid_y, cv2.contourArea(contour)))
 
-                # return a LegoBrick with the detected parameters
-                return LegoBrick(centroid_x, centroid_y, contour_shape, detected_color)
+                    # return a LegoBrick with the detected parameters
+                    return LegoBrick(centroid_x, centroid_y, contour_shape, detected_color)
 
-        # return contour name == "shape" centroid = 0,0, color == "wrongColor"
         return None  # FIXME: CG: we might to differ?
 
     # Check if the contour has a lego brick shape: square or rectangle

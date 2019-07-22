@@ -78,26 +78,26 @@ class LegoOutputStream:
     # mark the candidate in given frame
     @staticmethod
     def mark_candidates(frame, candidate_contour):
-        cv2.drawContours(frame, [candidate_contour], -1, (0, 255, 0), 3)
+        cv2.drawContours(frame, [candidate_contour], -1, (255, 0, 0), 3)
 
     # we label the identified lego bricks in the stream
     @staticmethod
     def labeling(frame, tracked_lego_brick: LegoBrick):
 
         # FIXME: extract constants! and change array  [][] access into named attribute access
-        # Draw green lego bricks IDs
+        # Draw lego bricks IDs
         text = "ID {}".format(tracked_lego_brick.asset_id)
         tracked_lego_brick_position = tracked_lego_brick.centroid_x, tracked_lego_brick.centroid_y
         cv2.putText(frame, text, (tracked_lego_brick.centroid_x - BRICK_LABEL_OFFSET,
                                   tracked_lego_brick.centroid_y - BRICK_LABEL_OFFSET),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 0, 0), 1)
 
-        # Draw green lego bricks contour names
-        # FIXME: put other other caption like id of the lego brick
+        # Draw lego bricks contour names
+        # FIXME: put other caption like id of the lego brick
         cv2.putText(frame, tracked_lego_brick.status.name, tracked_lego_brick_position,
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 0, 0), 1)
 
-        # Draw green lego bricks centroid points
+        # Draw lego bricks centroid points
         cv2.circle(frame, tracked_lego_brick_position, 4, (0, 255, 0), -1)
 
     def update(self) -> bool:

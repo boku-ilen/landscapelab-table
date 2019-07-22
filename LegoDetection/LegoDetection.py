@@ -11,7 +11,7 @@ import cv2  # TODO: fix the requirements.txt or provide library
 import colorsys
 import numpy as np
 
-from Tracking.LegoBrick import LegoBrick, LegoShape, LegoColor
+from LegoBricks import LegoBrick, LegoShape, LegoColor
 
 
 # enable logger

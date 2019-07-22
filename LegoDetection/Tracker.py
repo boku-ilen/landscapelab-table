@@ -1,6 +1,6 @@
 import logging
 import typing
-from Tracking.LegoBrick import LegoBrick, LegoStatus
+from LegoBricks import LegoBrick, LegoStatus
 
 # configure logging
 logger = logging.getLogger(__name__)

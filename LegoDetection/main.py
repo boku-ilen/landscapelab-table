@@ -6,7 +6,7 @@ from LegoDetection import ShapeDetector
 from LegoInputStream import LegoInputStream
 from LegoOutputStream import LegoOutputStream, LegoOutputChannel
 from ServerCommunication import ServerCommunication
-from Tracking.Tracker import Tracker
+from Tracker import Tracker
 from ConfigManager import ConfigManager
 
 

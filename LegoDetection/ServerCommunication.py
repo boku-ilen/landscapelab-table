@@ -3,7 +3,7 @@ import requests
 from requests.exceptions import HTTPError
 import json
 import config
-from Tracking.LegoBrick import LegoBrick
+from LegoBricks import LegoBrick
 
 # Configure logging
 logger = logging.getLogger(__name__)

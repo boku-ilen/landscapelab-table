@@ -32,6 +32,7 @@ class BoardDetector:
         # Get board detection property
         self.board_size_width = None
         self.board_size_height = None
+        self.board_corners = None
 
         # the distance to the board
         self.clipping_distance = None
@@ -206,7 +207,6 @@ class BoardDetector:
         bottom_right_corner = None
         bottom_left_corner = None
         centroids = []
-        board_corners = []
         all_board_corners_found = False
         all_codes_flag = True
         centroid_corner_distance = None
@@ -258,18 +258,17 @@ class BoardDetector:
                 bottom_right_corner is not None and bottom_left_corner is not None:
 
             self.board_corners = [top_left_corner, top_right_corner, bottom_right_corner, bottom_left_corner]
-            logger.debug("board_corners: {}".format(board_corners))
+            logger.debug("board_corners: {}".format(self.board_corners))
             all_board_corners_found = True
 
-            return all_board_corners_found, board_corners
-
-        return all_board_corners_found, board_corners
+        return all_board_corners_found, self.board_corners
 
     # Find min and max for x and y position of the board
     @staticmethod
     def find_min_max(corners):
         x = []
         y = []
+        # FIXME: x & y are sometimes switched?!
         for corner in corners:
             x.append(corner[0])
             y.append(corner[1])

@@ -2,7 +2,6 @@ import logging
 import requests
 from requests.exceptions import HTTPError
 import json
-import config
 from LegoBricks import LegoBrick
 
 # Configure logging
@@ -45,7 +44,7 @@ class ServerCommunication:
         self.geo_board_width = None
         self.geo_board_height = None
 
-
+    # TODO: HTTP error because of missing .json file on the server
     # Get location of the map and save in config a dictionary
     # with coordinates of board corners (map corners)
     def compute_board_coordinates(self, map_id):
@@ -168,8 +167,8 @@ class ServerCommunication:
 
         # Calculate width and height in geographical coordinates
         if self.geo_board_width is None or self.geo_board_height is None:
-            self.geo_board_width = self.location_coordinates['C_TR'][0] - self.location_coordinates['C_TL'][0]
-            self.geo_board_height = self.location_coordinates['C_TL'][1] - self.location_coordinates['C_BL'][1]
+            self.geo_board_width = self.location_coordinates['C_TR'][1] - self.location_coordinates['C_TL'][1]
+            self.geo_board_height = self.location_coordinates['C_TL'][0] - self.location_coordinates['C_BL'][0]
 
         logger.debug("geo size: {}, {}".format(self.geo_board_width, self.geo_board_height))
         board_size_width, board_size_height = self.board_detector.get_board_size()

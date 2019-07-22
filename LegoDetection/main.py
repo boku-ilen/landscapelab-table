@@ -45,6 +45,8 @@ class Main:
 
         if parser_arguments.usestream is not None:
             self.used_stream = parser_arguments.usestream
+        else:
+            self.used_stream = None
 
         if parser_arguments.ip is not None:
             self.config.set("server", "ip", parser_arguments.ip)

@@ -53,7 +53,7 @@ class Main:
 
         # initialize the input and output stream
         self.output_stream = LegoOutputStream()
-        self.input_stream = LegoInputStream()
+        self.input_stream = LegoInputStream(usestream=self.used_stream)
 
         # Initialize board detection
         self.board_detector = BoardDetector(threshold_qrcode, self.output_stream)
@@ -77,12 +77,7 @@ class Main:
         all_board_corners_found = False
 
         # initialize the input stream
-        try:
-            self.input_stream = LegoInputStream(usestream=self.used_stream)
-        except RuntimeError:
-            logger.error("Could not initialize Lego Input Stream")
-            print("Input Stream could not be initialized - terminating.")
-            return
+        self.input_stream = LegoInputStream(usestream=self.used_stream)
 
         logger.info("initialized lego input stream")
 

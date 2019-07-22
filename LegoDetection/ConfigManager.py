@@ -41,4 +41,3 @@ class ConfigManager:
             logger.debug("Overwriting config data {} -> {} with {}".format(group, key, value))
         except:
             logger.warning("Overwriting config data {} -> {} without success".format(group, key))
-

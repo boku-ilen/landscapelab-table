@@ -6,7 +6,11 @@ import logging
 
 
 # enable logger
+from LegoBricks import LegoBrick
+
 logger = logging.getLogger(__name__)
+
+BRICK_LABEL_OFFSET = 10
 
 
 class LegoOutputChannel(Enum):
@@ -78,17 +82,19 @@ class LegoOutputStream:
 
     # we label the identified lego bricks in the stream
     @staticmethod
-    def labeling(frame, tracked_lego_brick):
+    def labeling(frame, tracked_lego_brick: LegoBrick):
 
         # FIXME: extract constants! and change array  [][] access into named attribute access
         # Draw green lego bricks IDs
         text = "ID {}".format(tracked_lego_brick.asset_id)
-        tracked_lego_brick_position = tracked_lego_brick[0][0], tracked_lego_brick[0][1]
-        cv2.putText(frame, text, (tracked_lego_brick[0][0] - 10, tracked_lego_brick[0][1] - 10),
+        tracked_lego_brick_position = tracked_lego_brick.centroid_x, tracked_lego_brick.centroid_y
+        cv2.putText(frame, text, (tracked_lego_brick.centroid_x - BRICK_LABEL_OFFSET,
+                                  tracked_lego_brick.centroid_y - BRICK_LABEL_OFFSET),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
 
         # Draw green lego bricks contour names
-        cv2.putText(frame, tracked_lego_brick[1], tracked_lego_brick_position,
+        # FIXME: put other other caption like id of the lego brick
+        cv2.putText(frame, tracked_lego_brick.status.name, tracked_lego_brick_position,
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
 
         # Draw green lego bricks centroid points

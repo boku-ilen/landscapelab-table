@@ -16,7 +16,7 @@ try:
     logging.config.fileConfig('logging.conf')
     logger.info("Logging initialized")
 except:
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.DEBUG)
     logging.info("Could not initialize: logging.conf not found or misconfigured")
 
 
@@ -51,6 +51,7 @@ class Main:
         if parser_arguments.ip is not None:
             self.config.set("server", "ip", parser_arguments.ip)
 
+        # FIXME: switched colors in new saved streams, configs?
         # initialize the input and output stream
         self.output_stream = LegoOutputStream()
         self.input_stream = LegoInputStream(usestream=self.used_stream)

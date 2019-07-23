@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 
 MIN_DISTANCE = 6
 MIN_APPEARED = 6
-MAX_DISAPPEARED = 20
+MAX_DISAPPEARED = 40
 
 
 class Tracker:
@@ -67,18 +67,35 @@ class Tracker:
             else:
                 self.tracked_disappeared[possible_removed_brick] = 0
 
-        # remove the disappeared elements from the confirmed list
+        # we temporarily save disappeared
+        # elements to delete them from dicts
+        bricks_to_remove = []
+
+        # remove the disappeared elements
         for brick, amount in self.tracked_disappeared.items():
+
             # check for the threshold value
             if amount > self.max_disappeared:
-                # TODO: remove also from max_disappeared?
+
+                # remember disappeared elements to delete them from dicts
+                bricks_to_remove.append(brick)
+
+                # remove the disappeared elements from the confirmed list
                 self.confirmed_bricks.remove(brick)
+
                 # if the brick is associated with an asset also send a remove request to the server
                 if brick.status == LegoStatus.EXTERNAL_BRICK:
                     self.server_communicator.remove_lego_instance(brick)
 
+        # remove the disappeared elements from dicts
+        for brick in bricks_to_remove:
+
+            del self.tracked_candidates[brick]
+            del self.tracked_disappeared[brick]
+
         # add the qualified candidates to the confirmed list
         for candidate, amount in self.tracked_candidates.items():
+
             # check for the threshold value of new candidates
             if amount > self.min_appeared and candidate not in self.confirmed_bricks:
                 # FIXME: add here a hook for the detection of the status INTERNAL or EXTERNAL

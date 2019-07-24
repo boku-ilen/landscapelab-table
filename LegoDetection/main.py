@@ -81,8 +81,8 @@ class Main:
     # Run lego bricks detection and tracking code
     def run(self):
 
-        # Initialize the clipping distance
-        clip_dist = 0
+        # Initialize the distance to the board
+        board_distance = 0
 
         # Initialize board detection flag
         all_board_corners_found = False
@@ -114,9 +114,9 @@ class Main:
                 self.output_stream.write_to_channel(LegoOutputChannel.CHANNEL_COLOR, color_image)
 
                 # Get the distance to the board (to the middle of the frame)
-                # TODO: CG: why is this handled this way?
-                if not clip_dist or not all_board_corners_found:
-                    clip_dist = self.input_stream.get_distance_to_table()
+                # Check the distance until board is detected (in case the camera position changed)
+                if not board_distance or not all_board_corners_found:
+                    board_distance = self.input_stream.get_distance_to_table()
 
                 # If map_id and location coordinates are available, compute board coordinates
                 # FIXME: this has to be abstracted as the implementation may change if the beamer variant is used
@@ -126,8 +126,7 @@ class Main:
                     # compute board coordinates and save them in config file
                     self.server.compute_board_coordinates(self.board_detector.map_id)
 
-                # FIXME: why should clip_dist ever be None here?
-                if all_board_corners_found and clip_dist:
+                if all_board_corners_found:
                     region_of_interest = self.board_detector.rectify_image(region_of_interest, color_image)
 
                 else:

@@ -35,7 +35,7 @@ class BoardDetector:
         self.board_corners = None
 
         # the distance to the board
-        self.clipping_distance = None
+        self.board_distance = None
 
         # Array with all polygons of QR-Codes for board corners
         self.all_codes_polygons_points = [None, None, None, None]
@@ -330,10 +330,10 @@ class BoardDetector:
 
         # clipping the color image to the area with the right distance values
         # TODO: find a working pythonic way
-        if self.clipping_distance:
+        if self.board_distance:
             clipped_color_image = np.where(
-                (depth_image_3d > self.clipping_distance * (1 + CLIP)) |
-                (depth_image_3d < self.clipping_distance * (1 - CLIP)),
+                (depth_image_3d > self.board_distance * (1 + CLIP)) |
+                (depth_image_3d < self.board_distance * (1 - CLIP)),
             0, color_image)
         else:
             clipped_color_image = color_image

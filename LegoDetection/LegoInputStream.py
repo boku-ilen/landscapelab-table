@@ -3,7 +3,6 @@
 import pyrealsense2 as rs  # FIXME: CG: this currently requires python 3.6
 import logging
 import numpy as np
-import config
 
 # enable logger
 logger = logging.getLogger(__name__)
@@ -16,32 +15,37 @@ class LegoInputStream:
     pipeline = None
     depth_scale = None
 
-    # Initialize squared board size and middle of the board
-    middle_x = config.WIDTH//2
-    middle_y = config.HEIGHT//2
+    # Initialize the resolution
+    width = None
+    height = None
 
     # intermediate storage of actual frames
     color_frame = None
     aligned_depth_frame = None
 
-# initialize the input stream (from live camera or bag file)
-    def __init__(self, usestream=None):
+    # initialize the input stream (from live camera or bag file)
+    def __init__(self, config, usestream=None):
 
         self.pipeline = rs.pipeline()
         self.realsense_config = rs.config()
 
+        # Initialize the resolution
+        self.width = config.get("resolution", "width")
+        self.height = config.get("resolution", "height")
+
         # FIXME: missing frames when using videostream or too slow processing
         # https://github.com/IntelRealSense/librealsense/issues/2216
-        # Use recorded depth and color streams and its configuration
 
+        # Use recorded depth and color streams and its configuration
+        # If problems with colors occur, check bgr/rgb channels configurations
         if usestream is not None:
             rs.config.enable_device_from_file(self.realsense_config, usestream)
             self.realsense_config.enable_all_streams()
 
         # Configure depth and color streams
         else:
-            self.realsense_config.enable_stream(rs.stream.depth, config.WIDTH, config.HEIGHT, rs.format.z16, 30)
-            self.realsense_config.enable_stream(rs.stream.color, config.WIDTH, config.HEIGHT, rs.format.bgr8, 30)
+            self.realsense_config.enable_stream(rs.stream.depth, self.width, self.height, rs.format.z16, 30)
+            self.realsense_config.enable_stream(rs.stream.color, self.width, self.height, rs.format.bgr8, 30)
 
             # Create alignment primitive with color as its target stream:
         self.alignment_stream = rs.align(rs.stream.color)
@@ -91,10 +95,10 @@ class LegoInputStream:
             return None, None
 
     def get_distance_to_table(self):
-        clipping_distance = self.aligned_depth_frame.get_distance(self.middle_x, self.middle_y) / self.depth_scale
-        logger.info("Distance to the board is: {}".format(clipping_distance))
+        board_distance = self.aligned_depth_frame.get_distance(int(self.width/2), int(self.height/2)) / self.depth_scale
+        logger.info("Distance to the board is: {}".format(board_distance))
 
-        return clipping_distance
+        return board_distance
 
     def close(self):
         # Stop streaming

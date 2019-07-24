@@ -60,7 +60,7 @@ class Main:
 
         # initialize the input and output stream
         self.output_stream = LegoOutputStream(self.map_handler, ui_root, self.config)
-        self.input_stream = LegoInputStream(usestream=self.used_stream)
+        self.input_stream = LegoInputStream(self.config, usestream=self.used_stream)
 
         # Initialize board detection
         self.board_detector = BoardDetector(threshold_qrcode, self.output_stream)
@@ -88,7 +88,7 @@ class Main:
         all_board_corners_found = False
 
         # initialize the input stream
-        self.input_stream = LegoInputStream(usestream=self.used_stream)
+        self.input_stream = LegoInputStream(self.config, usestream=self.used_stream)
 
         logger.info("initialized lego input stream")
 

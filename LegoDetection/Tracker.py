@@ -1,6 +1,7 @@
 import logging
 import typing
 from LegoBricks import LegoBrick, LegoStatus
+from LegoUI.UIElements.UIElement import UIElement
 
 # configure logging
 logger = logging.getLogger(__name__)
@@ -20,9 +21,10 @@ class Tracker:
     min_appeared: int = None
     max_disappeared: int = None
 
-    def __init__(self, server_communicator, min_distance=MIN_DISTANCE,
+    def __init__(self, server_communicator, ui_root: UIElement, min_distance=MIN_DISTANCE,
                  min_appeared=MIN_APPEARED, max_disappeared=MAX_DISAPPEARED):
         self.server_communicator = server_communicator
+        self.ui_root = ui_root
         self.min_distance = min_distance
         self.min_appeared = min_appeared
         self.max_disappeared = max_disappeared
@@ -93,20 +95,41 @@ class Tracker:
             del self.tracked_candidates[brick]
             del self.tracked_disappeared[brick]
 
-        # add the qualified candidates to the confirmed list
+        # do ui update for all already confirmed bricks and mark as outdated if necessary
+        for brick in self.confirmed_bricks:
+
+            # mark all bricks as outdated that previously were on ui and now lie on the map or vice versa
+            # this might happen when a ui elements visibility gets toggled
+            if self.ui_root.brick_on_element(brick):
+                if brick.status == LegoStatus.EXTERNAL_BRICK:
+                    brick.status = LegoStatus.OUTDATED_BRICK
+                    self.server_communicator.remove_lego_instance(brick)
+            else:
+                if brick.status == LegoStatus.INTERNAL_BRICK:
+                    brick.status = LegoStatus.OUTDATED_BRICK
+
+        # add the qualified candidates to the confirmed list and do ui update for them
         for candidate, amount in self.tracked_candidates.items():
 
             # check for the threshold value of new candidates
             if amount > self.min_appeared and candidate not in self.confirmed_bricks:
-                # FIXME: add here a hook for the detection of the status INTERNAL or EXTERNAL
-                candidate.status = LegoStatus.EXTERNAL_BRICK  # FIXME: remove as soon as hook is available
+
+                if self.ui_root.brick_on_element(candidate):
+                    candidate.status = LegoStatus.INTERNAL_BRICK
+                else:
+                    candidate.status = LegoStatus.EXTERNAL_BRICK
+
                 self.confirmed_bricks.append(candidate)
                 # if the brick is associated with an asset also send a create request to the server
                 if candidate.status == LegoStatus.EXTERNAL_BRICK:
                     self.server_communicator.create_lego_instance(candidate)
 
-        # finally return the updated list of confirmed bricks
+        # handle mouse placed bricks and
+        # do ui tick so that the button release event can be recognized and triggered
+        self.ui_root.handle_mouse_bricks()
+        self.ui_root.ui_tick()
 
+        # finally return the updated list of confirmed bricks
         return self.confirmed_bricks
 
     # Check if the lego brick lay within min distance to the any in the list

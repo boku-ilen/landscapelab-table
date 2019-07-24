@@ -1,7 +1,7 @@
 import socket
 from CVControllerThread import CVControllerThread
 from ListenerThread import ListenerThread
-import LegoDetection.config as config
+from LegoDetection.ConfigManager import ConfigManager
 import logging
 
 try:
@@ -14,16 +14,11 @@ except:
 
 def main():
 
-    # create sockets
-    read_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    read_socket.bind((config.QGIS_IP, config.LEGO_READ_PORT))
-    write_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    qgis_address = (config.QGIS_IP, config.QGIS_READ_PORT)
-    lego_address = (config.QGIS_IP, config.LEGO_READ_PORT)
+    config = ConfigManager('E:/Users/rotzr/Documents/Desktoperweiterungen/desktop/Arbeit/BOKU_2018/Projekt/landscapelab-lego/LegoDetection/config.json')
 
     # create and start the threads
-    cv_c = CVControllerThread(write_socket, qgis_address, lego_address)
-    listener = ListenerThread(read_socket, config.UDP_BUFFER_SIZE, cv_c)
+    cv_c = CVControllerThread(config)
+    listener = ListenerThread(config, cv_c)
 
     # starting
     cv_c.start()

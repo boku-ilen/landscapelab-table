@@ -45,4 +45,3 @@ start_extent = np.array([
 
 PAN_DISTANCE = 0.1
 ZOOM_STRENGTH = 0.2     # TODO replace with arrays for different increments
-

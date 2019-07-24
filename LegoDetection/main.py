@@ -5,9 +5,12 @@ from BoardDetector import BoardDetector
 from LegoDetection import ShapeDetector
 from LegoInputStream import LegoInputStream
 from LegoOutputStream import LegoOutputStream, LegoOutputChannel
+from LegoUI.MapHandler import MapHandler
+from LegoUI.UIElements.UISetup import setup_ui
 from ServerCommunication import ServerCommunication
 from Tracker import Tracker
 from ConfigManager import ConfigManager
+from LegoUI.ListenerThread import ListenerThread
 
 
 # configure logging
@@ -51,8 +54,12 @@ class Main:
         if parser_arguments.ip is not None:
             self.config.set("server", "ip", parser_arguments.ip)
 
+        # initialize map handler and ui
+        self.map_handler = MapHandler(self.config)
+        ui_root = setup_ui(self.map_handler.action_map)
+
         # initialize the input and output stream
-        self.output_stream = LegoOutputStream()
+        self.output_stream = LegoOutputStream(self.map_handler, ui_root, self.config)
         self.input_stream = LegoInputStream(usestream=self.used_stream)
 
         # Initialize board detection
@@ -61,8 +68,12 @@ class Main:
         # Initialize server communication class
         self.server = ServerCommunication(self.config, self.board_detector)
 
+        # Initialize the QGIS listener Thread
+        self.listener_thread = ListenerThread(self.config, self.map_handler)
+        self.listener_thread.start()
+
         # Initialize the centroid tracker
-        self.tracker = Tracker(self.server)
+        self.tracker = Tracker(self.server, ui_root)
 
         # initialize the lego detector
         self.shape_detector = ShapeDetector()
@@ -167,6 +178,8 @@ class Main:
 
             # make sure the stream ends correctly
             self.input_stream.close()
+
+            self.map_handler.end()
 
 
 # execute the main class  ' TODO: meaningful rename

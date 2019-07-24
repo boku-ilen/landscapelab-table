@@ -58,6 +58,7 @@ class RemoteRendering(QgsTask):
                         '{}{}'.format(config.UPDATE_KEYWORD, extent_info).encode(),
                         self.write_target
                     )
+                    QgsMessageLog.logMessage('sent: {}{}'.format(config.UPDATE_KEYWORD, extent_info))
 
         finally:
             self.socket.close()

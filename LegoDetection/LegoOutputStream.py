@@ -1,12 +1,17 @@
 from enum import Enum
 
 import cv2
-import config
+from ConfigManager import ConfigManager
+from LegoUI.MapHandler import MapHandler
+from functools import partial
+from LegoUI.MapActions import MapActions
+from LegoUI.UIElements.UIElement import UIElement, MOUSE_BRICKS, MOUSE_BRICK_SIZE
+from LegoBricks import LegoBrick, LegoColor, LegoShape
+import numpy as np
 import logging
 
 
 # enable logger
-from LegoBricks import LegoBrick
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +46,7 @@ class LegoOutputStream:
     WINDOW_NAME_DEBUG = 'DEBUG WINDOW'
     WINDOW_NAME_BEAMER = 'BEAMER WINDOW'
 
-    def __init__(self, video_output_name=None, width=config.WIDTH, height=config.HEIGHT):
+    def __init__(self, map_handler: MapHandler, ui_root: UIElement, config: ConfigManager, video_output_name=None):
 
         self.active_channel = LegoOutputChannel.CHANNEL_COLOR
         self.active_window = LegoOutputStream.WINDOW_NAME_DEBUG  # TODO: implement window handling
@@ -49,15 +54,36 @@ class LegoOutputStream:
         # create output windows
         cv2.namedWindow(LegoOutputStream.WINDOW_NAME_DEBUG, cv2.WINDOW_AUTOSIZE)
         cv2.namedWindow(LegoOutputStream.WINDOW_NAME_BEAMER, cv2.WINDOW_AUTOSIZE)
+        cv2.setMouseCallback(LegoOutputStream.WINDOW_NAME_BEAMER, LegoOutputStream.beamer_mouse_callback)
 
         if video_output_name:
             # Define the codec and create VideoWriter object. The output is stored in .avi file.
             # Define the fps to be equal to 10. Also frame size is passed.
-            self.video_handler = cv2.VideoWriter(video_output_name,
-                                                 cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'),
-                                                 10, (width, height))
+            self.video_handler = cv2.VideoWriter(
+                video_output_name,
+                cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'),
+                10,
+                (config.get('resolution', 'width'), config.get('resolution', 'height'))
+            )
         else:
             self.video_handler = None
+
+        # set ui_root and map handler
+        self.ui_root = ui_root
+        self.map_handler = map_handler
+
+        # setup button map
+        # reads corresponding keyboard input for action with config.get(...) and converts it to int with ord(...)
+        self.BUTTON_MAP = {
+            ord(config.get('button_map', 'DEBUG_CHANNEL_UP')): self.channel_up,
+            ord(config.get('button_map', 'DEBUG_CHANNEL_DOWN')): self.channel_down,
+            ord(config.get('button_map', 'MAP_PAN_UP')): partial(map_handler.invoke, MapActions.PAN_UP),
+            ord(config.get('button_map', 'MAP_PAN_DOWN')): partial(map_handler.invoke, MapActions.PAN_DOWN),
+            ord(config.get('button_map', 'MAP_PAN_LEFT')): partial(map_handler.invoke, MapActions.PAN_LEFT),
+            ord(config.get('button_map', 'MAP_PAN_RIGHT')): partial(map_handler.invoke, MapActions.PAN_RIGHT),
+            ord(config.get('button_map', 'MAP_ZOOM_IN')): partial(map_handler.invoke, MapActions.ZOOM_IN),
+            ord(config.get('button_map', 'MAP_ZOOM_OUT')): partial(map_handler.invoke, MapActions.ZOOM_OUT)
+        }
 
     # Write the frame into the file
     def write_to_file(self, frame):
@@ -74,6 +100,14 @@ class LegoOutputStream:
     # change the active channel, which is displayed in the window
     def set_active_channel(self, channel):
         self.active_channel = channel
+
+    def channel_up(self):
+        logger.info("changed active channel one up")
+        self.set_active_channel(self.active_channel.next())
+
+    def channel_down(self):
+        logger.info("changed active channel one down")
+        self.set_active_channel(self.active_channel.prev())
 
     # mark the candidate in given frame
     @staticmethod
@@ -101,15 +135,13 @@ class LegoOutputStream:
         cv2.circle(frame, tracked_lego_brick_position, 4, (0, 255, 0), -1)
 
     def update(self) -> bool:
+
+        self.redraw_beamer_image()
+
         key = cv2.waitKeyEx(1)
 
-        # simple switch of the channel
-        if key == 97:  # 'a'
-            logger.info("changed active channel one up")
-            self.set_active_channel(self.active_channel.next())
-        if key == 113:  # 'q'
-            logger.info("changed active channel one down")
-            self.set_active_channel(self.active_channel.prev())
+        if key in self.BUTTON_MAP:
+            self.BUTTON_MAP[key]()
 
         # Break with Esc  # FIXME: CG: keyboard might not be available - use signals?
         if key == 27:
@@ -117,8 +149,49 @@ class LegoOutputStream:
         else:
             return False
 
+    # redraws
+    def redraw_beamer_image(self):
+
+        if MapHandler.MAP_REFRESHED or UIElement.UI_REFRESHED:
+            frame = self.map_handler.get_frame()
+            self.ui_root.draw(frame)
+            # render all mouse placed bricks
+            for brick in MOUSE_BRICKS:
+                pos = np.array((brick.centroid_x, brick.centroid_y))
+                half_size = np.array((MOUSE_BRICK_SIZE, MOUSE_BRICK_SIZE))
+                cv2.rectangle(frame, tuple(pos - half_size), tuple(pos + half_size), (0, 255, 0), cv2.FILLED)
+
+            cv2.imshow(LegoOutputStream.WINDOW_NAME_BEAMER, frame)
+
+            MapHandler.MAP_REFRESHED = False
+            UIElement.UI_REFRESHED = False
+
     # closing the outputstream if it is defined
     def close(self):
         cv2.destroyAllWindows()
         if self.video_handler:
             self.video_handler.release()
+
+    @staticmethod
+    def beamer_mouse_callback(event, x, y, flags, param):
+        mouse_pos = np.array((x, y))
+        UIElement.UI_REFRESHED = True
+
+        if event == cv2.EVENT_LBUTTONDOWN or event == cv2.EVENT_RBUTTONDOWN:
+            for brick in MOUSE_BRICKS:
+                pos = np.array((brick.centroid_x, brick.centroid_y))
+
+                # if mouse is in radius 5 to the brick remove it and stop
+                if np.linalg.norm(pos - mouse_pos) < MOUSE_BRICK_SIZE:
+                    MOUSE_BRICKS.remove(brick)
+
+                    logging.info('removed brick')
+                    logging.info('{} bricks remaining'.format(len(MOUSE_BRICKS)))
+                    return
+
+            # if mouse is on no brick create a new one
+            brick = LegoBrick(x, y, LegoShape.SQUARE_BRICK, LegoColor.BLUE_BRICK)
+            MOUSE_BRICKS.append(brick)
+
+            logging.info('added brick at {}'.format(mouse_pos))
+            logging.info('{} bricks on map'.format(len(MOUSE_BRICKS)))

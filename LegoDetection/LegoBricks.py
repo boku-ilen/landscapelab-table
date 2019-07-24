@@ -30,6 +30,7 @@ class LegoStatus(Enum):
     INTERNAL_BRICK = 0
     EXTERNAL_BRICK = 1
     CANDIDATE_BRICK = 2
+    OUTDATED_BRICK = 3
 
 
 # this class represents a lego brick and holds related properties

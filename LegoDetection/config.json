@@ -26,5 +26,35 @@
 
   "qr_code": {
     "threshold": 140
+  },
+
+  "qgis_interaction": {
+    "QGIS_IP": "127.0.0.1",
+    "QGIS_READ_PORT": 5005,
+    "LEGO_READ_PORT": 5006,
+    "UDP_BUFFER_SIZE": 1024,
+    "QGIS_IMAGE_PATH": "E:/Users/rotzr/Documents/Desktoperweiterungen/desktop/Arbeit/BOKU_2018/TestProjekte/QGIS_Remote/outputImage.png",
+    "UPDATE_KEYWORD": "update ",
+    "RENDER_KEYWORD": "render "
+  },
+
+  "button_map": {
+    "MAP_PAN_UP": "w",
+    "MAP_PAN_DOWN": "s",
+    "MAP_PAN_LEFT": "a",
+    "MAP_PAN_RIGHT": "d",
+    "MAP_ZOOM_IN": "q",
+    "MAP_ZOOM_OUT": "e",
+    "DEBUG_CHANNEL_UP": "r",
+    "DEBUG_CHANNEL_DOWN": "f"
+  },
+
+  "map_settings": {
+    "start_extent": [
+      16.31177944684454, 48.30538963724319,
+      16.403183681038215, 48.35604740559146
+    ],
+    "pan_distance": [0.1, 0.25, 0.5],
+    "zoom_strength": [0.2, 0.5, 0.9]
   }
 }

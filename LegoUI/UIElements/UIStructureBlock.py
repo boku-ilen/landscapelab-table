@@ -1,4 +1,4 @@
-from LegoDetection.Tracking.LegoBrick import LegoBrick
+from LegoBricks import LegoBrick
 from LegoUI.UIElements.UIElement import UIElement
 from typing import Tuple
 import numpy as np

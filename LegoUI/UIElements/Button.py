@@ -1,8 +1,7 @@
-from LegoUI.UIElements.UIElement import UIActionType
+from LegoUI.UIElements.UIElement import UIActionType, UIElement
 from LegoUI.UIElements.UIStructureBlock import UIStructureBlock
-from LegoDetection.Tracking.LegoBrick import LegoBrick
+from LegoBricks import LegoBrick, LegoStatus
 from typing import Callable, Tuple, Dict
-import numpy as np
 import cv2 as cv
 import logging
 
@@ -52,10 +51,11 @@ class Button(UIStructureBlock):
         if self.visible:
             x, y = (brick.centroid_x, brick.centroid_y)
 
-            if self.pos_on_block(x, y):
+            if self.pos_on_block(x, y) and brick.status == LegoStatus.CANDIDATE_BRICK:
 
                 if not self.pressed:
                     self.call(UIActionType.PRESS, brick)
+                    UIElement.UI_REFRESHED = True
                 else:
                     self.call(UIActionType.HOLD, brick)
 
@@ -67,15 +67,16 @@ class Button(UIStructureBlock):
         return False
 
     # call once all bricks in a frame have been processed so that e.g. buttons can call their release action
-    def finished_checking(self):
+    def ui_tick(self):
 
         # if button was pressed until now but has not been pressed this frame it now is released
         if self.pressed and not self.pressed_once:
             self.pressed = False
+            UIElement.UI_REFRESHED = True
             self.call(UIActionType.RELEASE, None)
 
         self.pressed_once = False
-        super().finished_checking()
+        super().ui_tick()
 
     # calls a callback function by action type
     def call(self, action_type: UIActionType, brick):

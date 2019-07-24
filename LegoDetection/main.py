@@ -114,8 +114,7 @@ class Main:
                 self.output_stream.write_to_channel(LegoOutputChannel.CHANNEL_COLOR, color_image)
 
                 # Get the distance to the board (to the middle of the frame)
-                # Check the distance until board is detected (in case the camera position changed)
-                if not board_distance or not all_board_corners_found:
+                if not board_distance:
                     board_distance = self.input_stream.get_distance_to_table()
 
                 # If map_id and location coordinates are available, compute board coordinates

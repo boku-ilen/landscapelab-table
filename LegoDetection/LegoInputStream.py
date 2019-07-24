@@ -29,7 +29,7 @@ class LegoInputStream:
         self.pipeline = rs.pipeline()
         self.realsense_config = rs.config()
 
-        # Initialize the resolution
+        # Get the resolution from config file
         self.width = config.get("resolution", "width")
         self.height = config.get("resolution", "height")
 

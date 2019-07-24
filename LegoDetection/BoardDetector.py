@@ -1,5 +1,4 @@
 import pyzbar.pyzbar as pyzbar
-import config
 import cv2
 import numpy as np
 import math
@@ -20,7 +19,7 @@ CLIP = 0.1
 # the board related to the video stream
 class BoardDetector:
 
-    def __init__(self, threshold_qrcode, output_stream):
+    def __init__(self, config, threshold_qrcode, output_stream):
 
         # Threshold for finding QR-Codes
         # To change the threshold use an optional parameter
@@ -42,6 +41,10 @@ class BoardDetector:
 
         # ID of the map (metadata read from the code)
         self.map_id = None
+
+        # Get the resolution from config file
+        self.frame_width = config.get("resolution", "width")
+        self.frame_height = config.get("resolution", "height")
 
     # Compute pythagoras value
     @staticmethod
@@ -357,7 +360,7 @@ class BoardDetector:
             #    self.board_detector.rectify(clipped_color_image, board_corners)
 
             # Set ROI to black and add only the rectified board, where objects are searched
-            region_of_interest[0:config.HEIGHT, 0:config.WIDTH] = [0, 0, 0]
+            region_of_interest[0:self.frame_height, 0:self.frame_width] = [0, 0, 0]
             region_of_interest[0:self.board_size_height, 0:self.board_size_width] = rectified_image
 
             # TODO: else: include positions in the frame?

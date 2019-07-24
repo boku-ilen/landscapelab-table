@@ -63,7 +63,7 @@ class Main:
         self.input_stream = LegoInputStream(self.config, usestream=self.used_stream)
 
         # Initialize board detection
-        self.board_detector = BoardDetector(threshold_qrcode, self.output_stream)
+        self.board_detector = BoardDetector(self.config, threshold_qrcode, self.output_stream)
 
         # Initialize server communication class
         self.server = ServerCommunication(self.config, self.board_detector)

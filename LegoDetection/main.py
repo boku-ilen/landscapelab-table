@@ -1,4 +1,3 @@
-import argparse
 import logging.config
 import numpy as np
 
@@ -11,6 +10,7 @@ from LegoUI.UIElements.UISetup import setup_ui
 from ServerCommunication import ServerCommunication
 from Tracker import Tracker
 from ConfigManager import ConfigManager
+from ParameterManager import ParameterManager
 from LegoUI.ListenerThread import ListenerThread
 
 
@@ -33,27 +33,9 @@ class Main:
         # Initialize config manager
         self.config = ConfigManager()
 
-        # Parse optional parameters
-        # FIXME: CG: parameters have to be handled in the main method?
-        parser = argparse.ArgumentParser()
-        parser.add_argument("--threshold", type=int,
-                            help="set the threshold for black-white image to recognize qr-codes")
-        parser.add_argument("--usestream", help="path and name of the file with saved .bag stream")
-        parser.add_argument("--ip", help="local ip, if other than localhost")
-        parser_arguments = parser.parse_args()
-
-        if parser_arguments.threshold is not None:
-            threshold_qrcode = parser_arguments.threshold
-        else:
-            threshold_qrcode = self.config.get("qr_code", "threshold")
-
-        if parser_arguments.usestream is not None:
-            self.used_stream = parser_arguments.usestream
-        else:
-            self.used_stream = None
-
-        if parser_arguments.ip is not None:
-            self.config.set("server", "ip", parser_arguments.ip)
+        # Initialize parameter manager and parse arguments
+        self.parser = ParameterManager(self.config)
+        self.used_stream = self.parser.used_stream
 
         # initialize map handler and ui
         self.map_handler = MapHandler(self.config)
@@ -64,7 +46,7 @@ class Main:
         self.input_stream = LegoInputStream(self.config, usestream=self.used_stream)
 
         # Initialize board detection
-        self.board_detector = BoardDetector(self.config, threshold_qrcode, self.output_stream)
+        self.board_detector = BoardDetector(self.config, self.config.get("qr_code", "threshold"), self.output_stream)
 
         # Initialize server communication class
         self.server = ServerCommunication(self.config, self.board_detector)
@@ -81,9 +63,6 @@ class Main:
 
     # Run lego bricks detection and tracking code
     def run(self):
-
-        # Initialize the distance to the board
-        board_distance = 0
 
         # Initialize board detection flag
         all_board_corners_found = False

@@ -20,17 +20,13 @@ BRICK_LABEL_OFFSET = 10
 
 class LegoOutputChannel(Enum):
 
-    CHANNEL_SHAPE_DETECTION = 1
-    CHANNEL_BOARD_DETECTION = 2
-    CHANNEL_ROI = 3
-    CHANNEL_COLOR = 4
-    CHANNEL_CLIPPED_COLOR = 5
-    CHANNEL_WHITE_BLACK = 6
+    CHANNEL_COLOR_DETECTION = 1
+    CHANNEL_WHITE_BLACK = 2
 
     def next(self):
         value = self.value + 1
-        if value > 6:
-            value = 6
+        if value > 2:
+            value = 2
         return LegoOutputChannel(value)
 
     def prev(self):
@@ -48,7 +44,7 @@ class LegoOutputStream:
 
     def __init__(self, map_handler: MapHandler, ui_root: UIElement, config: ConfigManager, video_output_name=None):
 
-        self.active_channel = LegoOutputChannel.CHANNEL_COLOR
+        self.active_channel = LegoOutputChannel.CHANNEL_COLOR_DETECTION
         self.active_window = LegoOutputStream.WINDOW_NAME_DEBUG  # TODO: implement window handling
 
         # create output windows

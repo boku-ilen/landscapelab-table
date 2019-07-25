@@ -329,6 +329,8 @@ class BoardDetector:
             for j in range(0, n):
                 cv2.line(frame, hull[j], hull[(j + 1) % n], (255, 0, 0), 3)
 
+    # FIXME: fix the method and use it
+    # Analyze only objects on the board distance
     def clip_board(self, color_image, depth_image_3d):
 
         # clipping the color image to the area with the right distance values
@@ -344,7 +346,6 @@ class BoardDetector:
         # clipped_color_image = np.where((depth_image_3d > clip_dist * (1 + CLIP)).all()
         #                               or (depth_image_3d < clip_dist * (1 - CLIP)).all(),
         #                               0, color_image)
-        self.output_stream.write_to_channel(LegoOutputChannel.CHANNEL_CLIPPED_COLOR, clipped_color_image)
 
         return clipped_color_image
 

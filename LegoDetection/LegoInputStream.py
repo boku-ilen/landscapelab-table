@@ -96,7 +96,6 @@ class LegoInputStream:
 
     def get_distance_to_table(self):
         board_distance = self.aligned_depth_frame.get_distance(int(self.width/2), int(self.height/2)) / self.depth_scale
-        logger.info("Distance to the board is: {}".format(board_distance))
 
         return board_distance
 

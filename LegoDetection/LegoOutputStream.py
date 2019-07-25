@@ -12,10 +12,17 @@ import logging
 
 
 # enable logger
-
 logger = logging.getLogger(__name__)
 
+# drawing constants
 BRICK_LABEL_OFFSET = 10
+BLUE = (255, 0, 0)
+GREEN = (0, 255, 0)
+FONT_SIZE = 0.4
+FONT_THICKNESS = 1
+CONTOUR_THICKNESS = 3
+IDX_DRAW_ALL = -1
+RADIUS = 3
 
 
 class LegoOutputChannel(Enum):
@@ -108,27 +115,26 @@ class LegoOutputStream:
     # mark the candidate in given frame
     @staticmethod
     def mark_candidates(frame, candidate_contour):
-        cv2.drawContours(frame, [candidate_contour], -1, (255, 0, 0), 3)
+        cv2.drawContours(frame, [candidate_contour], IDX_DRAW_ALL, BLUE, CONTOUR_THICKNESS)
 
     # we label the identified lego bricks in the stream
     @staticmethod
     def labeling(frame, tracked_lego_brick: LegoBrick):
 
-        # FIXME: extract constants! and change array  [][] access into named attribute access
         # Draw lego bricks IDs
         text = "ID {}".format(tracked_lego_brick.asset_id)
         tracked_lego_brick_position = tracked_lego_brick.centroid_x, tracked_lego_brick.centroid_y
         cv2.putText(frame, text, (tracked_lego_brick.centroid_x - BRICK_LABEL_OFFSET,
                                   tracked_lego_brick.centroid_y - BRICK_LABEL_OFFSET),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 0, 0), 1)
+                    cv2.FONT_HERSHEY_SIMPLEX, FONT_SIZE, BLUE, FONT_THICKNESS)
 
         # Draw lego bricks contour names
         # FIXME: put other caption like id of the lego brick
         cv2.putText(frame, tracked_lego_brick.status.name, tracked_lego_brick_position,
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 0, 0), 1)
+                    cv2.FONT_HERSHEY_SIMPLEX, FONT_SIZE, BLUE, FONT_THICKNESS)
 
         # Draw lego bricks centroid points
-        cv2.circle(frame, tracked_lego_brick_position, 4, (0, 255, 0), -1)
+        cv2.circle(frame, tracked_lego_brick_position, RADIUS, GREEN, cv2.FILLED)
 
     def update(self) -> bool:
 
@@ -155,7 +161,7 @@ class LegoOutputStream:
             for brick in MOUSE_BRICKS:
                 pos = np.array((brick.centroid_x, brick.centroid_y))
                 half_size = np.array((MOUSE_BRICK_SIZE, MOUSE_BRICK_SIZE))
-                cv2.rectangle(frame, tuple(pos - half_size), tuple(pos + half_size), (0, 255, 0), cv2.FILLED)
+                cv2.rectangle(frame, tuple(pos - half_size), tuple(pos + half_size), GREEN, cv2.FILLED)
 
             cv2.imshow(LegoOutputStream.WINDOW_NAME_BEAMER, frame)
 

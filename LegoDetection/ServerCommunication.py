@@ -95,13 +95,11 @@ class ServerCommunication:
         logger.debug("Detection recalculated: coordinates:{}".format(coordinates))
 
         # Send request creating lego instance and save the response
-        lego_instance_response = requests.get(self.prefix + self.ip + self.create_asset + str(lego_brick.asset_id)
-                                + "/" + str(coordinates[0]) + "/" + str(coordinates[1]))
-        logger.debug(self.prefix + self.ip + self.create_asset + str(lego_brick.asset_id)
+        # TODO: instead of color.value use a constant for type (shape & color)
+        logger.debug(self.prefix + self.ip + self.create_asset + str(lego_brick.color.value)
                      + "/" + str(coordinates[0]) + "/" + str(coordinates[1]))
-
-        # Initialize values given in response
-        lego_instance = None
+        lego_instance_response = requests.get(self.prefix + self.ip + self.create_asset + str(lego_brick.color.value)
+                                + "/" + str(coordinates[0]) + "/" + str(coordinates[1]))
 
         # Check if status code is 200
         if self.check_status_code_200(lego_instance_response.status_code):
@@ -111,13 +109,11 @@ class ServerCommunication:
 
             # Match given instance id with lego brick id
             lego_instance_creation_success = lego_instance_response_text.get("creation_success")
-            lego_instance = lego_instance_response_text.get("assetpos_id")
-            logger.debug("creation_success: {}, assetpos_id: {}"
-                         .format(lego_instance_creation_success, lego_instance))
 
-        # Return lego instance (id) given from server,
-        # None if no instance created
-        return lego_instance
+            # Get asset_id in response
+            lego_brick.asset_id = lego_instance_response_text.get("assetpos_id")
+            logger.debug("creation_success: {}, assetpos_id: {}"
+                         .format(lego_instance_creation_success, lego_brick.asset_id))
 
     # Remove lego instance
     def remove_lego_instance(self, lego_instance):

@@ -118,9 +118,10 @@ class ServerCommunication:
     # Remove lego instance
     def remove_lego_instance(self, lego_instance):
 
-        # Send a request to remove lego instance in 3D
-        logger.debug(self.prefix + self.ip + self.remove_asset + str(lego_instance))
-        lego_remove_instance_response = requests.get(self.prefix + self.ip + self.remove_asset + str(lego_instance))
+        # Send a request to remove lego instance
+        logger.debug(self.prefix + self.ip + self.remove_asset + str(lego_instance.asset_id))
+        lego_remove_instance_response = requests.get(self.prefix + self.ip +
+                                                     self.remove_asset + str(lego_instance.asset_id))
         logger.debug("remove instance {}, response {}".format(lego_instance, lego_remove_instance_response))
 
     # Return a dictionary with coordinates of board corners

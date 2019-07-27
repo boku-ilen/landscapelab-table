@@ -49,7 +49,7 @@ class Main:
         self.board_detector = BoardDetector(self.config, self.config.get("qr_code", "threshold"), self.output_stream)
 
         # Initialize server communication class
-        self.server = ServerCommunication(self.config, self.board_detector)
+        self.server = ServerCommunication(self.config)
 
         # Initialize the QGIS listener Thread
         self.listener_thread = ListenerThread(self.config, self.map_handler)

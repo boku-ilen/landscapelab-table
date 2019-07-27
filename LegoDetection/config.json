@@ -19,6 +19,11 @@
     "height": 720
   },
 
+  "board": {
+    "width": "None",
+    "height": "None"
+  },
+
   "qr_code": {
     "threshold": 140
   },

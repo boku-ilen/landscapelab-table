@@ -21,6 +21,8 @@ class BoardDetector:
 
     def __init__(self, config, threshold_qrcode, output_stream):
 
+        self.config = config
+
         # Threshold for finding QR-Codes
         # To change the threshold use an optional parameter
         self.threshold_qrcode = threshold_qrcode
@@ -43,8 +45,8 @@ class BoardDetector:
         self.map_id = None
 
         # Get the resolution from config file
-        self.frame_width = config.get("resolution", "width")
-        self.frame_height = config.get("resolution", "height")
+        self.frame_width = self.config.get("resolution", "width")
+        self.frame_height = self.config.get("resolution", "height")
 
     # Compute pythagoras value
     @staticmethod
@@ -290,22 +292,33 @@ class BoardDetector:
         source_corners[3] = corners[3]
 
         # Compute width and height of the board
-        min_x, min_y, max_x, max_y = self.find_min_max(corners)
-        board_size_width = max_x - min_x
-        board_size_height = max_y - min_y
+        self.compute_board_size(corners)
 
         # Construct destination points which will be used to map the board to a top-down view
         destination_corners = np.array([
             [0, 0],
-            [board_size_width - 1, 0],
-            [board_size_width - 1, board_size_height - 1],
-            [0, board_size_height - 1]], dtype="float32")
+            [self.board_size_width - 1, 0],
+            [self.board_size_width - 1, self.board_size_height - 1],
+            [0, self.board_size_height - 1]], dtype="float32")
 
         # Calculate the perspective transform matrix
         matrix = cv2.getPerspectiveTransform(source_corners, destination_corners)
-        rectified_image = cv2.warpPerspective(image, matrix, (board_size_width, board_size_height))
+        rectified_image = cv2.warpPerspective(image, matrix, (self.board_size_width, self.board_size_height))
 
-        return rectified_image, board_size_height, board_size_width
+        return rectified_image
+
+    # Compute board size and set in configs
+    def compute_board_size(self, corners):
+
+        min_x, min_y, max_x, max_y = self.find_min_max(corners)
+
+        # Compute board size
+        self.board_size_width = max_x - min_x
+        self.board_size_height = max_y - min_y
+
+        # Set board size in configs
+        self.config.set("board", "width", self.board_size_width)
+        self.config.set("board", "height", self.board_size_height)
 
     # Display QR-codes location
     @staticmethod
@@ -349,24 +362,20 @@ class BoardDetector:
 
         return clipped_color_image
 
-    def rectify_image(self, region_of_interest, color_image, ):
+    # Compute region of interest (board area) from the color image
+    def rectify_image(self, region_of_interest, color_image):
+
         # Check if found QR-code markers positions are included in the frame size
         if all([0, 0] < corners < [color_image.shape[1], color_image.shape[0]]
                for corners in self.board_corners):
 
             # Eliminate perspective transformations and show only the board
-            rectified_image, self.board_size_height, self.board_size_width = \
-                self.rectify(color_image, self.board_corners)
-            # rectified_image, self.board_size_height, self.board_size_width = \
-            #    self.board_detector.rectify(clipped_color_image, board_corners)
+            rectified_image = self.rectify(color_image, self.board_corners)
+            # TODO: use clipped color image
+            # rectified_image =  self.board_detector.rectify(clipped_color_image, board_corners)
 
             # Set ROI to black and add only the rectified board, where objects are searched
             region_of_interest[0:self.frame_height, 0:self.frame_width] = [0, 0, 0]
             region_of_interest[0:self.board_size_height, 0:self.board_size_width] = rectified_image
 
-            # TODO: else: include positions in the frame?
-
         return region_of_interest
-
-    def get_board_size(self):
-        return self.board_size_width, self.board_size_height

@@ -59,6 +59,7 @@ class MapHandler:
             MapActions.ZOOM_OUT: partial(self.init_render, zoom_out_modifier, zoom_strength),
         }
 
+    # TODO: maybe set here extent in config manager -> config_data?
     # reloads the viewport image
     def refresh(self, extent):
         unused_slot = (self.current_image + 1) % 2
@@ -68,6 +69,7 @@ class MapHandler:
         self.current_extent = extent
         MapHandler.MAP_REFRESHED = True
 
+    # TODO: maybe use extent_width & extent_height?
     # modifies the current extent and requests an updated render image
     # param brick gets ignored so that UIElements can call the function
     def init_render(self, extent_modifier, strength, brick):

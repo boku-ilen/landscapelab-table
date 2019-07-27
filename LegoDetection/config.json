@@ -14,11 +14,6 @@
     "remove": "/landscapelab/assetpos/remove/"
   },
 
-  "location": {
-    "get": "/landscapelab/location/map/",
-    "extension": ".json"
-  },
-
   "resolution": {
     "width": 1280,
     "height": 720
@@ -53,6 +48,12 @@
     "start_extent": [
       16.31177944684454, 48.30538963724319,
       16.403183681038215, 48.35604740559146
+    ],
+    "extent_width":[
+      48.30538963724319, 48.35604740559146
+    ],
+    "extent_height":[
+      16.31177944684454, 16.403183681038215
     ],
     "pan_distance": [0.1, 0.25, 0.5],
     "zoom_strength": [0.2, 0.5, 0.9]

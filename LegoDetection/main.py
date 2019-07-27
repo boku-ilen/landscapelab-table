@@ -102,14 +102,6 @@ class Main:
                     # Show the whole color image until the board detected
                     self.output_stream.write_to_channel(LegoOutputChannel.CHANNEL_COLOR_DETECTION, color_image)
 
-                # If map_id and location coordinates are available, compute board coordinates
-                # FIXME: this has to be abstracted as the implementation may change if the beamer variant is used
-                # if self.board_detector.map_id is not None and self.server.location_coordinates is None:
-
-                    # Get location of the map from the server,
-                    # compute board coordinates and save them in config file
-                    # self.server.compute_board_coordinates(self.board_detector.map_id)
-
                 # If the board is detected take only the region
                 # of interest and start lego bricks detection
                 else:

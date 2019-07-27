@@ -115,7 +115,7 @@ class Tracker:
 
             # if the extend changed, set external bricks as outdated
             self.extend_changed = self.config.get("map_settings", "extend_changed")
-            if self.extend_changed and brick.status == LegoStatus.EXTERNAL_BRICK:
+            if self.extend_changed is True and brick.status == LegoStatus.EXTERNAL_BRICK:
 
                 # change status of lego bricks to outdated
                 brick.status = LegoStatus.OUTDATED_BRICK

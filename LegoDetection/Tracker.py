@@ -21,13 +21,18 @@ class Tracker:
     min_appeared: int = None
     max_disappeared: int = None
 
-    def __init__(self, server_communicator, ui_root: UIElement, min_distance=MIN_DISTANCE,
+    def __init__(self, config, server_communicator, ui_root: UIElement, min_distance=MIN_DISTANCE,
                  min_appeared=MIN_APPEARED, max_disappeared=MAX_DISAPPEARED):
+        self.config = config
         self.server_communicator = server_communicator
         self.ui_root = ui_root
         self.min_distance = min_distance
         self.min_appeared = min_appeared
         self.max_disappeared = max_disappeared
+
+        # Initialize a flag for
+        # changes in the map extent
+        self.extend_changed = False
 
     def update(self, lego_bricks_candidates: typing.List[LegoBrick]) -> typing.List[LegoBrick]:
 
@@ -108,6 +113,16 @@ class Tracker:
                 if brick.status == LegoStatus.INTERNAL_BRICK:
                     brick.status = LegoStatus.OUTDATED_BRICK
 
+            # if the extend changed, set external bricks as outdated
+            self.extend_changed = self.config.get("map_settings", "extend_changed")
+            if self.extend_changed and brick.status == LegoStatus.EXTERNAL_BRICK:
+
+                # change status of lego bricks to outdated
+                brick.status = LegoStatus.OUTDATED_BRICK
+
+                # set the flag back
+                self.config.set("map_settings", "extend_changed", "False")
+
         # add the qualified candidates to the confirmed list and do ui update for them
         for candidate, amount in self.tracked_candidates.items():
 
@@ -119,7 +134,9 @@ class Tracker:
                 else:
                     candidate.status = LegoStatus.EXTERNAL_BRICK
 
+                # add a new lego brick to the confirmed lego bricks list
                 self.confirmed_bricks.append(candidate)
+
                 # if the brick is associated with an asset also send a create request to the server
                 if candidate.status == LegoStatus.EXTERNAL_BRICK:
                     self.server_communicator.create_lego_instance(candidate)

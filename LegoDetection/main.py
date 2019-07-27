@@ -56,7 +56,7 @@ class Main:
         self.listener_thread.start()
 
         # Initialize the centroid tracker
-        self.tracker = Tracker(self.server, ui_root)
+        self.tracker = Tracker(self.config, self.server, ui_root)
 
         # initialize the lego detector
         self.shape_detector = ShapeDetector()

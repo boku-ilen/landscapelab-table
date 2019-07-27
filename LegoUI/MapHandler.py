@@ -59,7 +59,7 @@ class MapHandler:
             MapActions.ZOOM_OUT: partial(self.init_render, zoom_out_modifier, zoom_strength),
         }
 
-    # TODO: maybe set here extent in config manager -> config_data?
+    # TODO: maybe use config manager to set extent and extend_changed flag to True
     # reloads the viewport image
     def refresh(self, extent):
         unused_slot = (self.current_image + 1) % 2

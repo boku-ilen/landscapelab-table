@@ -41,9 +41,6 @@ class BoardDetector:
         # Array with all polygons of QR-Codes for board corners
         self.all_codes_polygons_points = [None, None, None, None]
 
-        # ID of the map (metadata read from the code)
-        self.map_id = None
-
         # Get the resolution from config file
         self.frame_width = self.config.get("resolution", "width")
         self.frame_height = self.config.get("resolution", "height")
@@ -147,14 +144,6 @@ class BoardDetector:
 
         return corner1, corner2
 
-    # Read metadata save at the end of the QR-Code data -> map_id
-    @staticmethod
-    def read_metadata_id(code_data):
-
-        # Split code data of the form: 'C_BL_1'
-        map_id = code_data.split('_')[2]
-        return map_id
-
     # Save four polygons of QR-Codes decoded over couple of frames and read metadata
     def read_qr_codes(self, decoded_codes):
 
@@ -163,10 +152,6 @@ class BoardDetector:
 
             # Decode binary data which is saved in QR-code
             code_data = code.data.decode()
-
-            # If map_id is not known yet
-            if self.map_id is None:
-                self.map_id = self.read_metadata_id(code_data)
 
             # If data in array with top left, top right, bottom right, bottom left
             # data is not set yet, add the new found data

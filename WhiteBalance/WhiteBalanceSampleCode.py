@@ -15,6 +15,7 @@ img_hsv = cv.cvtColor(img, cv.COLOR_BGR2HSV)
 # https://pippin.gimp.org/image-processing/chapter-automaticadjustments.html
 def white_balance(image):
 
+    # FIXME: all values are in 0-255
     # Convert to CIE L*a*b* color space
     # L* for the luminance from black (0) to white (100)
     # a* from from -128 (a bluish green) to +127 (magenta)
@@ -29,6 +30,9 @@ def white_balance(image):
     L = result[:, :, 0]
     a = result[:, :, 1]
     b = result[:, :, 2]
+    print("L:", np.min(result[:, :, 0]), np.max(result[:, :, 0]))
+    print("a:", np.min(result[:, :, 1]), np.max(result[:, :, 1]))
+    print("b:", np.min(result[:, :, 2]), np.max(result[:, :, 2]))
 
     # Adjust a and b color values
     # scale the chroma distance shifted according to amount of
@@ -78,9 +82,9 @@ def apply_brightness_contrast(image, brightness=0, contrast=0):
     return result
 
 
-def remap(v, min, max):
+def remap(value, min, max, scale):
 
-    result = ((v-min) * 255.0)/(max-min)
+    result = ((value - min) * scale) / (max - min)
     return result
 
 
@@ -88,6 +92,7 @@ def remap(v, min, max):
 def stretch_bgr(image):
 
     result = image.copy()
+    bgr_scale = 255.0
 
     # Save min/max bgr values
     min_b = np.min(result[:, :, 0])
@@ -97,18 +102,18 @@ def stretch_bgr(image):
     min_r = np.min(result[:, :, 2])
     max_r = np.max(result[:, :, 2])
 
-    # TODO: rewrite without loops if possible
-    for y in range(image.shape[0]):
-        for x in range(image.shape[1]):
-            result[y, x, 0] = remap(result[y, x, 0], min_b, max_b)
-            result[y, x, 1] = remap(result[y, x, 1], min_g, max_g)
-            result[y, x, 2] = remap(result[y, x, 2], min_r, max_r)
+    result[:, :, 0] = remap(result[:, :, 0], min_b, max_b, bgr_scale)
+    result[:, :, 1] = remap(result[:, :, 1], min_g, max_g, bgr_scale)
+    result[:, :, 2] = remap(result[:, :, 2], min_r, max_r, bgr_scale)
 
     return result
 
 
 # FIXME: not working yet as supposed
+# Stretch luminance
 def stretch_luminance(image):
+
+    l_scale = 255.0
 
     # Convert to CIE L*a*b* color space
     result = cv.cvtColor(image, cv.COLOR_BGR2LAB)
@@ -116,11 +121,17 @@ def stretch_luminance(image):
     # Save min/max L values
     min_l = np.min(result[:, :, 0])
     max_l = np.max(result[:, :, 0])
+    print("stretch_luminance:", min_l, max_l)
 
     # Stretch values
-    for y in range(image.shape[0]):
-        for x in range(image.shape[1]):
-            result[y, x, 0] = ((result[y, x, 0] - min_l) * 100.0)/(max_l - min_l)
+    result[:, :, 0] = remap(result[:, :, 0], min_l, max_l, l_scale)
+
+    min_l = np.min(result[:, :, 0])
+    max_l = np.max(result[:, :, 0])
+    print("stretched_luminance:", min_l, max_l)
+
+    # Convert back to BGR
+    result = cv.cvtColor(result, cv.COLOR_LAB2BGR)
 
     return result
 
@@ -130,13 +141,14 @@ contrasted = apply_brightness_contrast(img, 80, 80)
 white_balance_output = np.hstack((img, white_balance(contrasted)))
 
 stretch_bgr_output = np.hstack((img, stretch_bgr(img)))
-# stretch_luminance_output = np.hstack((img, stretch_luminance(img)))
+stretch_luminance = stretch_luminance(img)
+stretch_luminance_output = np.hstack((img, stretch_luminance))
 
 # Show output
 # cv.imshow('Contrasted', contrasted)
-cv.imshow('Balance', white_balance_output)
+cv.imshow('Contrasted_balance', white_balance_output)
 cv.imshow('Stretch_bgr', stretch_bgr_output)
-# cv.imshow('Stretch_luminance', stretch_luminance_output)
+cv.imshow('Stretch_luminance', stretch_luminance_output)
 
 cv.waitKey(0)
 cv.destroyAllWindows()

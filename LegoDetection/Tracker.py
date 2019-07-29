@@ -13,6 +13,8 @@ MAX_DISAPPEARED = 40
 
 class Tracker:
 
+    BRICKS_REFRESHED = False
+
     server_communicator = None
     tracked_candidates = {}  # we hold candidates which are not confirmed yet for some ticks
     confirmed_bricks: typing.List[LegoBrick] = []
@@ -89,6 +91,7 @@ class Tracker:
 
                 # remove the disappeared elements from the confirmed list
                 self.confirmed_bricks.remove(brick)
+                Tracker.BRICKS_REFRESHED = True
 
                 # if the brick is associated with an asset also send a remove request to the server
                 if brick.status == LegoStatus.EXTERNAL_BRICK:
@@ -136,6 +139,7 @@ class Tracker:
 
                 # add a new lego brick to the confirmed lego bricks list
                 self.confirmed_bricks.append(candidate)
+                Tracker.BRICKS_REFRESHED = True
 
                 # if the brick is associated with an asset also send a create request to the server
                 if candidate.status == LegoStatus.EXTERNAL_BRICK:

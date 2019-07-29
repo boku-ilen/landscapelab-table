@@ -37,26 +37,26 @@ class Main:
         self.parser = ParameterManager(self.config)
         self.used_stream = self.parser.used_stream
 
+        # Initialize server communication class
+        self.server = ServerCommunication(self.config)
+
         # initialize map handler and ui
         self.map_handler = MapHandler(self.config)
         ui_root = setup_ui(self.map_handler.action_map)
 
+        # Initialize the centroid tracker
+        self.tracker = Tracker(self.config, self.server, ui_root)
+
         # initialize the input and output stream
-        self.output_stream = LegoOutputStream(self.map_handler, ui_root, self.config)
+        self.output_stream = LegoOutputStream(self.map_handler, ui_root, self.tracker, self.config)
         self.input_stream = LegoInputStream(self.config, usestream=self.used_stream)
 
         # Initialize board detection
         self.board_detector = BoardDetector(self.config, self.config.get("qr_code", "threshold"), self.output_stream)
 
-        # Initialize server communication class
-        self.server = ServerCommunication(self.config)
-
         # Initialize the QGIS listener Thread
         self.listener_thread = ListenerThread(self.config, self.map_handler)
         self.listener_thread.start()
-
-        # Initialize the centroid tracker
-        self.tracker = Tracker(self.config, self.server, ui_root)
 
         # initialize the lego detector
         self.shape_detector = ShapeDetector()

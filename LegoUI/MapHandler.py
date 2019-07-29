@@ -15,6 +15,9 @@ class MapHandler:
     MAP_REFRESHED = True
 
     def __init__(self, config: ConfigManager):
+
+        self.config = config
+
         # initialize two black images
         self.qgis_image = [
             np.zeros((500, 500, 3), np.uint8),
@@ -67,6 +70,7 @@ class MapHandler:
         self.qgis_image[unused_slot] = cv.imread(self.image_path, 1)
         self.current_image = unused_slot
         self.current_extent = extent
+        self.config.set("map_settings", "extent_changed", True)
         MapHandler.MAP_REFRESHED = True
 
     # TODO: maybe use extent_width & extent_height?

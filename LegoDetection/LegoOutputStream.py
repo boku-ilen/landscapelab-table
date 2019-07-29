@@ -1,6 +1,6 @@
 from enum import Enum
-
 import cv2
+from Tracker import Tracker
 from ConfigManager import ConfigManager
 from LegoUI.MapHandler import MapHandler
 from functools import partial
@@ -49,7 +49,14 @@ class LegoOutputStream:
     WINDOW_NAME_DEBUG = 'DEBUG WINDOW'
     WINDOW_NAME_BEAMER = 'BEAMER WINDOW'
 
-    def __init__(self, map_handler: MapHandler, ui_root: UIElement, config: ConfigManager, video_output_name=None):
+    MOUSE_BRICKS_REFRESHED = False
+
+    def __init__(self,
+                 map_handler: MapHandler,
+                 ui_root: UIElement,
+                 tracker: Tracker,
+                 config: ConfigManager,
+                 video_output_name=None):
 
         self.active_channel = LegoOutputChannel.CHANNEL_COLOR_DETECTION
         self.active_window = LegoOutputStream.WINDOW_NAME_DEBUG  # TODO: implement window handling
@@ -71,9 +78,10 @@ class LegoOutputStream:
         else:
             self.video_handler = None
 
-        # set ui_root and map handler
+        # set ui_root and map handler, create empty variable for tracker
         self.ui_root = ui_root
         self.map_handler = map_handler
+        self.tracker: Tracker = tracker
 
         # setup button map
         # reads corresponding keyboard input for action with config.get(...) and converts it to int with ord(...)
@@ -151,14 +159,17 @@ class LegoOutputStream:
         else:
             return False
 
-    # redraws
+    # redraws the beamer image
     def redraw_beamer_image(self):
 
-        if MapHandler.MAP_REFRESHED or UIElement.UI_REFRESHED:
+        if MapHandler.MAP_REFRESHED \
+                or UIElement.UI_REFRESHED \
+                or Tracker.BRICKS_REFRESHED \
+                or LegoOutputStream.MOUSE_BRICKS_REFRESHED:
             frame = self.map_handler.get_frame()
             self.ui_root.draw(frame)
             # render all mouse placed bricks
-            for brick in MOUSE_BRICKS:
+            for brick in MOUSE_BRICKS + self.tracker.confirmed_bricks:
                 pos = np.array((brick.centroid_x, brick.centroid_y))
                 half_size = np.array((MOUSE_BRICK_SIZE, MOUSE_BRICK_SIZE))
                 cv2.rectangle(frame, tuple(pos - half_size), tuple(pos + half_size), GREEN, cv2.FILLED)
@@ -177,13 +188,13 @@ class LegoOutputStream:
     @staticmethod
     def beamer_mouse_callback(event, x, y, flags, param):
         mouse_pos = np.array((x, y))
-        UIElement.UI_REFRESHED = True
+        LegoOutputStream.MOUSE_BRICKS_REFRESHED = True
 
         if event == cv2.EVENT_LBUTTONDOWN or event == cv2.EVENT_RBUTTONDOWN:
             for brick in MOUSE_BRICKS:
                 pos = np.array((brick.centroid_x, brick.centroid_y))
 
-                # if mouse is in radius 5 to the brick remove it and stop
+                # if mouse is in radius MOUSE_BRICK_SIZE to the brick remove it and return
                 if np.linalg.norm(pos - mouse_pos) < MOUSE_BRICK_SIZE:
                     MOUSE_BRICKS.remove(brick)
 

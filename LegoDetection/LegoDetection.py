@@ -28,12 +28,8 @@ MAX_SQ = 1.35
 MIN_REC = 0.2
 MAX_REC = 2.5
 
-# TODO: use only lower, upper arrays
-# Accepted HSV colors
-BLUE_MIN = (0.53, 0.33, 105)
-BLUE_MAX = (0.65, 1, 255)
-RED_MIN = (0.92, 0.40, 140)
-RED_MAX = (1, 1, 255)
+# FIXME: make it configurable ?
+KERNEL_SIZE = (3, 3)
 
 # TODO: make masks configurable ?
 masks_configuration = {
@@ -95,11 +91,6 @@ class ShapeDetector:
                         detected_color = color
                         break
 
-                # TODO: remove if the above method is sufficient (masks/lower, upper arrays)
-                if detected_color == LegoColor.UNKNOWN_COLOR:
-                    detected_color = self.check_color(centroid_x, centroid_y, frame)
-
-                # TODO: set color using mask
                 # Eliminate wrong colors contours
                 if detected_color == LegoColor.UNKNOWN_COLOR:
                     logger.debug("Don't draw -> wrong color")
@@ -175,45 +166,13 @@ class ShapeDetector:
         # Return the aspect ratio of two sides lengths of the rotated bounding box
         return ratio
 
-    # Compute the color name of the found lego brick
-    @staticmethod
-    # FIXME: this might be deprecated anyways?
-    def check_color(x, y, color_image) -> LegoColor:
-
-        # Calculate the mean color (RGB) in the middle of the found lego brick
-        color = cv2.mean(color_image[y:y+4, x:x+4])
-
-        # Change color in RGB to HSV
-        color_hsv = colorsys.rgb_to_hsv(color[2], color[1], color[0])
-        logger.debug("HSV: {}".format(color_hsv))
-
-        # Initialize the color name
-        color_name = LegoColor.UNKNOWN_COLOR
-
-        # Check if the color is red
-        # FIXME: CG: do this in a more generalized way to support more colors
-        if RED_MIN[0] <= color_hsv[0] <= RED_MAX[0] \
-                and RED_MIN[1] <= color_hsv[1] <= RED_MAX[1]\
-                and RED_MIN[2] <= color_hsv[2] <= RED_MAX[2]:
-            color_name = LegoColor.RED_BRICK
-
-        # Check if the color is blue
-        elif BLUE_MIN[0] <= color_hsv[0] <= BLUE_MAX[0]\
-                and BLUE_MIN[1] <= color_hsv[1] <= BLUE_MAX[1]\
-                and BLUE_MIN[2] <= color_hsv[2] <= BLUE_MAX[2]:
-            color_name = LegoColor.BLUE_BRICK
-
-        # Return the color name
-        return color_name
-
-    @staticmethod
-    def detect_contours(frame):
+    def detect_contours(self, frame):
 
         # Set red and blue mask
         frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
         # Do some morphological corrections (fill 'holes' in masks)
-        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))  # FIXME: make it configurable
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, KERNEL_SIZE)
 
         mask_colors = None
         color_masks = {}

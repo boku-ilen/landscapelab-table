@@ -195,8 +195,7 @@ class ShapeDetector:
                 mask_colors = mask_colors + dilate
             color_masks[mask_color] = mask_colors
 
-            if mask_color == LegoColor.RED_BRICK:
-                self.output_stream.write_to_channel(LegoOutputChannel.CHANNEL_MASKS, mask_colors)
+        self.output_stream.write_to_channel(LegoOutputChannel.CHANNEL_MASKS, mask_colors)
 
         # Find contours in the thresholded image
         # Retrieve all of the contours without establishing any hierarchical relationships (RETR_LIST)

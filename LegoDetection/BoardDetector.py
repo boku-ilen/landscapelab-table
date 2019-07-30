@@ -398,6 +398,7 @@ class BoardDetector:
             # Update a running average
             cv2.accumulateWeighted(color_image, self.background, INPUT_WEIGHT)
             self.current_loop += 1
+        # TODO Moritz if current_loop >= MAX_LOOP_NUMBER do next stage "qr code"
 
         # Subtract background
         diff = cv2.absdiff(color_image, self.background.astype("uint8"))

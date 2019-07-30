@@ -168,7 +168,7 @@ class LegoOutputStream:
                 or UIElement.UI_REFRESHED \
                 or Tracker.BRICKS_REFRESHED \
                 or LegoOutputStream.MOUSE_BRICKS_REFRESHED:
-            frame = self.map_handler.get_frame()
+            frame = self.map_handler.get_frame().copy()
             self.ui_root.draw(frame)
             # render all mouse placed bricks
             for brick in MOUSE_BRICKS + self.tracker.confirmed_bricks:

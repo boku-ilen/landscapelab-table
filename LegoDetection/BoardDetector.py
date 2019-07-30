@@ -293,7 +293,7 @@ class BoardDetector:
         source_corners[3] = corners[3]
 
         # If not done yet, compute width and height of the board
-        if not self.config.get("board", "width") or not self.config.get("board", "height"):
+        if not self.board_size_width or not self.board_size_width:
 
             # Compute width and height of the board
             self.compute_board_size(corners)
@@ -320,6 +320,8 @@ class BoardDetector:
         self.board_size_width = max_x - min_x
         self.board_size_height = max_y - min_y
 
+        # TODO: do we need the board size in config?
+        # FIXME: create board as a business object
         # Set board size in configs
         self.config.set("board", "width", self.board_size_width)
         self.config.set("board", "height", self.board_size_height)

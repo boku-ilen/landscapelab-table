@@ -20,8 +20,8 @@
   },
 
   "board": {
-    "width": "None",
-    "height": "None"
+    "width": "",
+    "height": ""
   },
 
   "qr_code": {

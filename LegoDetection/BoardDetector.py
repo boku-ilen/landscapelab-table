@@ -292,8 +292,11 @@ class BoardDetector:
         source_corners[2] = corners[2]
         source_corners[3] = corners[3]
 
-        # Compute width and height of the board
-        self.compute_board_size(corners)
+        # If not done yet, compute width and height of the board
+        if not self.config.get("board", "width") or not self.config.get("board", "height"):
+
+            # Compute width and height of the board
+            self.compute_board_size(corners)
 
         # Construct destination points which will be used to map the board to a top-down view
         destination_corners = np.array([

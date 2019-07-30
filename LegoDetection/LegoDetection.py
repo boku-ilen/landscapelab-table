@@ -29,7 +29,7 @@ MIN_REC = 0.2
 MAX_REC = 2.5
 
 # FIXME: make it configurable ?
-KERNEL_SIZE = (3, 3)
+KERNEL_SIZE = (5, 5)
 
 # TODO: make masks configurable ?
 masks_configuration = {
@@ -40,7 +40,7 @@ masks_configuration = {
         (np.array([55, 50, 50]), np.array([95, 255, 255])),
     ],
     LegoColor.BLUE_BRICK: [
-        (np.array([95, 150, 50]), np.array([150, 255, 180])),
+        (np.array([95, 100, 10]), np.array([170, 255, 255])),
     ],
     LegoColor.RED_BRICK: [
         (np.array([0, 120, 120]), np.array([10, 255, 255])),
@@ -85,7 +85,7 @@ class ShapeDetector:
                 centroid_x = int((moments_dict["m10"] / moments_dict["m00"]))
                 centroid_y = int((moments_dict["m01"] / moments_dict["m00"]))
 
-                # Check color of the lego brick (currently only red, blue and green accepted)
+                # Check color of the lego brick
                 for color, mask in color_masks.items():
                     if mask[centroid_y, centroid_x] == 255:
                         detected_color = color

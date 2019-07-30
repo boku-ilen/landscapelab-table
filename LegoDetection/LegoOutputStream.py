@@ -6,7 +6,7 @@ from LegoUI.MapHandler import MapHandler
 from functools import partial
 from LegoUI.MapActions import MapActions
 from LegoUI.UIElements.UIElement import UIElement, MOUSE_BRICKS, MOUSE_BRICK_SIZE
-from LegoBricks import LegoBrick, LegoColor, LegoShape
+from LegoBricks import LegoBrick, LegoColor, LegoShape, LegoStatus
 import numpy as np
 import logging
 
@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 BRICK_LABEL_OFFSET = 10
 BLUE = (255, 0, 0)
 GREEN = (0, 255, 0)
+RED = (0, 0, 255)
 FONT_SIZE = 0.4
 FONT_THICKNESS = 1
 CONTOUR_THICKNESS = 3
@@ -170,9 +171,15 @@ class LegoOutputStream:
             self.ui_root.draw(frame)
             # render all mouse placed bricks
             for brick in MOUSE_BRICKS + self.tracker.confirmed_bricks:
+
                 pos = np.array((brick.centroid_x, brick.centroid_y))
                 half_size = np.array((MOUSE_BRICK_SIZE, MOUSE_BRICK_SIZE))
-                cv2.rectangle(frame, tuple(pos - half_size), tuple(pos + half_size), GREEN, cv2.FILLED)
+
+                color = GREEN
+                if brick.status == LegoStatus.OUTDATED_BRICK:
+                    color = RED
+
+                cv2.rectangle(frame, tuple(pos - half_size), tuple(pos + half_size), color, cv2.FILLED)
 
             cv2.imshow(LegoOutputStream.WINDOW_NAME_BEAMER, frame)
 

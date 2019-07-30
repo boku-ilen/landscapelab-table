@@ -14,10 +14,23 @@ logger = logging.getLogger(__name__)
 # Objects in greater distance to the board than (1 +- CLIP) * x will be excluded from processing
 CLIP = 0.1
 
+# Number of frames for
+# computing background average
+MAX_LOOP_NUMBER = 30
+
+# accumulate weighted parameter
+INPUT_WEIGHT = 0.5
+
+# Maximum value to use
+# with the THRESH_BINARY
+MAX_VALUE = 255
+
 
 # this class manages the extent to detect and reference the extent of
 # the board related to the video stream
 class BoardDetector:
+
+    background = None
 
     def __init__(self, config, threshold_qrcode, output_stream):
 
@@ -44,6 +57,8 @@ class BoardDetector:
         # Get the resolution from config file
         self.frame_width = self.config.get("resolution", "width")
         self.frame_height = self.config.get("resolution", "height")
+
+        self.current_loop = 0
 
     # Compute pythagoras value
     @staticmethod
@@ -169,22 +184,23 @@ class BoardDetector:
     # Detect the board using four QR-Codes in the board corners
     def detect_board(self, color_image):
 
-        # Decode QR or Bar-Codes
-        # Convert to black and white to find QR-Codes
-        # Threshold image to white in black
+        # Compute difference between background and the current frame
+        diff = self.subtract_background(color_image)
 
-        mask = cv2.inRange(color_image, (0, 0, 0),
-                           (self.threshold_qrcode, self.threshold_qrcode, self.threshold_qrcode))
-        white_in_black = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
-        # Invert image it to black in white
-        looking_for_qr_code_image = 255 - white_in_black
+        # Invert image
+        looking_for_qr_code_image = 255 - diff
+
+        # Decode QR or Bar-Codes from both
+        # black-white and color image
         decoded_codes = pyzbar.decode(looking_for_qr_code_image)
+        if not decoded_codes:
+            decoded_codes = pyzbar.decode(color_image)
 
         # Mark found QR-codes on the color image
         self.display_found_codes(color_image, decoded_codes)
 
         # Show mask for finding qr-codes
-        self.output_stream.write_to_channel(LegoOutputChannel.CHANNEL_WHITE_BLACK, white_in_black)
+        self.output_stream.write_to_channel(LegoOutputChannel.CHANNEL_WHITE_BLACK, looking_for_qr_code_image)
 
         # Read codes which were decoded in this frame:
         # save polygons in the array self.board_detector.all_codes_polygons_points
@@ -364,3 +380,25 @@ class BoardDetector:
             region_of_interest[0:self.board_size_height, 0:self.board_size_width] = rectified_image
 
         return region_of_interest
+
+    # Returns difference between
+    # background and current frame
+    def subtract_background(self, color_image):
+
+        # Save background
+        if self.current_loop == 0:
+            self.background = color_image.copy().astype("float")
+
+        if self.current_loop < MAX_LOOP_NUMBER:
+            # Update a running average
+            cv2.accumulateWeighted(color_image, self.background, INPUT_WEIGHT)
+            self.current_loop += 1
+
+        # Subtract background
+        diff = cv2.absdiff(color_image, self.background.astype("uint8"))
+        diff = cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY)
+        ret_val, diff = cv2.threshold(diff, self.threshold_qrcode, MAX_VALUE, cv2.THRESH_BINARY)
+
+        # Return difference between
+        # the current frame and background
+        return diff

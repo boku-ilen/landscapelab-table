@@ -59,7 +59,7 @@ class Main:
         self.listener_thread.start()
 
         # initialize the lego detector
-        self.shape_detector = ShapeDetector()
+        self.shape_detector = ShapeDetector(self.output_stream)
 
     # Run lego bricks detection and tracking code
     def run(self):

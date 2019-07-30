@@ -29,12 +29,13 @@ RADIUS = 3
 class LegoOutputChannel(Enum):
 
     CHANNEL_COLOR_DETECTION = 1
-    CHANNEL_WHITE_BLACK = 2
+    CHANNEL_MASKS = 2
+    CHANNEL_WHITE_BLACK = 3
 
     def next(self):
         value = self.value + 1
-        if value > 2:
-            value = 2
+        if value > 3:
+            value = 3
         return LegoOutputChannel(value)
 
     def prev(self):

@@ -8,10 +8,10 @@
 import logging
 from builtins import staticmethod
 import cv2  # TODO: fix the requirements.txt or provide library
-import colorsys
 import numpy as np
 
 from LegoBricks import LegoBrick, LegoShape, LegoColor
+from LegoOutputStream import LegoOutputStream, LegoOutputChannel
 
 
 # enable logger
@@ -55,6 +55,10 @@ class ShapeDetector:
     tracker = None
 
     pipeline = None
+
+    def __init__(self, output_stream):
+
+        self.output_stream = output_stream
 
     # Check if the contour is a lego brick
     # TODO: remove frame if nothing to draw anymore
@@ -190,6 +194,9 @@ class ShapeDetector:
             else:
                 mask_colors = mask_colors + dilate
             color_masks[mask_color] = mask_colors
+
+            if mask_color == LegoColor.RED_BRICK:
+                self.output_stream.write_to_channel(LegoOutputChannel.CHANNEL_MASKS, mask_colors)
 
         # Find contours in the thresholded image
         # Retrieve all of the contours without establishing any hierarchical relationships (RETR_LIST)

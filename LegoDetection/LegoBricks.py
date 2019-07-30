@@ -8,10 +8,10 @@ logger = logging.getLogger(__name__)
 
 # constants for color
 class LegoColor(Enum):
-    RED_BRICK = 0
-    BLUE_BRICK = 1
-    GREEN_BRICK = 2
-    UNKNOWN_COLOR = 3
+    UNKNOWN_COLOR = 0
+    RED_BRICK = 1
+    BLUE_BRICK = 2
+    GREEN_BRICK = 3
     YELLOW_BRICK = 4
 
 

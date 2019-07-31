@@ -33,12 +33,14 @@ KERNEL_SIZE = (5, 5)
 
 # TODO: make masks configurable ?
 masks_configuration = {
-    LegoColor.YELLOW_BRICK: [
-        (np.array([10, 100, 100]), np.array([20, 255, 200])),
-    ],
-    LegoColor.GREEN_BRICK: [
-        (np.array([55, 50, 50]), np.array([95, 255, 255])),
-    ],
+    # TODO: adjust yellow so skin will be excluded
+    #LegoColor.YELLOW_BRICK: [
+    #    (np.array([10, 100, 100]), np.array([20, 255, 200])),
+    #],
+    # TODO: adjust green so black will be excluded
+    #LegoColor.GREEN_BRICK: [
+    #    (np.array([55, 50, 50]), np.array([95, 255, 255])),
+    #],
     LegoColor.BLUE_BRICK: [
         (np.array([95, 100, 10]), np.array([170, 255, 255])),
     ],

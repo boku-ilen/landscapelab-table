@@ -42,10 +42,6 @@ class Tracker:
 
     def update(self, lego_bricks_candidates: typing.List[LegoBrick]) -> typing.List[LegoBrick]:
 
-        """logger.info("{} virtual bricks".format(len(self.virtual_bricks)))
-        for brick in self.virtual_bricks:
-            logger.info("virtual brick status: {}".format(brick.status.name))"""
-
         # count frames certain bricks have been continuously visible / gone
         self.do_brick_ticks(lego_bricks_candidates)
 
@@ -225,6 +221,10 @@ class Tracker:
             for brick in self.confirmed_bricks:
                 if brick.status == LegoStatus.EXTERNAL_BRICK:
                     # change status of lego bricks to outdated
+                    self.set_virtual_brick_at(brick)
+                    # TODO the virtual brick should have the same position on the map as the original brick
+                    #  since the extent was altered there needs to be some way to reverse engineer the board position
+                    #  from map coordinates
                     self.set_brick_outdated(brick)
 
             # set the flag back

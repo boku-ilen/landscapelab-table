@@ -1,4 +1,5 @@
 import logging
+from typing import Optional
 
 # Configure logging
 from enum import Enum
@@ -50,6 +51,10 @@ class LegoBrick:
         self.shape: LegoShape = shape
         self.color: LegoColor = color
         self.status: LegoStatus = LegoStatus.CANDIDATE_BRICK
+
+        # these values will ONLY be set if the brick status is EXTERNAL_BRICK
+        self.map_pos_x: Optional[float] = None
+        self.map_pos_y: Optional[float] = None
 
     def clone(self):
         clone = LegoBrick(self.centroid_x, self.centroid_y, self.shape, self.color)

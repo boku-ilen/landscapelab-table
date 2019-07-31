@@ -50,6 +50,7 @@ class ServerCommunication:
     def create_lego_instance(self, lego_brick: LegoBrick):
 
         coordinates = self.lego_position_converter.compute_coordinates((lego_brick.centroid_x, lego_brick.centroid_y))
+        lego_brick.map_pos_x, lego_brick.map_pos_y = coordinates
         logger.debug("Detection ({} {}) recalculated -> coordinates {}".format
                      (lego_brick.centroid_x, lego_brick.centroid_y, coordinates))
 

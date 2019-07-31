@@ -1,6 +1,7 @@
 import logging.config
 import numpy as np
 
+from ProgramStage import ProgramStage
 from BoardDetector import BoardDetector
 from LegoDetection import ShapeDetector
 from LegoInputStream import LegoInputStream
@@ -33,6 +34,8 @@ class Main:
         # Initialize config manager
         self.config = ConfigManager()
 
+        self.program_stage = ProgramStage.WHITE_BALANCE
+
         # Initialize parameter manager and parse arguments
         self.parser = ParameterManager(self.config)
         self.used_stream = self.parser.used_stream
@@ -64,9 +67,6 @@ class Main:
     # Run lego bricks detection and tracking code
     def run(self):
 
-        # Initialize board detection flag
-        all_board_corners_found = False
-
         # initialize the input stream
         self.input_stream = LegoInputStream(self.config, usestream=self.used_stream)
 
@@ -79,7 +79,7 @@ class Main:
         try:
 
             # main loop which handles each frame
-            while not self.output_stream.update():
+            while not self.output_stream.update(self.program_stage):
 
                 # get the next frame
                 depth_image_3d, color_image = self.input_stream.get_frame()
@@ -88,60 +88,18 @@ class Main:
                 # Analyze only objects on the board / table
                 clipped_color_image = self.board_detector.clip_board(color_image, depth_image_3d)
 
-                # Detect the board using qr-codes polygon data saved in the array
-                # -> self.board_detector.all_codes_polygons_points
-                if not all_board_corners_found:
+                # always write the current frame to the board detection channel
+                self.output_stream.write_to_channel(LegoOutputChannel.CHANNEL_BOARD_DETECTION, color_image)
 
-                    logger.debug("No QR-code detector result")
-                    # TODO: use distance to set possible lego brick size
-                    logger.debug("Distance to the board is: {}".format(self.input_stream.get_distance_to_table()))
+                # call different functions depending on program state
+                if self.program_stage == ProgramStage.WHITE_BALANCE:
+                    self.white_balance()
 
-                    # Find position of board corners
-                    all_board_corners_found, board_corners = self.board_detector.detect_board(color_image)
+                elif self.program_stage == ProgramStage.FIND_BOARDERS:
+                    self.detect_boarders(color_image)
 
-                    # Show the whole color image until the board detected
-                    self.output_stream.write_to_channel(LegoOutputChannel.CHANNEL_COLOR_DETECTION, color_image)
-
-                # If the board is detected take only the region
-                # of interest and start lego bricks detection
-                else:
-
-                    # Take only the region of interest from the color image
-                    region_of_interest = self.board_detector.rectify_image(region_of_interest, color_image)
-
-                    # Initialize legos brick properties list
-                    potential_lego_bricks_list = []
-
-                    # detect contours in area of interest
-                    contours, color_masks = self.shape_detector.detect_contours(region_of_interest)
-
-                    # Loop over the contours
-                    for contour in contours:
-
-                        # Check if the contour is a lego brick candidate (shape and color can be detected)
-                        brick_candidate = self.shape_detector.detect_lego_brick(contour, region_of_interest, color_masks)
-
-                        if brick_candidate:
-                            # Update the properties list of all potential lego bricks which are found in the frame
-                            potential_lego_bricks_list.append(brick_candidate)
-
-                            # mark potential lego brick contours
-                            LegoOutputStream.mark_candidates(region_of_interest, contour)
-
-                    # Compute tracked lego bricks dictionary
-                    # using the centroid tracker and set of properties
-                    tracked_lego_bricks = self.tracker.update(potential_lego_bricks_list)
-
-                    # Loop over the tracked objects and label them in the stream
-                    for tracked_lego_brick in tracked_lego_bricks:
-                        LegoOutputStream.labeling(region_of_interest, tracked_lego_brick)
-
-                    # write current frame to the stream output
-                    self.output_stream.write_to_file(region_of_interest)
-
-                    # Render shape detection images
-                    if all_board_corners_found:
-                        self.output_stream.write_to_channel(LegoOutputChannel.CHANNEL_COLOR_DETECTION, region_of_interest)
+                elif self.program_stage == ProgramStage.LEGO_DETECTION:
+                    self.do_lego_detection(region_of_interest, color_image)
 
         finally:
             # handle the output stream correctly
@@ -151,6 +109,66 @@ class Main:
             self.input_stream.close()
 
             self.map_handler.end()
+
+    def white_balance(self):
+        # TODO Barabra implement white balance
+        #      when finished start next stage with command below
+        self.program_stage = self.program_stage.next()
+
+    # Detect the board using qr-codes polygon data saved in the array
+    # -> self.board_detector.all_codes_polygons_points
+    def detect_boarders(self, color_image):
+        logger.debug("No QR-code detector result")
+        # TODO: use distance to set possible lego brick size
+        logger.debug("Distance to the board is: {}".format(self.input_stream.get_distance_to_table()))
+
+        # Find position of board corners
+        all_board_corners_found, board_corners = self.board_detector.detect_board(color_image)
+
+        # if all boarders were found change channel and start next stage
+        if all_board_corners_found:
+            self.output_stream.set_active_channel(LegoOutputChannel.CHANNEL_ROI)
+            self.program_stage = self.program_stage.next()
+
+    def do_lego_detection(self, region_of_interest, color_image):
+        # If the board is detected take only the region
+        # of interest and start lego bricks detection
+
+        # Take only the region of interest from the color image
+        region_of_interest = self.board_detector.rectify_image(region_of_interest, color_image)
+
+        # Initialize legos brick properties list
+        potential_lego_bricks_list = []
+
+        # detect contours in area of interest
+        contours, color_masks = self.shape_detector.detect_contours(region_of_interest)
+
+        # Loop over the contours
+        for contour in contours:
+
+            # Check if the contour is a lego brick candidate (shape and color can be detected)
+            brick_candidate = self.shape_detector.detect_lego_brick(contour, region_of_interest, color_masks)
+
+            if brick_candidate:
+                # Update the properties list of all potential lego bricks which are found in the frame
+                potential_lego_bricks_list.append(brick_candidate)
+
+                # mark potential lego brick contours
+                LegoOutputStream.mark_candidates(region_of_interest, contour)
+
+        # Compute tracked lego bricks dictionary
+        # using the centroid tracker and set of properties
+        tracked_lego_bricks = self.tracker.update(potential_lego_bricks_list)
+
+        # Loop over the tracked objects and label them in the stream
+        for tracked_lego_brick in tracked_lego_bricks:
+            LegoOutputStream.labeling(region_of_interest, tracked_lego_brick)
+
+        # write current frame to the stream output
+        self.output_stream.write_to_file(region_of_interest)
+
+        # Render shape detection images
+        self.output_stream.write_to_channel(LegoOutputChannel.CHANNEL_ROI, region_of_interest)
 
 
 # execute the main class  ' TODO: meaningful rename

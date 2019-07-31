@@ -1,5 +1,6 @@
 from enum import Enum
 import cv2
+from ProgramStage import ProgramStage
 from Tracker import Tracker
 from ConfigManager import ConfigManager
 from LegoUI.MapHandler import MapHandler
@@ -17,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 # drawing constants
 BRICK_DISPLAY_SIZE = 10
-VIRTUAL_BRICK_ALPHA = 0.7
+VIRTUAL_BRICK_ALPHA = 0.3
 BRICK_LABEL_OFFSET = 10
 BLUE = (255, 0, 0)
 GREEN = (0, 255, 0)
@@ -31,14 +32,15 @@ RADIUS = 3
 
 class LegoOutputChannel(Enum):
 
-    CHANNEL_COLOR_DETECTION = 1
-    CHANNEL_MASKS = 2
-    CHANNEL_WHITE_BLACK = 3
+    CHANNEL_BOARD_DETECTION = 1
+    CHANNEL_ROI = 2
+    CHANNEL_MASKS = 3
+    CHANNEL_WHITE_BLACK = 4
 
     def next(self):
         value = self.value + 1
-        if value > 3:
-            value = 3
+        if value > 4:
+            value = 4
         return LegoOutputChannel(value)
 
     def prev(self):
@@ -65,7 +67,7 @@ class LegoOutputStream:
 
         self.config = config
 
-        self.active_channel = LegoOutputChannel.CHANNEL_COLOR_DETECTION
+        self.active_channel = LegoOutputChannel.CHANNEL_BOARD_DETECTION
         self.active_window = LegoOutputStream.WINDOW_NAME_DEBUG  # TODO: implement window handling
 
         # create output windows
@@ -158,9 +160,9 @@ class LegoOutputStream:
         # Draw lego bricks centroid points
         cv2.circle(frame, tracked_lego_brick_position, RADIUS, GREEN, cv2.FILLED)
 
-    def update(self) -> bool:
+    def update(self, program_stage: ProgramStage) -> bool:
 
-        self.redraw_beamer_image()
+        self.redraw_beamer_image(program_stage)
 
         key = cv2.waitKeyEx(1)
 
@@ -174,36 +176,49 @@ class LegoOutputStream:
             return False
 
     # redraws the beamer image
-    def redraw_beamer_image(self):
+    def redraw_beamer_image(self, program_stage: ProgramStage):
 
-        if MapHandler.MAP_REFRESHED \
-                or UIElement.UI_REFRESHED \
-                or Tracker.BRICKS_REFRESHED \
-                or LegoOutputStream.MOUSE_BRICKS_REFRESHED:
-            frame = self.map_handler.get_frame().copy()
-
-            # render virtual external bricks behind ui
-            self.render_external_virtual_bricks(frame)
-
-            # render ui
-            self.ui_root.draw(frame)
-
-            # render remaining bricks in front of ui
-            self.render_bricks(frame)
-
+        if program_stage == ProgramStage.WHITE_BALANCE:
+            frame = np.ones([
+                self.config.get("beamer-resolution", "height"),
+                self.config.get("beamer-resolution", "width"),
+                3
+            ]) * 255
             cv2.imshow(LegoOutputStream.WINDOW_NAME_BEAMER, frame)
             self.last_frame = frame
+        elif program_stage == ProgramStage.FIND_BOARDERS:
+            # TODO Moritz show qr codes
+            pass
+        elif program_stage == ProgramStage.LEGO_DETECTION:
 
-            MapHandler.MAP_REFRESHED = False
-            UIElement.UI_REFRESHED = False
+            if MapHandler.MAP_REFRESHED \
+                    or UIElement.UI_REFRESHED \
+                    or Tracker.BRICKS_REFRESHED \
+                    or LegoOutputStream.MOUSE_BRICKS_REFRESHED:
+                frame = self.map_handler.get_frame().copy()
+
+                # render virtual external bricks behind ui
+                self.render_external_virtual_bricks(frame)
+
+                # render ui
+                self.ui_root.draw(frame)
+
+                # render remaining bricks in front of ui
+                self.render_bricks(frame)
+
+                cv2.imshow(LegoOutputStream.WINDOW_NAME_BEAMER, frame)
+                self.last_frame = frame
+
+                MapHandler.MAP_REFRESHED = False
+                UIElement.UI_REFRESHED = False
 
     # renders only external virtual bricks since they should be displayed behind the ui unlike any other brick types
     def render_external_virtual_bricks(self, render_target):
 
-        overlay_target = np.zeros_like(render_target)
+        overlay_target = render_target.copy()
         for brick in filter(lambda b: b.status == LegoStatus.EXTERNAL_BRICK, self.tracker.virtual_bricks):
             self.render_brick(brick, overlay_target)
-        cv2.addWeighted(overlay_target, VIRTUAL_BRICK_ALPHA, render_target, 1, 0, render_target)
+        cv2.addWeighted(overlay_target, VIRTUAL_BRICK_ALPHA, render_target, 1 - VIRTUAL_BRICK_ALPHA, 0, render_target)
 
     # renders all bricks except external virtual ones since those get rendered earlier
     def render_bricks(self, render_target):
@@ -212,10 +227,10 @@ class LegoOutputStream:
             self.render_brick(brick, render_target)
 
         # render virtual bricks
-        overlay_target = np.zeros_like(render_target)
+        overlay_target = render_target.copy()
         for brick in list(filter(lambda b: b.status != LegoStatus.EXTERNAL_BRICK, self.tracker.virtual_bricks)):
             self.render_brick(brick, overlay_target)
-        cv2.addWeighted(overlay_target, VIRTUAL_BRICK_ALPHA, render_target, 1, 0, render_target)
+        cv2.addWeighted(overlay_target, VIRTUAL_BRICK_ALPHA, render_target, 1 - VIRTUAL_BRICK_ALPHA, 0, render_target)
 
     def render_brick(self, brick, render_target):
         b = self.board_to_beamer(brick)
@@ -245,6 +260,9 @@ class LegoOutputStream:
         source_width, source_height = source_res()
         target_width, target_height = target_res()
 
+        # logger.info("source res: {} {}, target res: {} {}"
+        #             .format(source_width, source_height, target_width, target_height))
+
         ret.centroid_x = int((ret.centroid_x / source_width) * target_width)
         ret.centroid_y = int((ret.centroid_y / source_height) * target_height)
 
@@ -254,7 +272,7 @@ class LegoOutputStream:
         return self.config.get("board", "width"), self.config.get("board", "height")
 
     def get_beamer_res(self):
-        return self.last_frame.shape[0], self.last_frame.shape[1]
+        return self.last_frame.shape[1], self.last_frame.shape[0]
 
     def beamer_mouse_callback(self, event, x, y, flags, param):
         mouse_pos = self.beamer_to_board(LegoBrick(x, y, LegoShape.RECTANGLE_BRICK, LegoColor.BLUE_BRICK))
@@ -267,4 +285,3 @@ class LegoOutputStream:
                 self.tracker.virtual_bricks.remove(virtual_brick)
             else:
                 self.tracker.virtual_bricks.append(mouse_pos)
-                logger.info("added mouse brick with state {}".format(mouse_pos.status.name))

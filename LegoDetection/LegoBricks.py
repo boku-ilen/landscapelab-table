@@ -51,6 +51,12 @@ class LegoBrick:
         self.color: LegoColor = color
         self.status: LegoStatus = LegoStatus.CANDIDATE_BRICK
 
+    def clone(self):
+        clone = LegoBrick(self.centroid_x, self.centroid_y, self.shape, self.color)
+        clone.status = self.status
+        clone.asset_id = self.asset_id
+        return clone
+
     def __eq__(self, other):
         # (type) safety first
         if type(self) is not type(other):

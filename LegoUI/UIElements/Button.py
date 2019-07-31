@@ -51,9 +51,8 @@ class Button(UIStructureBlock):
         if self.visible:
             x, y = (brick.centroid_x, brick.centroid_y)
 
-            if self.pos_on_block(x, y) and brick.status == LegoStatus.CANDIDATE_BRICK:
-
-                if not self.pressed:
+            if self.pos_on_block(x, y):
+                if brick.status == LegoStatus.CANDIDATE_BRICK and not self.pressed:
                     self.call(UIActionType.PRESS, brick)
                     UIElement.UI_REFRESHED = True
                 else:

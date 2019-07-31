@@ -73,7 +73,7 @@ class LegoInputStream:
         self.color_frame = aligned_frames.get_color_frame()
 
         # New frame log information
-        logger.info("!! new frame started")
+        # logger.info("!! new frame started")
 
         # Validate that both frames are valid
         if self.aligned_depth_frame and self.color_frame:

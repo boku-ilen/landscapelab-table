@@ -1,4 +1,12 @@
 {
+  "resources": {
+    "relative-path": ["..", "resources"],
+    "qr_bottom_left": ["QR_Codes", "bottom_left.png"],
+    "qr_bottom_right": ["QR_Codes", "bottom_right.png"],
+    "qr_top_left": ["QR_Codes", "top_left.png"],
+    "qr_top_right": ["QR_Codes", "top_right.png"],
+    "qr_size": 100
+  },
   "video_output": {
     "name": "shape_detection_output.avi"
   },

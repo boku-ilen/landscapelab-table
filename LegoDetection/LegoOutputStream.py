@@ -5,12 +5,13 @@ from Tracker import Tracker
 from ConfigManager import ConfigManager
 from LegoUI.MapHandler import MapHandler
 from functools import partial
-from typing import Callable, Tuple
+from typing import Callable, Tuple, List
 from LegoUI.MapActions import MapActions
 from LegoUI.UIElements.UIElement import UIElement
 from LegoBricks import LegoBrick, LegoColor, LegoShape, LegoStatus
 import numpy as np
 import logging
+import os
 
 
 # enable logger
@@ -112,6 +113,28 @@ class LegoOutputStream:
             ord(config.get('button_map', 'MAP_ZOOM_OUT')): partial(map_handler.invoke, MapActions.ZOOM_OUT)
         }
 
+        # load qr code images
+        self.resource_path = LegoOutputStream.reconstruct_path(
+            os.getcwd(),
+            self.config.get("resources", "relative-path")
+        )
+        qr_size = self.config.get("resources", "qr_size")
+        # TODO calc optimal size on draw instead of scaling down to fixed size
+        self.qr_bottom_left = cv2.resize(self.load_image("qr_bottom_left"), (qr_size, qr_size))
+        self.qr_bottom_right = cv2.resize(self.load_image("qr_bottom_right"), (qr_size, qr_size))
+        self.qr_top_left = cv2.resize(self.load_image("qr_top_left"), (qr_size, qr_size))
+        self.qr_top_right = cv2.resize(self.load_image("qr_top_right"), (qr_size, qr_size))
+
+    @staticmethod
+    def reconstruct_path(base_path, relative_path: List[str]):
+        for d in relative_path:
+            base_path = os.path.join(base_path, d)
+        return base_path
+
+    def load_image(self, name):
+        image_path = self.reconstruct_path(self.resource_path, self.config.get("resources", name))
+        return cv2.imread(image_path)
+
     # Write the frame into the file
     def write_to_file(self, frame):
         # TODO: shouldn't we be able to select which channel we want to write to the file?
@@ -186,9 +209,24 @@ class LegoOutputStream:
             ]) * 255
             cv2.imshow(LegoOutputStream.WINDOW_NAME_BEAMER, frame)
             self.last_frame = frame
+
         elif program_stage == ProgramStage.FIND_BOARDERS:
-            # TODO Moritz show qr codes
-            pass
+
+            frame = self.last_frame
+            # TODO make code pretty
+            LegoOutputStream.draw_image_on_image(frame, self.qr_top_left,
+                                                 (0, 0))
+            LegoOutputStream.draw_image_on_image(frame, self.qr_top_right,
+                                                 (frame.shape[1] - self.qr_top_right.shape[1], 0))
+            LegoOutputStream.draw_image_on_image(frame, self.qr_bottom_left,
+                                                 (0, frame.shape[0] - self.qr_bottom_left.shape[0]))
+            LegoOutputStream.draw_image_on_image(frame, self.qr_bottom_right,
+                                                 (
+                                                     frame.shape[1] - self.qr_bottom_right.shape[1],
+                                                     frame.shape[0] - self.qr_bottom_right.shape[0]
+                                                 ))
+            cv2.imshow(LegoOutputStream.WINDOW_NAME_BEAMER, frame)
+
         elif program_stage == ProgramStage.LEGO_DETECTION:
 
             if MapHandler.MAP_REFRESHED \
@@ -211,6 +249,12 @@ class LegoOutputStream:
 
                 MapHandler.MAP_REFRESHED = False
                 UIElement.UI_REFRESHED = False
+
+    @staticmethod
+    def draw_image_on_image(bottom_image, top_image, offset: Tuple[int, int]):
+        x_offset, y_offset = offset
+        bottom_image[y_offset:y_offset + top_image.shape[0], x_offset:x_offset + top_image.shape[1]] = top_image
+        return bottom_image
 
     # renders only external virtual bricks since they should be displayed behind the ui unlike any other brick types
     def render_external_virtual_bricks(self, render_target):

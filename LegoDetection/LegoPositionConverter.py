@@ -26,6 +26,8 @@ class LegoPositionConverter:
 
     # Calculate geographical position for lego bricks
     def compute_coordinates(self, lego_brick_position):
+        # TODO take LegoBrick itself as argument instead of coordinates
+        # TODO save brick pos in brick pos
 
         if not self.board_size_width or not self.board_size_height:
             # Get width and height of the board

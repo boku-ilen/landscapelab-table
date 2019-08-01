@@ -3,8 +3,8 @@ import socket
 import threading
 import numpy as np
 from functools import partial
+import LegoDetection.config as config
 from LegoDetection.LegoBricks import LegoBrick, LegoStatus, LegoShape, LegoColor
-from LegoDetection.ConfigManager import ConfigManager
 from LegoUI.UIElements.UISetup import setup_ui
 from LegoUI.MapActions import MapActions
 from typing import List
@@ -25,7 +25,7 @@ class StopCVControllerException(Exception):
 
 class CVControllerThread(threading.Thread):
 
-    def __init__(self, config: ConfigManager):
+    def __init__(self, sock: socket, qgis_addr: (str, int), lego_addr: (str,int)):
         threading.Thread.__init__(self)
 
         # initialize two black images
@@ -36,17 +36,13 @@ class CVControllerThread(threading.Thread):
         self.current_image = 0
 
         # set extents
-        self.current_extent = config.get('map_settings', 'start_extent')
-        self.next_extent = self.current_extent
+        self.current_extent = config.start_extent
+        self.next_extent = config.start_extent
 
         # set socket info
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.qgis_addr = (config.get('qgis_interaction', 'QGIS_IP'), config.get('qgis_interaction', 'QGIS_READ_PORT'))
-        self.lego_addr = (config.get('qgis_interaction', 'QGIS_IP'), config.get('qgis_interaction', 'LEGO_READ_PORT'))
-
-        # get communication settings
-        self.image_path = config.get('qgis_interaction', 'QGIS_IMAGE_PATH')
-        self.render_keyword = config.get('qgis_interaction', 'RENDER_KEYWORD')
+        self.sock = sock
+        self.qgis_addr = qgis_addr
+        self.lego_addr = lego_addr
 
         # request first render
         self.request_render(self.current_extent)
@@ -70,18 +66,13 @@ class CVControllerThread(threading.Thread):
             ord('x'): MapActions.QUIT,
         }
 
-        # get navigation settings
-        pan_distance = config.get('map_settings', 'pan_distance')
-        zoom_strength = config.get('map_settings', 'zoom_strength')
-
-        # setup action map
         self.action_map = {
-            MapActions.PAN_UP: partial(self.init_render, pan_up_modifier, pan_distance),
-            MapActions.PAN_DOWN: partial(self.init_render, pan_down_modifier, pan_distance),
-            MapActions.PAN_LEFT: partial(self.init_render, pan_left_modifier, pan_distance),
-            MapActions.PAN_RIGHT: partial(self.init_render, pan_right_modifier, pan_distance),
-            MapActions.ZOOM_IN: partial(self.init_render, zoom_in_modifier, zoom_strength),
-            MapActions.ZOOM_OUT: partial(self.init_render, zoom_out_modifier, zoom_strength),
+            MapActions.PAN_UP: partial(self.init_render, pan_up_modifier, config.PAN_DISTANCE),
+            MapActions.PAN_DOWN: partial(self.init_render, pan_down_modifier, config.PAN_DISTANCE),
+            MapActions.PAN_LEFT: partial(self.init_render, pan_left_modifier, config.PAN_DISTANCE),
+            MapActions.PAN_RIGHT: partial(self.init_render, pan_right_modifier, config.PAN_DISTANCE),
+            MapActions.ZOOM_IN: partial(self.init_render, zoom_in_modifier, config.ZOOM_STRENGTH),
+            MapActions.ZOOM_OUT: partial(self.init_render, zoom_out_modifier, config.ZOOM_STRENGTH),
             MapActions.QUIT: partial(self.quit)
         }
 
@@ -92,7 +83,7 @@ class CVControllerThread(threading.Thread):
     def refresh(self, extent):
         unused_slot = (self.current_image + 1) % 2
 
-        self.qgis_image[unused_slot] = cv.imread(self.image_path, 1)
+        self.qgis_image[unused_slot] = cv.imread(config.QGIS_IMAGE_PATH, 1)
         self.current_image = unused_slot
         self.current_extent = extent
 
@@ -108,7 +99,10 @@ class CVControllerThread(threading.Thread):
 
                 # execute ui update logic
                 for brick in lego_bricks:
-                    self.ui_root.brick_on_element(brick)
+                    if self.ui_root.brick_on_element(brick):
+                        brick.status = LegoStatus.INTERNAL_BRICK
+                    else:
+                        brick.status = LegoStatus.EXTERNAL_BRICK
                 self.ui_root.ui_tick()
 
                 # draw ui
@@ -147,7 +141,7 @@ class CVControllerThread(threading.Thread):
         move_extent = np.multiply(
             extent_modifier,
             np.array([width, height, width, height])
-        ) * strength[0]
+        ) * strength
 
         next_extent = np.add(self.current_extent, move_extent)
 
@@ -156,7 +150,7 @@ class CVControllerThread(threading.Thread):
 
     def request_render(self, extent):
         self.send(
-            '{}{} {} {} {}'.format(self.render_keyword, extent[0], extent[1], extent[2], extent[3])
+            '{}{} {} {} {}'.format(config.RENDER_KEYWORD, extent[0], extent[1], extent[2], extent[3])
             .encode()
         )
 

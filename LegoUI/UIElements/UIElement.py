@@ -7,8 +7,6 @@ from enum import Enum
 # base class for UI element (other than the map itself) the user can interact with
 class UIElement:
 
-    UI_REFRESHED = True
-
     def __init__(self):
         self.position = np.array((0, 0))
         self.visible: bool = True
@@ -44,11 +42,9 @@ class UIElement:
     def add_child(self, child):
         self.children.append(child)
         child.parent = self
-        UIElement.UI_REFRESHED = True
 
     def set_visible(self, visible: bool):
         self.visible = visible
-        UIElement.UI_REFRESHED = True
 
 
 # used for buttons etc

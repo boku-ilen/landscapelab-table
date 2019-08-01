@@ -1,7 +1,8 @@
-from LegoUI.UIElements.UIElement import UIActionType, UIElement
+from LegoUI.UIElements.UIElement import UIActionType
 from LegoUI.UIElements.UIStructureBlock import UIStructureBlock
-from LegoBricks import LegoBrick, LegoStatus
+from LegoBricks import LegoBrick
 from typing import Callable, Tuple, Dict
+import numpy as np
 import cv2 as cv
 import logging
 
@@ -18,10 +19,10 @@ class Button(UIStructureBlock):
 
         # TODO: adjust colors
         # set visuals
-        self.color = (50, 50, 50)
+        self.color = (100, 100, 100)
         self.icon = None
 
-        self.color_pressed = (100, 100, 100)
+        self.color_pressed = (150, 150, 150)
         self.icon_pressed = None
 
         self.name: str = name
@@ -53,9 +54,9 @@ class Button(UIStructureBlock):
             x, y = (brick.centroid_x, brick.centroid_y)
 
             if self.pos_on_block(x, y):
-                if brick.status == LegoStatus.CANDIDATE_BRICK and not self.pressed:
+
+                if not self.pressed:
                     self.call(UIActionType.PRESS, brick)
-                    UIElement.UI_REFRESHED = True
                 else:
                     self.call(UIActionType.HOLD, brick)
 
@@ -72,7 +73,6 @@ class Button(UIStructureBlock):
         # if button was pressed until now but has not been pressed this frame it now is released
         if self.pressed and not self.pressed_once:
             self.pressed = False
-            UIElement.UI_REFRESHED = True
             self.call(UIActionType.RELEASE, None)
 
         self.pressed_once = False

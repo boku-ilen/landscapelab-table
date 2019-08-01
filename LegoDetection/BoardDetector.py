@@ -390,14 +390,7 @@ class BoardDetector:
     # background and current frame
     def subtract_background(self, color_image):
 
-        # Save background
-        if self.current_loop == 0:
-            self.background = color_image.copy().astype("float")
 
-        if self.current_loop < MAX_LOOP_NUMBER:
-            # Update a running average
-            cv2.accumulateWeighted(color_image, self.background, INPUT_WEIGHT)
-            self.current_loop += 1
         # TODO Moritz if current_loop >= MAX_LOOP_NUMBER do next stage "qr code"
 
         # Subtract background
@@ -408,3 +401,19 @@ class BoardDetector:
         # Return difference between
         # the current frame and background
         return diff
+
+    # saves the average image over a certain time period returns true if enough iterations were done
+    def compute_background(self, color_image):
+
+        # Save background
+        if self.current_loop == 0:
+            self.background = color_image.copy().astype("float")
+
+        if self.current_loop < MAX_LOOP_NUMBER:
+            # Update a running average
+            cv2.accumulateWeighted(color_image, self.background, INPUT_WEIGHT)
+            self.current_loop += 1
+        else:
+            return True
+
+        return False

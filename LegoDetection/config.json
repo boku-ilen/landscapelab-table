@@ -5,7 +5,7 @@
     "qr_bottom_right": ["QR_Codes", "bottom_right.png"],
     "qr_top_left": ["QR_Codes", "top_left.png"],
     "qr_top_right": ["QR_Codes", "top_right.png"],
-    "qr_size": 100
+    "qr_size": 300
   },
   "video_output": {
     "name": "shape_detection_output.avi"
@@ -28,8 +28,8 @@
   },
 
   "beamer-resolution": {
-    "width": 1920,
-    "height": 1080
+    "width": 800,
+    "height": 800
   },
 
   "board": {

@@ -64,8 +64,6 @@ class Main:
         # initialize the lego detector
         self.shape_detector = ShapeDetector(self.output_stream)
 
-        self.countdown = 30
-
     # Run lego bricks detection and tracking code
     def run(self):
 
@@ -95,7 +93,7 @@ class Main:
 
                 # call different functions depending on program state
                 if self.program_stage == ProgramStage.WHITE_BALANCE:
-                    self.white_balance()
+                    self.white_balance(color_image)
 
                 elif self.program_stage == ProgramStage.FIND_BOARDERS:
                     self.detect_boarders(color_image)
@@ -112,12 +110,12 @@ class Main:
 
             self.map_handler.end()
 
-    def white_balance(self):
+    def white_balance(self, color_image):
         # TODO Barabra implement white balance
         #      when finished start next stage with command below
-        self.countdown -= 1
-        if self.countdown < 0:
 
+        if self.board_detector.compute_background(color_image):
+            # switch to next stage if finished
             self.program_stage = self.program_stage.next()
 
     # Detect the board using qr-codes polygon data saved in the array

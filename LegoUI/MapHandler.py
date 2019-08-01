@@ -19,7 +19,7 @@ class MapHandler:
         self.config = config
 
         # get desired screen resolution
-        self.resolution_x = int(self.config.get("beamer-resolution", "width") )
+        self.resolution_x = int(self.config.get("beamer-resolution", "width"))
         self.resolution_y = int(self.config.get("beamer-resolution", "height"))
 
         # initialize two black images
@@ -29,9 +29,17 @@ class MapHandler:
         ]
         self.current_image = 0
 
-        # set extents
-        self.current_extent = config.get('map_settings', 'start_extent')
-        self.next_extent = self.current_extent
+        # fit extent to resolution and set it
+        beamer_ratio = self.resolution_y / self.resolution_x
+        extent_width = config.get('map_settings', 'extent_width')
+        extent_height = config.get('map_settings', 'extent_height')
+        extent_w = abs(extent_width[0] - extent_width[1])
+        extent_h = abs(extent_height[0] - extent_height[1])
+        extent_h_diff = beamer_ratio * extent_w - extent_h
+        extent_height[0] -= extent_h_diff / 2
+        extent_height[1] += extent_h_diff / 2
+        self.current_extent = [extent_height[0], extent_width[0], extent_height[1], extent_width[1]]
+
 
         # set socket & connection info
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -98,7 +106,7 @@ class MapHandler:
 
     def request_render(self, extent):
         self.send(
-            '{}{} {} {} {}'.format(self.render_keyword, extent[0], extent[1], extent[2], extent[3])
+            '{}{} {} {} {} {}'.format(self.render_keyword, self.resolution_x, extent[0], extent[1], extent[2], extent[3])
             .encode()
         )
 
@@ -115,6 +123,6 @@ class MapHandler:
         return self.qgis_image[self.current_image]
 
     def end(self):
-        self.sock.sendto(b'exit', self.qgis_addr)
+        # self.sock.sendto(b'exit', self.qgis_addr)
         self.sock.sendto(b'exit', self.lego_addr)
         self.sock.close()

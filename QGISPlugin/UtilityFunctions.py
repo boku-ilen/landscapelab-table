@@ -4,10 +4,9 @@ from qgis.core import *
 
 
 # code mainly from https://github.com/opensourceoptions/pyqgis-tutorials/blob/master/015_render-map-layer.py
-def render_image(extent, image_location):
+def render_image(extent, image_width, image_location):
 
     ratio = extent.width() / extent.height()
-    image_width = 1920
 
     # create image
     img = QImage(QSize(image_width, image_width / ratio), QImage.Format_ARGB32_Premultiplied)

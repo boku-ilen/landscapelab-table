@@ -48,17 +48,20 @@ class RemoteRendering(QgsTask):
                     return True
 
                 if data.startswith(config.RENDER_KEYWORD):
-                    extent_info = data[len(config.RENDER_KEYWORD):]
-                    extent = extent_info.split(' ')
+                    render_info = data[len(config.RENDER_KEYWORD):]
+                    render_info = render_info.split(' ')
+                    image_width = int(render_info[0])
+                    extent_info = render_info[1:5]
 
-                    extent = QgsRectangle(float(extent[0]), float(extent[1]), float(extent[2]), float(extent[3]))
+                    extent = QgsRectangle(float(extent_info[0]), float(extent_info[1]), float(extent_info[2]), float(extent_info[3]))
 
-                    render_image(extent, self.image_location)
+                    render_image(extent, image_width, self.image_location)
+                    update_msg =  '{}{} {} {} {}'.format(config.UPDATE_KEYWORD, extent_info[0], extent_info[1], extent_info[2], extent_info[3])
                     self.socket.sendto(
-                        '{}{}'.format(config.UPDATE_KEYWORD, extent_info).encode(),
+                        update_msg.encode(),
                         self.write_target
                     )
-                    QgsMessageLog.logMessage('sent: {}{}'.format(config.UPDATE_KEYWORD, extent_info))
+                    QgsMessageLog.logMessage('sent: {}'.format(update_msg))
 
         finally:
             self.socket.close()

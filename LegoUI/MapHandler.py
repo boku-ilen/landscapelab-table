@@ -19,8 +19,8 @@ class MapHandler:
         self.config = config
 
         # get desired screen resolution
-        self.resolution_x = int(self.config.get("beamer-resolution", "width") / 2)
-        self.resolution_y = int(self.config.get("beamer-resolution", "height") / 2)
+        self.resolution_x = int(self.config.get("beamer-resolution", "width") )
+        self.resolution_y = int(self.config.get("beamer-resolution", "height"))
 
         # initialize two black images
         self.qgis_image = [

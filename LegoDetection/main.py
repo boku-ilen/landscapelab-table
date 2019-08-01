@@ -64,6 +64,8 @@ class Main:
         # initialize the lego detector
         self.shape_detector = ShapeDetector(self.output_stream)
 
+        self.countdown = 30
+
     # Run lego bricks detection and tracking code
     def run(self):
 
@@ -113,7 +115,10 @@ class Main:
     def white_balance(self):
         # TODO Barabra implement white balance
         #      when finished start next stage with command below
-        self.program_stage = self.program_stage.next()
+        self.countdown -= 1
+        if self.countdown < 0:
+
+            self.program_stage = self.program_stage.next()
 
     # Detect the board using qr-codes polygon data saved in the array
     # -> self.board_detector.all_codes_polygons_points

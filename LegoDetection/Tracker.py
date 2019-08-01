@@ -123,7 +123,7 @@ class Tracker:
 
                 # if the brick is associated with an asset also send a remove request to the server
                 if brick.status == LegoStatus.EXTERNAL_BRICK:
-                    self.set_virtual_brick_at(brick)
+                    #self.set_virtual_brick_at(brick)
                     self.server_communicator.remove_lego_instance(brick)
 
         # remove the disappeared elements from dicts

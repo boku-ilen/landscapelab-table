@@ -16,11 +16,12 @@ class Button(UIStructureBlock):
 
         super().__init__(position, size)
 
+        # TODO: adjust colors
         # set visuals
-        self.color = (255, 0, 0)
+        self.color = (50, 50, 50)
         self.icon = None
 
-        self.color_pressed = (0, 0, 255)
+        self.color_pressed = (100, 100, 100)
         self.icon_pressed = None
 
         self.name: str = name

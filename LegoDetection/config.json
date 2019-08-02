@@ -11,16 +11,9 @@
     "name": "shape_detection_output.avi"
   },
 
-  "server": {
-    "prefix": "http://",
-    "ip": "127.0.0.1"
-  },
-
-  "asset": {
-    "create": "/landscapelab/assetpos/create/",
-    "set": "/landscapelab/assetpos/set/",
-    "remove": "/landscapelab/assetpos/remove/"
-  },
+    "server": {
+      "ip": "127.0.0.1"
+    },
 
   "resolution": {
     "width": 1280,

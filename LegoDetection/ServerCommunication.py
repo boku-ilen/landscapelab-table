@@ -7,27 +7,21 @@ from LegoPositionConverter import LegoPositionConverter
 # Configure logging
 logger = logging.getLogger(__name__)
 
+# Constants for server communication
+HTTP = "http://"
+PREFIX = "/landscapelab"
+CREATE_ASSET_POS = "/assetpos/create/"
+SET_ASSET_POS = "/assetpos/set/"
+REMOVE_ASSET_POS = "/assetpos/remove/"
+
 
 class ServerCommunication:
     """Creates and removes lego instances"""
 
-    # Initialize server configurations
-    prefix = None
-    ip = None
-
-    # Initialize create, edit, remove
-    # requests for lego instances
-    create_asset = None
-    set_asset = None
-    remove_asset = None
-
     def __init__(self, config):
 
-        self.prefix = config.get("server", "prefix")
+        # Initialize ip
         self.ip = config.get("server", "ip")
-        self.create_asset = config.get("asset", "create")
-        self.set_asset = config.get("asset", "set")
-        self.remove_asset = config.get("asset", "remove")
 
         # Initialize lego position converter
         self.lego_position_converter = LegoPositionConverter(config)
@@ -54,10 +48,10 @@ class ServerCommunication:
 
         # Send request creating lego instance and save the response
         # TODO: instead of color.value use a constant for type (shape & color)
-        logger.debug(self.prefix + self.ip + self.create_asset + str(lego_brick.color.value)
+        logger.debug(HTTP + self.ip + PREFIX + CREATE_ASSET_POS + str(lego_brick.color.value)
                      + "/" + str(lego_brick.map_pos_x) + "/" + str(lego_brick.map_pos_y))
-        lego_instance_response = requests.get(self.prefix + self.ip + self.create_asset + str(lego_brick.color.value)
-                                + "/" + str(lego_brick.map_pos_x) + "/" + str(lego_brick.map_pos_y))
+        lego_instance_response = requests.get(HTTP + self.ip + PREFIX + CREATE_ASSET_POS + str(lego_brick.color.value)
+                                              + "/" + str(lego_brick.map_pos_x) + "/" + str(lego_brick.map_pos_y))
 
         # Check if status code is 200
         if self.check_status_code_200(lego_instance_response.status_code):
@@ -77,7 +71,7 @@ class ServerCommunication:
     def remove_lego_instance(self, lego_instance):
 
         # Send a request to remove lego instance
-        logger.debug(self.prefix + self.ip + self.remove_asset + str(lego_instance.asset_id))
-        lego_remove_instance_response = requests.get(self.prefix + self.ip +
-                                                     self.remove_asset + str(lego_instance.asset_id))
+        logger.debug(HTTP + self.ip + PREFIX + REMOVE_ASSET_POS + str(lego_instance.asset_id))
+        lego_remove_instance_response = requests.get(HTTP + self.ip
+                                                     + PREFIX + REMOVE_ASSET_POS + str(lego_instance.asset_id))
         logger.debug("remove instance {}, response {}".format(lego_instance, lego_remove_instance_response))

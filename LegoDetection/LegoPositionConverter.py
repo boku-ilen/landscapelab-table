@@ -25,9 +25,7 @@ class LegoPositionConverter:
         logger.debug("extent size: {}, {}".format(self.extent_width, self.extent_height))
 
     # Calculate geographical position for lego bricks
-    def compute_coordinates(self, lego_brick_position):
-        # TODO take LegoBrick itself as argument instead of coordinates
-        # TODO save brick pos in brick pos
+    def compute_coordinates(self, lego_brick):
 
         if not self.board_size_width or not self.board_size_height:
             # Get width and height of the board
@@ -37,20 +35,19 @@ class LegoPositionConverter:
 
         # Calculate lego brick width (latitude)
         # Calculate proportions
-        lego_brick_width = self.extent_width * lego_brick_position[0] / self.board_size_width
+        lego_brick.map_pos_x = self.extent_width * lego_brick.centroid_x / self.board_size_width
         # Add offset
         # TODO: control the offset
-        lego_brick_width += self.extent_width_list[0]
+        lego_brick.map_pos_x += self.extent_width_list[0]
 
         # Calculate lego brick height coordinate (longitude)
         # Calculate proportions
-        lego_brick_height = self.extent_height * lego_brick_position[1] / self.board_size_height
+        lego_brick.map_pos_y = self.extent_height * lego_brick.centroid_y / self.board_size_height
         # Invert the axis
-        lego_brick_height = self.extent_height - lego_brick_height
+        lego_brick.map_pos_y = self.extent_height - lego_brick.map_pos_y
         # Add offset
         # TODO: control the offset
-        lego_brick_height += self.extent_height_list[0]
+        lego_brick.map_pos_y += self.extent_height_list[0]
 
-        lego_brick_coordinates = float(lego_brick_width), float(lego_brick_height)
-
-        return lego_brick_coordinates
+        logger.debug("Detection ({} {}) recalculated -> coordinates {} {}".format
+                     (lego_brick.centroid_x, lego_brick.centroid_y, lego_brick.map_pos_x, lego_brick.map_pos_y))

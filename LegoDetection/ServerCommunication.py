@@ -46,20 +46,18 @@ class ServerCommunication:
         # Return True if status code is 200
         return True
 
-    # Create lego instance and return lego instance (id)
+    # Create lego instance
     def create_lego_instance(self, lego_brick: LegoBrick):
 
-        coordinates = self.lego_position_converter.compute_coordinates((lego_brick.centroid_x, lego_brick.centroid_y))
-        lego_brick.map_pos_x, lego_brick.map_pos_y = coordinates
-        logger.debug("Detection ({} {}) recalculated -> coordinates {}".format
-                     (lego_brick.centroid_x, lego_brick.centroid_y, coordinates))
+        # Compute geographical coordinates for lego bricks
+        self.lego_position_converter.compute_coordinates(lego_brick)
 
         # Send request creating lego instance and save the response
         # TODO: instead of color.value use a constant for type (shape & color)
         logger.debug(self.prefix + self.ip + self.create_asset + str(lego_brick.color.value)
-                     + "/" + str(coordinates[0]) + "/" + str(coordinates[1]))
+                     + "/" + str(lego_brick.map_pos_x) + "/" + str(lego_brick.map_pos_y))
         lego_instance_response = requests.get(self.prefix + self.ip + self.create_asset + str(lego_brick.color.value)
-                                + "/" + str(coordinates[0]) + "/" + str(coordinates[1]))
+                                + "/" + str(lego_brick.map_pos_x) + "/" + str(lego_brick.map_pos_y))
 
         # Check if status code is 200
         if self.check_status_code_200(lego_instance_response.status_code):

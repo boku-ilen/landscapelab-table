@@ -62,16 +62,16 @@ class ServerCommunication:
             # Match given instance id with lego brick id
             lego_instance_creation_success = lego_instance_response_text.get("creation_success")
 
-            # Get asset_id in response
-            lego_brick.asset_id = lego_instance_response_text.get("assetpos_id")
+            # Get assetpos_id in response
+            lego_brick.assetpos_id = lego_instance_response_text.get("assetpos_id")
             logger.debug("creation_success: {}, assetpos_id: {}"
-                         .format(lego_instance_creation_success, lego_brick.asset_id))
+                         .format(lego_instance_creation_success, lego_brick.assetpos_id))
 
     # Remove lego instance
     def remove_lego_instance(self, lego_instance):
 
         # Send a request to remove lego instance
-        logger.debug(HTTP + self.ip + PREFIX + REMOVE_ASSET_POS + str(lego_instance.asset_id))
+        logger.debug(HTTP + self.ip + PREFIX + REMOVE_ASSET_POS + str(lego_instance.assetpos_id))
         lego_remove_instance_response = requests.get(HTTP + self.ip
-                                                     + PREFIX + REMOVE_ASSET_POS + str(lego_instance.asset_id))
+                                                     + PREFIX + REMOVE_ASSET_POS + str(lego_instance.assetpos_id))
         logger.debug("remove instance {}, response {}".format(lego_instance, lego_remove_instance_response))

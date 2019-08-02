@@ -169,7 +169,7 @@ class LegoOutputStream:
     def labeling(frame, tracked_lego_brick: LegoBrick):
 
         # Draw lego bricks IDs
-        text = "ID {}".format(tracked_lego_brick.asset_id)
+        text = "ID {}".format(tracked_lego_brick.assetpos_id)
         tracked_lego_brick_position = tracked_lego_brick.centroid_x, tracked_lego_brick.centroid_y
         cv2.putText(frame, text, (tracked_lego_brick.centroid_x - BRICK_LABEL_OFFSET,
                                   tracked_lego_brick.centroid_y - BRICK_LABEL_OFFSET),

@@ -25,7 +25,7 @@ class LegoShape(Enum):
 
 # constants for the detection status
 # INTERNAL: used for buttons and controls
-# EXTERNAL: this has real geographical coordinates and an asset_id
+# EXTERNAL: this has real geographical coordinates and an assetpos_id
 # CANDIDATE: we not yet know if this is a real lego brick
 class LegoStatus(Enum):
     INTERNAL_BRICK = 0
@@ -39,9 +39,9 @@ class LegoBrick:
 
     def __init__(self, centroid_x: int, centroid_y: int, shape: LegoShape, color: LegoColor):
 
-        # the asset_id which the brick has on the server. this needs to be
+        # the assetpos_id which the brick has on the server. this needs to be
         # available if it is not a candidate and not internal
-        self.asset_id = None
+        self.assetpos_id = None
 
         # the x and y coordinates locally (in stream coordinates)
         # of the center of the detected shape
@@ -59,7 +59,7 @@ class LegoBrick:
     def clone(self):
         clone = LegoBrick(self.centroid_x, self.centroid_y, self.shape, self.color)
         clone.status = self.status
-        clone.asset_id = self.asset_id
+        clone.assetpos_id = self.assetpos_id
         return clone
 
     def __eq__(self, other):
@@ -76,4 +76,4 @@ class LegoBrick:
 
     def __str__(self):
         return "LegoBrick ({}, {}) [{}|{}|{}] {}".format(self.centroid_x, self.centroid_y,
-                                                         self.color, self.shape, self.status, self.asset_id)
+                                                         self.color, self.shape, self.status, self.assetpos_id)

@@ -7,6 +7,7 @@
     "qr_top_right": ["QR_Codes", "top_right.png"],
     "qr_size": 300
   },
+
   "video_output": {
     "name": "shape_detection_output.avi"
   },
@@ -32,6 +33,20 @@
 
   "qr_code": {
     "threshold": 60
+  },
+
+  "SQUARE_BRICK": {
+    "RED_BRICK": 1,
+    "BLUE_BRICK" : 3,
+    "GREEN_BRICK" : 5,
+    "YELLOW_BRICK" : 7
+  },
+
+  "RECTANGLE_BRICK": {
+    "RED_BRICK": 2,
+    "BLUE_BRICK" : 4,
+    "GREEN_BRICK" : 6,
+    "YELLOW_BRICK" : 8
   },
 
   "qgis_interaction": {

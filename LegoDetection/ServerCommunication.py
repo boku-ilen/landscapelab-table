@@ -20,11 +20,13 @@ class ServerCommunication:
 
     def __init__(self, config):
 
+        self.config = config
+
         # Initialize ip
-        self.ip = config.get("server", "ip")
+        self.ip = self.config.get("server", "ip")
 
         # Initialize lego position converter
-        self.lego_position_converter = LegoPositionConverter(config)
+        self.lego_position_converter = LegoPositionConverter(self.config)
 
     # Check status code of the response
     # Return True if 200, else return False
@@ -46,11 +48,13 @@ class ServerCommunication:
         # Compute geographical coordinates for lego bricks
         self.lego_position_converter.compute_coordinates(lego_brick)
 
+        # Map the lego brick asset_id from color & shape
+        lego_brick.map_asset_id(self.config)
+
         # Send request creating lego instance and save the response
-        # TODO: instead of color.value use a constant for type (shape & color)
-        logger.debug(HTTP + self.ip + PREFIX + CREATE_ASSET_POS + str(lego_brick.color.value)
+        logger.debug(HTTP + self.ip + PREFIX + CREATE_ASSET_POS + str(lego_brick.asset_id)
                      + "/" + str(lego_brick.map_pos_x) + "/" + str(lego_brick.map_pos_y))
-        lego_instance_response = requests.get(HTTP + self.ip + PREFIX + CREATE_ASSET_POS + str(lego_brick.color.value)
+        lego_instance_response = requests.get(HTTP + self.ip + PREFIX + CREATE_ASSET_POS + str(lego_brick.asset_id)
                                               + "/" + str(lego_brick.map_pos_x) + "/" + str(lego_brick.map_pos_y))
 
         # Check if status code is 200

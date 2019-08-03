@@ -18,9 +18,9 @@ class LegoColor(Enum):
 
 # constants for shape
 class LegoShape(Enum):
-    SQUARE_BRICK = 0
-    RECTANGLE_BRICK = 1
-    UNKNOWN_SHAPE = 2
+    UNKNOWN_SHAPE = 0
+    SQUARE_BRICK = 1
+    RECTANGLE_BRICK = 2
 
 
 # constants for the detection status
@@ -43,6 +43,10 @@ class LegoBrick:
         # available if it is not a candidate and not internal
         self.assetpos_id = None
 
+        # the asset_id which is mapped
+        # from color and shape
+        self.asset_id = None
+
         # the x and y coordinates locally (in stream coordinates)
         # of the center of the detected shape
         self.centroid_x: int = centroid_x
@@ -51,10 +55,14 @@ class LegoBrick:
         self.shape: LegoShape = shape
         self.color: LegoColor = color
         self.status: LegoStatus = LegoStatus.CANDIDATE_BRICK
-
         # these values will ONLY be set if the brick status is EXTERNAL_BRICK
         self.map_pos_x: Optional[float] = None
         self.map_pos_y: Optional[float] = None
+
+    def map_asset_id(self, config):
+
+        # map the lego brick asset_id from color & shape
+        self.asset_id = config.get(str(self.shape.name), str(self.color.name))
 
     def clone(self):
         clone = LegoBrick(self.centroid_x, self.centroid_y, self.shape, self.color)

@@ -40,7 +40,6 @@ class MapHandler:
         extent_height[1] += extent_h_diff / 2
         self.current_extent = [extent_height[0], extent_width[0], extent_height[1], extent_width[1]]
 
-
         # set socket & connection info
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.qgis_addr = (config.get('qgis_interaction', 'QGIS_IP'), config.get('qgis_interaction', 'QGIS_READ_PORT'))
@@ -74,7 +73,6 @@ class MapHandler:
             MapActions.ZOOM_OUT: partial(self.init_render, zoom_out_modifier, zoom_strength),
         }
 
-    # TODO: maybe use config manager to set extent and extend_changed flag to True
     # reloads the viewport image
     def refresh(self, extent):
         unused_slot = (self.current_image + 1) % 2
@@ -85,7 +83,6 @@ class MapHandler:
         self.config.set("map_settings", "extent_changed", True)
         MapHandler.MAP_REFRESHED = True
 
-    # TODO: maybe use extent_width & extent_height?
     # modifies the current extent and requests an updated render image
     # param brick gets ignored so that UIElements can call the function
     def init_render(self, extent_modifier, strength, brick):

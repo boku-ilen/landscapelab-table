@@ -24,6 +24,10 @@ except:
     logging.basicConfig(level=logging.INFO)
     logging.info("Could not initialize: logging.conf not found or misconfigured")
 
+# Number of RGB channels in
+# region of interest image
+CHANNELS_NUMBER = 3
+
 
 # TODO: rename
 # this class manages the base workflow and handles the main loop
@@ -72,7 +76,7 @@ class Main:
 
         # Initialize ROI as a black RGB-image
         region_of_interest = np.zeros((self.config.get("resolution", "height"),
-                                       self.config.get("resolution", "width"), 3), np.uint8)
+                                       self.config.get("resolution", "width"), CHANNELS_NUMBER), np.uint8)
 
         logger.info("initialized lego input stream")
 

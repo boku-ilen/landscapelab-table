@@ -25,6 +25,14 @@ INPUT_WEIGHT = 0.5
 # with the THRESH_BINARY
 MAX_VALUE = 255
 
+# Number of frames for
+# changing threshold_qrcode
+# when detecting the board corners
+MAX_FRAMES_NUMBER = 60
+
+# Adjusting threshold_qrcode step
+THRESHOLD_STEP = 5
+
 
 # this class manages the extent to detect and reference the extent of
 # the board related to the video stream
@@ -59,6 +67,8 @@ class BoardDetector:
         self.frame_height = self.config.get("resolution", "height")
 
         self.current_loop = 0
+
+        self.detect_corners_frames_number = 0
 
     # Compute pythagoras value
     @staticmethod
@@ -390,9 +400,6 @@ class BoardDetector:
     # background and current frame
     def subtract_background(self, color_image):
 
-
-        # TODO Moritz if current_loop >= MAX_LOOP_NUMBER do next stage "qr code"
-
         # Subtract background
         diff = cv2.absdiff(color_image, self.background.astype("uint8"))
         diff = cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY)
@@ -417,3 +424,25 @@ class BoardDetector:
             return True
 
         return False
+
+    # Adjust cyclically the threshold for finding qr-codes
+    def adjust_threshold_qrcode(self):
+
+        # Count frames
+        self.detect_corners_frames_number += 1
+
+        # Every X frames change the threshold
+        if self.detect_corners_frames_number % MAX_FRAMES_NUMBER == 0:
+
+            # Count the number of threshold change
+            loop = int(self.detect_corners_frames_number / MAX_FRAMES_NUMBER)
+
+            # For odd loops changed the sign
+            if loop % 2 == 0:
+                loop *= -1
+
+            # Adjust the threshold with +- step
+            new_threshold = self.config.get("qr_code", "threshold") + loop * THRESHOLD_STEP
+
+            # Set the new threshold
+            self.config.set("qr_code", "threshold", new_threshold)

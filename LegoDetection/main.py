@@ -115,9 +115,8 @@ class Main:
             self.map_handler.end()
 
     def white_balance(self, color_image):
-        # TODO Barabra implement white balance
-        #      when finished start next stage with command below
 
+        # when finished start next stage with command below
         if self.board_detector.compute_background(color_image):
             # switch to next stage if finished
             self.program_stage = self.program_stage.next()
@@ -125,7 +124,9 @@ class Main:
     # Detect the board using qr-codes polygon data saved in the array
     # -> self.board_detector.all_codes_polygons_points
     def detect_corners(self, color_image):
+
         logger.debug("No QR-code detector result")
+
         # TODO: use distance to set possible lego brick size
         logger.debug("Distance to the board is: {}".format(self.input_stream.get_distance_to_table()))
 
@@ -136,6 +137,9 @@ class Main:
         if all_board_corners_found:
             self.output_stream.set_active_channel(LegoOutputChannel.CHANNEL_ROI)
             self.program_stage = self.program_stage.next()
+
+        # use different thresholds for board detection
+        self.board_detector.adjust_threshold_qrcode()
 
     def do_lego_detection(self, region_of_interest, color_image):
         # If the board is detected take only the region

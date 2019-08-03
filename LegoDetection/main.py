@@ -99,8 +99,8 @@ class Main:
                 if self.program_stage == ProgramStage.WHITE_BALANCE:
                     self.white_balance(color_image)
 
-                elif self.program_stage == ProgramStage.FIND_BOARDERS:
-                    self.detect_boarders(color_image)
+                elif self.program_stage == ProgramStage.FIND_CORNERS:
+                    self.detect_corners(color_image)
 
                 elif self.program_stage == ProgramStage.LEGO_DETECTION:
                     self.do_lego_detection(region_of_interest, color_image)
@@ -124,7 +124,7 @@ class Main:
 
     # Detect the board using qr-codes polygon data saved in the array
     # -> self.board_detector.all_codes_polygons_points
-    def detect_boarders(self, color_image):
+    def detect_corners(self, color_image):
         logger.debug("No QR-code detector result")
         # TODO: use distance to set possible lego brick size
         logger.debug("Distance to the board is: {}".format(self.input_stream.get_distance_to_table()))

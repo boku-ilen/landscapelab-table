@@ -210,7 +210,7 @@ class LegoOutputStream:
             cv2.imshow(LegoOutputStream.WINDOW_NAME_BEAMER, frame)
             self.last_frame = frame
 
-        elif program_stage == ProgramStage.FIND_BOARDERS:
+        elif program_stage == ProgramStage.FIND_CORNERS:
 
             frame = self.last_frame
             # TODO make code pretty

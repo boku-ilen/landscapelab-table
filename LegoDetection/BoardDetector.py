@@ -230,7 +230,6 @@ class BoardDetector:
         # Check if all codes polygons points are available
         for code_polygon in self.all_codes_polygons_points:
             if code_polygon is None:
-                logger.debug("Not all codes polygons for board corners are available")
                 all_codes_flag = False
 
         # Continue if all needed data is available
@@ -404,6 +403,7 @@ class BoardDetector:
         diff = cv2.absdiff(color_image, self.background.astype("uint8"))
         diff = cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY)
         ret_val, diff = cv2.threshold(diff, self.threshold_qrcode, MAX_VALUE, cv2.THRESH_BINARY)
+        logger.debug("Using threshold for qr-codes {}".format(self.threshold_qrcode))
 
         # Return difference between
         # the current frame and background
@@ -426,6 +426,7 @@ class BoardDetector:
         return False
 
     # Adjust cyclically the threshold for finding qr-codes
+    # Example: 60 -> 65 -> 55 -> 70 -> 50 ...
     def adjust_threshold_qrcode(self):
 
         # Count frames
@@ -442,7 +443,6 @@ class BoardDetector:
                 loop *= -1
 
             # Adjust the threshold with +- step
-            new_threshold = self.config.get("qr_code", "threshold") + loop * THRESHOLD_STEP
+            self.threshold_qrcode += loop * THRESHOLD_STEP
 
-            # Set the new threshold
-            self.config.set("qr_code", "threshold", new_threshold)
+

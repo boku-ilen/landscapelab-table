@@ -135,6 +135,7 @@ class Main:
 
         # if all boarders were found change channel and start next stage
         if all_board_corners_found:
+            logger.debug("Used threshold for qr-codes -> {}".format(self.board_detector.threshold_qrcode))
             self.output_stream.set_active_channel(LegoOutputChannel.CHANNEL_ROI)
             self.program_stage = self.program_stage.next()
 

@@ -33,6 +33,9 @@ class LegoInputStream:
         self.width = config.get("resolution", "width")
         self.height = config.get("resolution", "height")
 
+        # TODO: save it in a class Board
+        self.board_distance = None
+
         # FIXME: missing frames when using videostream or too slow processing
         # https://github.com/IntelRealSense/librealsense/issues/2216
 
@@ -94,10 +97,17 @@ class LegoInputStream:
         else:
             return None, None
 
-    def get_distance_to_table(self):
+    # Get the depth information from the middle of the frame
+    # and save it if it is not 0
+    def get_distance_to_board(self):
+
+        # Get the depth information from the middle of the frame
         board_distance = self.aligned_depth_frame.get_distance(int(self.width/2), int(self.height/2)) / self.depth_scale
 
-        return board_distance
+        # if not 0 -> happen when the depth data
+        # is not correctly computed
+        if board_distance:
+            self.board_distance = board_distance
 
     def close(self):
         # Stop streaming

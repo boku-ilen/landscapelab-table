@@ -40,13 +40,16 @@ class BoardDetector:
 
     background = None
 
-    def __init__(self, config, threshold_qrcode, output_stream):
+    def __init__(self, config, threshold_qrcode, input_stream, output_stream):
 
         self.config = config
 
         # Threshold for finding QR-Codes
         # To change the threshold use an optional parameter
         self.threshold_qrcode = threshold_qrcode
+
+        # the inputstream
+        self.input_stream = input_stream
 
         # the outputstream
         self.output_stream = output_stream
@@ -55,9 +58,6 @@ class BoardDetector:
         self.board_size_width = None
         self.board_size_height = None
         self.board_corners = None
-
-        # the distance to the board
-        self.board_distance = None
 
         # Array with all polygons of QR-Codes for board corners
         self.all_codes_polygons_points = [None, None, None, None]
@@ -363,10 +363,10 @@ class BoardDetector:
 
         # clipping the color image to the area with the right distance values
         # TODO: find a working pythonic way
-        if self.board_distance:
+        if self.input_stream.board_distance:
             clipped_color_image = np.where(
-                (depth_image_3d > self.board_distance * (1 + CLIP)) |
-                (depth_image_3d < self.board_distance * (1 - CLIP)),
+                (depth_image_3d > self.input_stream.board_distance * (1 + CLIP)) |
+                (depth_image_3d < self.input_stream.board_distance * (1 - CLIP)),
             0, color_image)
         else:
             clipped_color_image = color_image
@@ -444,5 +444,3 @@ class BoardDetector:
 
             # Adjust the threshold with +- step
             self.threshold_qrcode += loop * THRESHOLD_STEP
-
-

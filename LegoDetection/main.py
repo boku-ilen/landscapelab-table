@@ -59,7 +59,8 @@ class Main:
         self.input_stream = LegoInputStream(self.config, usestream=self.used_stream)
 
         # Initialize board detection
-        self.board_detector = BoardDetector(self.config, self.config.get("qr_code", "threshold"), self.output_stream)
+        self.board_detector = BoardDetector(self.config, self.config.get("qr_code", "threshold"),
+                                            self.input_stream, self.output_stream)
 
         # Initialize the QGIS listener Thread
         self.listener_thread = ListenerThread(self.config, self.map_handler)
@@ -128,7 +129,8 @@ class Main:
         logger.debug("No QR-code detector result")
 
         # TODO: use distance to set possible lego brick size
-        logger.debug("Distance to the board is: {}".format(self.input_stream.get_distance_to_table()))
+        self.input_stream.get_distance_to_board()
+        logger.debug("Distance to the board is: {}".format(self.input_stream.board_distance))
 
         # Find position of board corners
         all_board_corners_found, board_corners = self.board_detector.detect_board(color_image)

@@ -76,12 +76,20 @@ class MapHandler:
 
     # reloads the viewport image
     def refresh(self, extent):
+        logger.info("refreshing map")
+
         unused_slot = (self.current_image + 1) % 2
 
         self.qgis_image[unused_slot] = cv.imread(self.image_path, 1)
         self.current_image = unused_slot
-        self.current_extent = extent
-        self.config.set("map_settings", "extent_changed", True)
+
+        if not np.array_equal(self.current_extent, extent):
+            self.current_extent = extent
+            self.config.set("map_settings", "extent_changed", True)
+            self.config.set("map_settings", "extent_width", [extent[1], extent[3]])
+            self.config.set("map_settings", "extent_height", [extent[0], extent[2]])
+            logger.info("extent changed")
+
         MapHandler.MAP_REFRESHED = True
 
     # modifies the current extent and requests an updated render image

@@ -2,6 +2,7 @@ import logging
 import typing
 from LegoBricks import LegoBrick, LegoStatus
 from LegoUI.UIElements.UIElement import UIElement
+from LegoPositionConverter import LegoPositionConverter
 from typing import Callable
 from functools import partial
 
@@ -38,7 +39,10 @@ class Tracker:
 
         # Initialize a flag for
         # changes in the map extent
-        self.extend_changed = False
+        self.extent_changed = False
+
+        # Initialize lego position converter
+        self.lego_position_converter = LegoPositionConverter(self.config)
 
     def update(self, lego_bricks_candidates: typing.List[LegoBrick]) -> typing.List[LegoBrick]:
 
@@ -123,7 +127,6 @@ class Tracker:
 
                 # if the brick is associated with an asset also send a remove request to the server
                 if brick.status == LegoStatus.EXTERNAL_BRICK:
-                    #self.set_virtual_brick_at(brick)
                     self.server_communicator.remove_lego_instance(brick)
 
         # remove the disappeared elements from dicts
@@ -140,11 +143,11 @@ class Tracker:
             # this might happen when a ui elements visibility gets toggled
             if self.brick_on_ui(brick):
                 if brick.status == LegoStatus.EXTERNAL_BRICK:
-                    self.set_brick_outdated(brick)
+                    Tracker.set_brick_outdated(brick)
                     self.server_communicator.remove_lego_instance(brick)
             else:
                 if brick.status == LegoStatus.INTERNAL_BRICK:
-                    self.set_brick_outdated(brick)
+                    Tracker.set_brick_outdated(brick)
 
         for brick in self.virtual_bricks:
             # remove any virtual internal bricks that do not lie on ui elements anymore
@@ -215,31 +218,33 @@ class Tracker:
     # marks external bricks as outdated if the map was updated
     # TODO add virtual brick to original position
     def mark_external_bricks_outdated_if_map_updated(self):
-        # if the extend changed, set external bricks as outdated
-        self.extend_changed = self.config.get("map_settings", "extend_changed")
-        if self.extend_changed is True:
+        # if the extent changed, set external bricks as outdated
+        self.extent_changed = self.config.get("map_settings", "extent_changed")
+        if self.extent_changed is True:
+            logger.info("set bricks outdated because extent changed")
             for brick in self.confirmed_bricks:
                 if brick.status == LegoStatus.EXTERNAL_BRICK:
                     # change status of lego bricks to outdated
-                    self.set_virtual_brick_at(brick)
+                    self.set_virtual_brick_at_global_pos_of(brick)
                     # TODO the virtual brick should have the same position on the map as the original brick
                     #  since the extent was altered there needs to be some way to reverse engineer the board position
                     #  from map coordinates
-                    self.set_brick_outdated(brick)
+                    Tracker.set_brick_outdated(brick)
 
             # set the flag back
-            self.config.set("map_settings", "extend_changed", "False")
+            self.config.set("map_settings", "extent_changed", False)
 
-    def set_brick_outdated(self, brick: LegoBrick):
-
-        if brick.status == LegoStatus.EXTERNAL_BRICK:
-            self.set_virtual_brick_at(brick)
-
+    @staticmethod
+    def set_brick_outdated(brick: LegoBrick):
         brick.status = LegoStatus.OUTDATED_BRICK
         Tracker.BRICKS_REFRESHED = True
 
-    def set_virtual_brick_at(self, brick: LegoBrick):
-        self.virtual_bricks.append(brick.clone())
+    def set_virtual_brick_at_global_pos_of(self, brick: LegoBrick):
+        virtual_brick = brick.clone()
+        self.lego_position_converter.compute_board_coordinates(virtual_brick)
+
+        self.virtual_bricks.append(virtual_brick)
+        Tracker.BRICKS_REFRESHED = True
 
     def brick_on_ui(self, brick):
         board_to_beamer = self.get_board_to_beamer_conversion()

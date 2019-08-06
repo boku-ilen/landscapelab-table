@@ -46,7 +46,7 @@ class ServerCommunication:
     def create_lego_instance(self, lego_brick: LegoBrick):
 
         # Compute geographical coordinates for lego bricks
-        self.lego_position_converter.compute_coordinates(lego_brick)
+        self.lego_position_converter.compute_geo_coordinates(lego_brick)
 
         # Map the lego brick asset_id from color & shape
         lego_brick.map_asset_id(self.config)

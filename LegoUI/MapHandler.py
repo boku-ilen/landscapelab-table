@@ -30,7 +30,7 @@ class MapHandler:
         self.current_image = 0
 
         # fit extent to resolution and set it
-        beamer_ratio = self.resolution_y / self.resolution_x
+        beamer_ratio = self.resolution_x / self.resolution_y
         extent_width = config.get('map_settings', 'extent_width')
         extent_height = config.get('map_settings', 'extent_height')
         extent_w = abs(extent_width[0] - extent_width[1])

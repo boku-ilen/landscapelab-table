@@ -55,8 +55,9 @@
     "LEGO_READ_PORT": 5006,
     "UDP_BUFFER_SIZE": 1024,
     "QGIS_IMAGE_PATH": "C:/landscapelab/qgis/outputImage.png",
-    "UPDATE_KEYWORD": "update ",
-    "RENDER_KEYWORD": "render "
+    "UPDATE_KEYWORD": "update:",
+    "RENDER_KEYWORD": "render:",
+    "EXIT_KEYWORD": "exit"
   },
 
   "button_map": {

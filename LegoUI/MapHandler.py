@@ -48,6 +48,7 @@ class MapHandler:
         # get communication info
         self.image_path = config.get('qgis_interaction', 'QGIS_IMAGE_PATH')
         self.render_keyword = config.get('qgis_interaction', 'RENDER_KEYWORD')
+        self.exit_keyword = config.get('qgis_interaction', 'EXIT_KEYWORD')
 
         # request first render
         self.request_render(self.current_extent)
@@ -120,6 +121,6 @@ class MapHandler:
         return self.qgis_image[self.current_image]
 
     def end(self):
-        # self.sock.sendto(b'exit', self.qgis_addr)
-        self.sock.sendto(b'exit', self.lego_addr)
+        # self.sock.sendto(self.exit_keyword.encode(), self.qgis_addr)
+        self.sock.sendto(self.exit_keyword.encode(), self.lego_addr)
         self.sock.close()

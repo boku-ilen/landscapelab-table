@@ -316,7 +316,7 @@ class LegoOutputStream:
         return self.config.get("board", "width"), self.config.get("board", "height")
 
     def get_beamer_res(self):
-        return self.last_frame.shape[1], self.last_frame.shape[0]
+        return self.config.get("beamer-resolution", "width"), self.config.get("beamer-resolution", "height")
 
     def beamer_mouse_callback(self, event, x, y, flags, param):
         mouse_pos = self.beamer_to_board(LegoBrick(x, y, LegoShape.RECTANGLE_BRICK, LegoColor.BLUE_BRICK))

@@ -19,10 +19,10 @@ class Button(UIStructureBlock):
 
         # TODO: adjust colors
         # set visuals
-        self.color = (100, 100, 100)
+        self.color = (255, 255, 255)
         self.icon = None
 
-        self.color_pressed = (150, 150, 150)
+        self.color_pressed = (200, 200, 200)
         self.icon_pressed = None
 
         self.name: str = name

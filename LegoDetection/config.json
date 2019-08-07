@@ -22,8 +22,14 @@
   },
 
   "beamer-resolution": {
+    "screen-id": 1,
+    "NOTE": ["screen id refers to the display the beamer output should be started on",
+      "if the id exceeds the currently attached screen count the screen with the highest id will be selected",
+      "if the id is negative the beamer output will be shown in a window instead of full-screen"],
     "width": 1800,
-    "height": 1000
+    "height": 1000,
+    "pos-x": NaN,
+    "pos-y": NaN
   },
 
   "board": {

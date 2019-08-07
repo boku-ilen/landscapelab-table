@@ -37,6 +37,7 @@ class Main:
 
         # Initialize config manager
         self.config = ConfigManager()
+        LegoOutputStream.set_beamer_config_info(self.config)
 
         self.program_stage = ProgramStage.WHITE_BALANCE
 

@@ -1,5 +1,6 @@
 from enum import Enum
 import cv2
+import screeninfo
 from ProgramStage import ProgramStage
 from Tracker import Tracker
 from ConfigManager import ConfigManager
@@ -71,9 +72,22 @@ class LegoOutputStream:
         self.active_channel = LegoOutputChannel.CHANNEL_BOARD_DETECTION
         self.active_window = LegoOutputStream.WINDOW_NAME_DEBUG  # TODO: implement window handling
 
-        # create output windows
+        # create debug window
         cv2.namedWindow(LegoOutputStream.WINDOW_NAME_DEBUG, cv2.WINDOW_AUTOSIZE)
-        cv2.namedWindow(LegoOutputStream.WINDOW_NAME_BEAMER, cv2.WINDOW_AUTOSIZE)
+
+        # create beamer window
+        beamer_id = self.config.get("beamer-resolution", "screen-id")
+        if beamer_id >= 0:
+            pos_x = config.get("beamer-resolution", "pos-x")
+            pos_y = config.get("beamer-resolution", "pos-y")
+
+            logger.info("beamer coords: {} {}".format(pos_x, pos_y))
+
+            cv2.namedWindow(LegoOutputStream.WINDOW_NAME_BEAMER, cv2.WND_PROP_FULLSCREEN)
+            cv2.moveWindow(LegoOutputStream.WINDOW_NAME_BEAMER, pos_x, pos_y)
+            cv2.setWindowProperty(LegoOutputStream.WINDOW_NAME_BEAMER, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+        else:
+            cv2.namedWindow(LegoOutputStream.WINDOW_NAME_BEAMER, cv2.WINDOW_AUTOSIZE)
         cv2.setMouseCallback(LegoOutputStream.WINDOW_NAME_BEAMER, self.beamer_mouse_callback)
 
         if video_output_name:
@@ -124,6 +138,21 @@ class LegoOutputStream:
         self.qr_bottom_right = cv2.resize(self.load_image("qr_bottom_right"), (qr_size, qr_size))
         self.qr_top_left = cv2.resize(self.load_image("qr_top_left"), (qr_size, qr_size))
         self.qr_top_right = cv2.resize(self.load_image("qr_top_right"), (qr_size, qr_size))
+
+    @staticmethod
+    def set_beamer_config_info(config):
+        beamer_id = config.get("beamer-resolution", "screen-id")
+        if beamer_id >= 0:
+            monitors = screeninfo.get_monitors()
+
+            # if beamer-id out of bounds use last screen
+            beamer_id = min(beamer_id, len(monitors) - 1)
+
+            beamer = monitors[beamer_id]
+            config.set("beamer-resolution", "width", beamer.width)
+            config.set("beamer-resolution", "height", beamer.height)
+            config.set("beamer-resolution", "pos-x", beamer.x - 1)
+            config.set("beamer-resolution", "pos-y", beamer.y - 1)
 
     @staticmethod
     def reconstruct_path(base_path, relative_path: List[str]):

@@ -66,6 +66,10 @@
     "EXIT_KEYWORD": "exit"
   },
 
+  "ui-settings": {
+    "nav-block-toggle": true
+  },
+
   "button_map": {
     "MAP_PAN_UP": "w",
     "MAP_PAN_DOWN": "s",

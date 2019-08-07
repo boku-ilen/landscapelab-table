@@ -1,13 +1,14 @@
 from LegoUI.UIElements.UIElement import UIElement, UIActionType
 from LegoUI.UIElements.Button import Button
 from LegoUI.UIElements.UIStructureBlock import UIStructureBlock
+from ConfigManager import ConfigManager
 from typing import Dict, Callable
 from LegoUI.MapActions import MapActions
 
 BUTTON_SIZE = (50, 50)
 
 
-def setup_ui(action_map: Dict[MapActions, Callable]) -> UIElement:
+def setup_ui(action_map: Dict[MapActions, Callable], config: ConfigManager) -> UIElement:
 
     # create root element
     root = UIElement()
@@ -36,14 +37,23 @@ def setup_ui(action_map: Dict[MapActions, Callable]) -> UIElement:
     navigation_block.set_visible(False)
 
     # set button functionality
-    toggle_nav_block_button.set_callback(UIActionType.PRESS, lambda brick: navigation_block.set_visible(True))
-    toggle_nav_block_button.set_callback(UIActionType.RELEASE, lambda brick: navigation_block.set_visible(False))
     pan_up_button.set_callback(UIActionType.PRESS, action_map[MapActions.PAN_UP])
     pan_down_button.set_callback(UIActionType.PRESS, action_map[MapActions.PAN_DOWN])
     pan_left_button.set_callback(UIActionType.PRESS, action_map[MapActions.PAN_LEFT])
     pan_right_button.set_callback(UIActionType.PRESS, action_map[MapActions.PAN_RIGHT])
     zoom_in_button.set_callback(UIActionType.PRESS, action_map[MapActions.ZOOM_IN])
     zoom_out_button.set_callback(UIActionType.PRESS, action_map[MapActions.ZOOM_OUT])
+
+    if config.get("ui-settings", "nav-block-toggle"):
+        # this makes the button toggle
+        toggle_nav_block_button.set_callback(
+            UIActionType.PRESS,
+            lambda brick: navigation_block.set_visible(not navigation_block.visible)
+        )
+    else:
+        # this shows the nav_block only when a brick is on the button
+        toggle_nav_block_button.set_callback(UIActionType.PRESS, lambda brick: navigation_block.set_visible(True))
+        toggle_nav_block_button.set_callback(UIActionType.RELEASE, lambda brick: navigation_block.set_visible(False))
 
     return root
 

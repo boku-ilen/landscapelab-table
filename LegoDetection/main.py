@@ -50,7 +50,7 @@ class Main:
 
         # initialize map handler and ui
         self.map_handler = MapHandler(self.config)
-        ui_root = setup_ui(self.map_handler.action_map)
+        ui_root = setup_ui(self.map_handler.action_map, self.config)
 
         # Initialize the centroid tracker
         self.tracker = Tracker(self.config, self.server, ui_root)

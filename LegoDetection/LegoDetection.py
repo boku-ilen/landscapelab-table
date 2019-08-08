@@ -32,21 +32,25 @@ MAX_REC = 2.5
 KERNEL_SIZE = (5, 5)
 
 # TODO: make masks configurable ?
+# OpenCV supports:
+# H-value range (0 to 180)
+# S-value range (0 to 255)
+# V-value range (0 to 255)
 masks_configuration = {
     # TODO: adjust yellow so skin will be excluded
     #LegoColor.YELLOW_BRICK: [
     #    (np.array([10, 100, 100]), np.array([20, 255, 200])),
     #],
     # TODO: adjust green so black will be excluded
-    #LegoColor.GREEN_BRICK: [
-    #    (np.array([55, 50, 50]), np.array([95, 255, 255])),
-    #],
+    LegoColor.GREEN_BRICK: [
+        (np.array([40, 50, 50]), np.array([80, 255, 255])),
+    ],
     LegoColor.BLUE_BRICK: [
-        (np.array([95, 100, 10]), np.array([170, 255, 255])),
+        (np.array([100, 50, 50]), np.array([140, 255, 255])),
     ],
     LegoColor.RED_BRICK: [
-        (np.array([0, 120, 120]), np.array([10, 255, 255])),
-        (np.array([170, 50, 120]), np.array([180, 255, 255])),
+        (np.array([0, 120, 50]), np.array([20, 255, 255])),
+        (np.array([160, 50, 50]), np.array([180, 255, 255])),
     ]
 }
 
@@ -103,7 +107,7 @@ class ShapeDetector:
                     if contour_shape is not LegoShape.UNKNOWN_SHAPE:
 
                         # Compute a list of contour pixels
-                        cv2.drawContours(frame, [approx], 0, (0, 0, 255), cv2.FILLED)
+                        # cv2.drawContours(frame, [approx], 0, (0, 0, 255), cv2.FILLED)
                         contour_pixels = self.compute_contour_pixels(approx, frame)
 
                         # Initialize a dictionary with colors and number of pixels
@@ -118,8 +122,8 @@ class ShapeDetector:
                             # pixels[1] includes a list of column indices
                             contour_pixels_row = contour_pixels[0]
                             contour_pixels_column = contour_pixels[1]
-                            for idx in range(len(contour_pixels_row)):
 
+                            for idx in range(len(contour_pixels_row)):
                                 if mask[contour_pixels_row[idx], contour_pixels_column[idx]] == 255:
 
                                     # Count color of pixels in the contour
@@ -203,10 +207,11 @@ class ShapeDetector:
         # Do some morphological corrections (fill 'holes' in masks)
         kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, KERNEL_SIZE)
 
-        mask_colors = None
         color_masks = {}
         for mask_color, mask_config in masks_configuration.items():
+
             masks = None
+            mask_colors = None
             for entry in mask_config:
                 mask = cv2.inRange(frame_hsv, entry[0], entry[1])
                 if masks is None:

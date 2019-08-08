@@ -86,40 +86,57 @@ class ShapeDetector:
             # its centroid, and information about its orientation
             moments_dict = cv2.moments(contour)
 
-            # Compute the centroid of the contour (cX, cY)
+            # Compute the centroid of the contour
             if moments_dict["m00"] != 0:
                 centroid_x = int((moments_dict["m10"] / moments_dict["m00"]))
                 centroid_y = int((moments_dict["m01"] / moments_dict["m00"]))
 
+                # Compute a list of contour pixels
+                # cv2.drawContours(frame, [approx], 0, (0, 0, 255), cv2.FILLED)
+                contour_pixels = self.compute_contour_pixels(approx, frame)
+
+                # Initialize a dictionary with colors and number of pixels
+                color_count = {}
+
                 # Check color of the lego brick
                 for color, mask in color_masks.items():
-                    if mask[centroid_y, centroid_x] == 255:
-                        detected_color = color
-                        break
+
+                    color_count[color] = 0
+
+                    # pixels[0] includes a list of row indices
+                    # pixels[1] includes a list of column indices
+                    for idx in range(len(contour_pixels[0])):
+                        if mask[contour_pixels[0][idx], contour_pixels[1][idx]] == 255:
+
+                            # Count color of pixels in the contour
+                            color_count[color] += 1
+
+                # Find the most common color in the contour
+                colors = list(color_count.keys())
+                counts = list(color_count.values())
+                max_counts = max(counts)
 
                 # Eliminate wrong colors contours
-                if detected_color == LegoColor.UNKNOWN_COLOR:
+                if max_counts is 0:
+                    detected_color = LegoColor.UNKNOWN_COLOR
                     logger.debug("Don't draw -> wrong color")
-
-                # Eliminate very small contours
-                elif cv2.contourArea(contour) < MIN_AREA:
-                    logger.debug("Don't draw -> area too small")
-
                 else:
+                    detected_color = colors[counts.index(max_counts)]
 
-                    # Compute the rotated bounding box
-                    rect = cv2.minAreaRect(contour)
-                    rotated_bbox = np.int0(cv2.boxPoints(rect))
+                    # Eliminate very small contours
+                    if cv2.contourArea(contour) < MIN_AREA:
+                        logger.debug("Don't draw -> area too small")
 
-                    contour_shape = self.check_if_square(rotated_bbox)
+                    else:
+                        contour_shape = self.check_if_square(approx)
 
-                    logger.debug("Draw contour:\n Shape: {}\n Color: {}\n "
-                                 "Center coordinates: {}, {}\n Contour area: {}".
-                                 format(contour_shape, detected_color,
-                                        centroid_x, centroid_y, cv2.contourArea(contour)))
+                        logger.debug("Draw contour:\n Shape: {}\n Color: {}\n "
+                                     "Center coordinates: {}, {}\n Contour area: {}".
+                                     format(contour_shape, detected_color,
+                                            centroid_x, centroid_y, cv2.contourArea(contour)))
 
-                    # return a LegoBrick with the detected parameters
-                    return LegoBrick(centroid_x, centroid_y, contour_shape, detected_color)
+                        # return a LegoBrick with the detected parameters
+                        return LegoBrick(centroid_x, centroid_y, contour_shape, detected_color)
 
         return None  # FIXME: CG: we might to differ?
 
@@ -199,12 +216,31 @@ class ShapeDetector:
 
         self.output_stream.write_to_channel(LegoOutputChannel.CHANNEL_MASKS, mask_colors)
 
-        # Find contours in the thresholded image
+        # Find all edges
+        frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        frame_gray = 255 - frame_gray
+        edges = cv2.Canny(frame_gray, 30, 120)
+
+        # Find contours in the edges image
         # Retrieve all of the contours without establishing any hierarchical relationships (RETR_LIST)
         major = cv2.__version__.split('.')[0]
         if major == '3':
-            _, contours, hierarchy = cv2.findContours(mask_colors.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+            _, contours, hierarchy = cv2.findContours(edges.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
         else:
-            contours, hierarchy = cv2.findContours(mask_colors.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+            contours, hierarchy = cv2.findContours(edges.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
 
         return contours, color_masks
+
+    # Return the list of the contour pixels
+    @staticmethod
+    def compute_contour_pixels(contour, frame):
+
+        # Create a mask image that contains the contour filled in
+        # Create a blank image
+        contour_img = np.zeros_like(frame)
+        # Draw the filled-in contour in this blank image
+        cv2.drawContours(contour_img, [contour], 0, (255, 255, 255), cv2.FILLED)
+        # Access the image pixels
+        contour_pixels = np.where(contour_img == 255)
+
+        return contour_pixels

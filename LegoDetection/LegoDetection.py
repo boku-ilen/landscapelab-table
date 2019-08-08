@@ -42,9 +42,9 @@ masks_configuration = {
     #    (np.array([10, 100, 100]), np.array([20, 255, 200])),
     #],
     # TODO: adjust green so black will be excluded
-    LegoColor.GREEN_BRICK: [
-        (np.array([40, 50, 50]), np.array([80, 255, 255])),
-    ],
+    #LegoColor.GREEN_BRICK: [
+    #    (np.array([40, 50, 50]), np.array([80, 255, 255])),
+    #],
     LegoColor.BLUE_BRICK: [
         (np.array([100, 50, 50]), np.array([140, 255, 255])),
     ],
@@ -201,31 +201,8 @@ class ShapeDetector:
 
     def detect_contours(self, frame):
 
-        # Set red and blue mask
-        frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-
-        # Do some morphological corrections (fill 'holes' in masks)
-        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, KERNEL_SIZE)
-
-        color_masks = {}
-        for mask_color, mask_config in masks_configuration.items():
-
-            masks = None
-            mask_colors = None
-            for entry in mask_config:
-                mask = cv2.inRange(frame_hsv, entry[0], entry[1])
-                if masks is None:
-                    masks = mask
-                else:
-                    masks = masks + mask
-            dilate = cv2.dilate(masks, kernel, iterations=1)
-            if mask_colors is None:
-                mask_colors = dilate
-            else:
-                mask_colors = mask_colors + dilate
-            color_masks[mask_color] = mask_colors
-
-        self.output_stream.write_to_channel(LegoOutputChannel.CHANNEL_MASKS, mask_colors)
+        # Save color masks as configured
+        color_masks = self.compute_color_masks(frame)
 
         # Find all edges
         frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -241,6 +218,53 @@ class ShapeDetector:
             contours, hierarchy = cv2.findContours(edges.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
 
         return contours, color_masks
+
+    # Save color masks as configured
+    def compute_color_masks(self, frame):
+
+        # Set red and blue mask
+        frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+
+        # Do some morphological corrections (fill 'holes' in masks)
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, KERNEL_SIZE)
+
+        # Initialize a dictionary with color masks
+        # and all masks together
+        color_masks = {}
+        all_color_masks = None
+
+        # Save color masks as configured
+        for mask_color, mask_config in masks_configuration.items():
+
+            masks = None
+            mask_colors = None
+
+            # Save color masks as configured
+            for entry in mask_config:
+                mask = cv2.inRange(frame_hsv, entry[0], entry[1])
+                if masks is None:
+                    masks = mask
+                else:
+                    masks = masks + mask
+
+            # Use dilation to 'fill holes' if needed
+            dilate = cv2.dilate(masks, kernel, iterations=1)
+            if mask_colors is None:
+                mask_colors = dilate
+            else:
+                mask_colors = mask_colors + dilate
+            color_masks[mask_color] = mask_colors
+
+            # Save all masks together
+            if all_color_masks is None:
+                all_color_masks = color_masks[mask_color]
+            else:
+                all_color_masks = all_color_masks + color_masks[mask_color]
+
+        # Show all masks together as a debug channel
+        self.output_stream.write_to_channel(LegoOutputChannel.CHANNEL_MASKS, all_color_masks)
+
+        return color_masks
 
     # Return the list of the contour pixels
     @staticmethod

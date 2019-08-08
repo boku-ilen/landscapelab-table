@@ -91,52 +91,58 @@ class ShapeDetector:
                 centroid_x = int((moments_dict["m10"] / moments_dict["m00"]))
                 centroid_y = int((moments_dict["m01"] / moments_dict["m00"]))
 
-                # Compute a list of contour pixels
-                # cv2.drawContours(frame, [approx], 0, (0, 0, 255), cv2.FILLED)
-                contour_pixels = self.compute_contour_pixels(approx, frame)
+                # Eliminate very small contours
+                if cv2.contourArea(contour) < MIN_AREA:
+                    logger.debug("Don't draw -> area too small")
 
-                # Initialize a dictionary with colors and number of pixels
-                color_count = {}
-
-                # Check color of the lego brick
-                for color, mask in color_masks.items():
-
-                    color_count[color] = 0
-
-                    # pixels[0] includes a list of row indices
-                    # pixels[1] includes a list of column indices
-                    for idx in range(len(contour_pixels[0])):
-                        if mask[contour_pixels[0][idx], contour_pixels[1][idx]] == 255:
-
-                            # Count color of pixels in the contour
-                            color_count[color] += 1
-
-                # Find the most common color in the contour
-                colors = list(color_count.keys())
-                counts = list(color_count.values())
-                max_counts = max(counts)
-
-                # Eliminate wrong colors contours
-                if max_counts is 0:
-                    detected_color = LegoColor.UNKNOWN_COLOR
-                    logger.debug("Don't draw -> wrong color")
                 else:
-                    detected_color = colors[counts.index(max_counts)]
 
-                    # Eliminate very small contours
-                    if cv2.contourArea(contour) < MIN_AREA:
-                        logger.debug("Don't draw -> area too small")
+                    # Check if contour is a rectangle or square
+                    contour_shape = self.check_if_square(approx)
 
-                    else:
-                        contour_shape = self.check_if_square(approx)
+                    if contour_shape is not LegoShape.UNKNOWN_SHAPE:
 
-                        logger.debug("Draw contour:\n Shape: {}\n Color: {}\n "
-                                     "Center coordinates: {}, {}\n Contour area: {}".
-                                     format(contour_shape, detected_color,
-                                            centroid_x, centroid_y, cv2.contourArea(contour)))
+                        # Compute a list of contour pixels
+                        cv2.drawContours(frame, [approx], 0, (0, 0, 255), cv2.FILLED)
+                        contour_pixels = self.compute_contour_pixels(approx, frame)
 
-                        # return a LegoBrick with the detected parameters
-                        return LegoBrick(centroid_x, centroid_y, contour_shape, detected_color)
+                        # Initialize a dictionary with colors and number of pixels
+                        color_count = {}
+
+                        # Check color of the lego brick
+                        for color, mask in color_masks.items():
+
+                            color_count[color] = 0
+
+                            # pixels[0] includes a list of row indices
+                            # pixels[1] includes a list of column indices
+                            contour_pixels_row = contour_pixels[0]
+                            contour_pixels_column = contour_pixels[1]
+                            for idx in range(len(contour_pixels_row)):
+
+                                if mask[contour_pixels_row[idx], contour_pixels_column[idx]] == 255:
+
+                                    # Count color of pixels in the contour
+                                    color_count[color] += 1
+
+                        # Find the most common color in the contour
+                        colors = list(color_count.keys())
+                        counts = list(color_count.values())
+                        max_counts = max(counts)
+
+                        # Eliminate wrong colors contours
+                        if max_counts is 0:
+                            detected_color = LegoColor.UNKNOWN_COLOR
+                            logger.debug("Don't draw -> wrong color")
+                        else:
+                            detected_color = colors[counts.index(max_counts)]
+                            logger.debug("Draw contour:\n Shape: {}\n Color: {}\n "
+                                         "Center coordinates: {}, {}\n Contour area: {}".
+                                         format(contour_shape, detected_color,
+                                                centroid_x, centroid_y, cv2.contourArea(contour)))
+
+                            # return a LegoBrick with the detected parameters
+                            return LegoBrick(centroid_x, centroid_y, contour_shape, detected_color)
 
         return None  # FIXME: CG: we might to differ?
 

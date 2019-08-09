@@ -108,7 +108,9 @@ class ShapeDetector:
                     # Check if contour is a rectangle or square
                     contour_shape = self.check_if_square(approx)
 
-                    if contour_shape is not LegoShape.UNKNOWN_SHAPE:
+                    if contour_shape is LegoShape.UNKNOWN_SHAPE:
+                        logger.debug("Don't draw -> unknown shape")
+                    else:
 
                         # Create an empty histogram mask of the frame size
                         if self.histogram_mask is None:
@@ -125,7 +127,7 @@ class ShapeDetector:
 
                         # Eliminate wrong colors contours
                         if detected_color == LegoColor.UNKNOWN_COLOR:
-                            logger.debug("Don't draw -> wrong color")
+                            logger.debug("Don't draw -> unknown color")
                         else:
                             logger.debug("Draw contour:\n Shape: {}\n Color: {}\n "
                                          "Center coordinates: {}, {}\n Contour area: {}".
@@ -140,12 +142,15 @@ class ShapeDetector:
     # Check if the contour has a lego brick shape: square or rectangle
     def check_if_square(self, rotated_bbox) -> LegoShape:
 
-        # Compute the aspect ratio of the two lengths
-        # Is set to 0, if the size of lego was not correct
-        aspect_ratio = self.calculate_sides_ratio(rotated_bbox)
+        rotated_bbox_lengths = self.calculate_rotated_bbox_lengths(rotated_bbox)
 
-        if aspect_ratio == 0:
+        # Check if sides of the lego brick are not too short/long
+        if (MIN_ROTATED_LENGTH > rotated_bbox_lengths[0] > MAX_ROTATED_LENGTH) \
+                | (MIN_ROTATED_LENGTH > rotated_bbox_lengths[1] > MAX_ROTATED_LENGTH):
             return LegoShape.UNKNOWN_SHAPE
+
+        # Compute the aspect ratio of the two lengths
+        aspect_ratio = int(rotated_bbox_lengths[0]) / int(rotated_bbox_lengths[1])
 
         # Check if aspect ratio is near 1:1
         if MIN_SQ <= aspect_ratio <= MAX_SQ:
@@ -157,9 +162,12 @@ class ShapeDetector:
             logger.debug("Rectangle ratio: {}".format(aspect_ratio))
             return LegoShape.RECTANGLE_BRICK
 
+        else:
+            return LegoShape.UNKNOWN_SHAPE
+
     # Compute two sides lengths of the contour, which have a common corner
     @staticmethod
-    def calculate_sides_ratio(rotated_bbox):
+    def calculate_rotated_bbox_lengths(rotated_bbox):
 
         # Initialize a list for sides lengths of the contour
         sides_lengths_list = []
@@ -174,17 +182,7 @@ class ShapeDetector:
         rotated_bbox_lengths = np.delete(sides_lengths_list, np.argmax(sides_lengths_list))
         logger.debug("Rotated bbox size: {}".format(rotated_bbox_lengths))
 
-        # Check if the lego brick is not too small/large
-        if (MIN_ROTATED_LENGTH > rotated_bbox_lengths[0] > MAX_ROTATED_LENGTH) \
-                | (MIN_ROTATED_LENGTH > rotated_bbox_lengths[1] > MAX_ROTATED_LENGTH):
-            logger.debug("Don't draw -> wrong size")
-            return 0
-
-        # Compute the aspect ratio of the two lengths
-        ratio = int(rotated_bbox_lengths[0]) / int(rotated_bbox_lengths[1])
-
-        # Return the aspect ratio of two sides lengths of the rotated bounding box
-        return ratio
+        return rotated_bbox_lengths
 
     @staticmethod
     def detect_contours(frame):
@@ -249,10 +247,8 @@ class ShapeDetector:
 
                         # Return an accepted
                         # detected color name
-                        print("detected", most_frequent_hue_values)
                         return detected_color
 
         # Return if no configured color detected
-        print("not detected", most_frequent_hue_values)
         return LegoColor.UNKNOWN_COLOR
 

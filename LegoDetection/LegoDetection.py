@@ -11,7 +11,7 @@ import cv2  # TODO: fix the requirements.txt or provide library
 import numpy as np
 
 from LegoBricks import LegoBrick, LegoShape, LegoColor
-from LegoOutputStream import LegoOutputStream, LegoOutputChannel
+from LegoOutputStream import LegoOutputChannel
 
 
 # enable logger
@@ -31,6 +31,14 @@ MAX_REC = 2.5
 # FIXME: make it configurable ?
 KERNEL_SIZE = (5, 5)
 
+# Hue histogram configurations
+# Color channel
+HUE = [0]
+# Histogram size
+HIST_SIZE = [181]
+# Range
+RANGE = [0, 181]
+
 # TODO: make masks configurable ?
 # OpenCV supports:
 # H-value range (0 to 180)
@@ -46,7 +54,7 @@ masks_configuration = {
     #    (np.array([40, 50, 50]), np.array([80, 255, 255])),
     #],
     LegoColor.BLUE_BRICK: [
-        (np.array([100, 50, 50]), np.array([140, 255, 255])),
+        (np.array([80, 50, 50]), np.array([140, 255, 255])),
     ],
     LegoColor.RED_BRICK: [
         (np.array([0, 120, 50]), np.array([20, 255, 255])),
@@ -62,13 +70,15 @@ class ShapeDetector:
 
     pipeline = None
 
+    histogram_mask = None
+
     def __init__(self, output_stream):
 
         self.output_stream = output_stream
 
     # Check if the contour is a lego brick
     # TODO: remove frame if nothing to draw anymore
-    def detect_lego_brick(self, contour, frame, color_masks) -> LegoBrick:
+    def detect_lego_brick(self, contour, frame) -> LegoBrick:
 
         # Initialize the contour name and approximate the contour
         # with Douglas-Peucker algorithm
@@ -79,12 +89,6 @@ class ShapeDetector:
 
         # Check if the contour has 4 vertices
         if len(approx) == 4:
-
-            # Compute the bounding box of the contour
-            # (x, y, w, h) = cv2.boundingRect(approx)
-            # bbox = (x, y, w, h)
-            # Draw a blue bounding box (for testing purposes)
-            # cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
 
             # Compute contour moments, which include area,
             # its centroid, and information about its orientation
@@ -106,40 +110,23 @@ class ShapeDetector:
 
                     if contour_shape is not LegoShape.UNKNOWN_SHAPE:
 
-                        # Compute a list of contour pixels
-                        # cv2.drawContours(frame, [approx], 0, (0, 0, 255), cv2.FILLED)
-                        contour_pixels = self.compute_contour_pixels(approx, frame)
+                        # Create an empty histogram mask of the frame size
+                        if self.histogram_mask is None:
+                            self.histogram_mask = np.zeros(frame.shape[:2], np.uint8)
 
-                        # Initialize a dictionary with colors and number of pixels
-                        color_count = {}
+                        # Compute the bounding box of the contour
+                        bbox = cv2.boundingRect(approx)
 
-                        # Check color of the lego brick
-                        for color, mask in color_masks.items():
+                        #cv2.drawContours(frame, [approx], 0, (0, 255, 0), 1)
 
-                            color_count[color] = 0
-
-                            # pixels[0] includes a list of row indices
-                            # pixels[1] includes a list of column indices
-                            contour_pixels_row = contour_pixels[0]
-                            contour_pixels_column = contour_pixels[1]
-
-                            for idx in range(len(contour_pixels_row)):
-                                if mask[contour_pixels_row[idx], contour_pixels_column[idx]] == 255:
-
-                                    # Count color of pixels in the contour
-                                    color_count[color] += 1
-
-                        # Find the most common color in the contour
-                        colors = list(color_count.keys())
-                        counts = list(color_count.values())
-                        max_counts = max(counts)
+                        # Find the most frequent color (heu value)
+                        # in the bounding box
+                        detected_color = self.find_most_frequent_hue(bbox, frame)
 
                         # Eliminate wrong colors contours
-                        if max_counts is 0:
-                            detected_color = LegoColor.UNKNOWN_COLOR
+                        if detected_color == LegoColor.UNKNOWN_COLOR:
                             logger.debug("Don't draw -> wrong color")
                         else:
-                            detected_color = colors[counts.index(max_counts)]
                             logger.debug("Draw contour:\n Shape: {}\n Color: {}\n "
                                          "Center coordinates: {}, {}\n Contour area: {}".
                                          format(contour_shape, detected_color,
@@ -199,10 +186,8 @@ class ShapeDetector:
         # Return the aspect ratio of two sides lengths of the rotated bounding box
         return ratio
 
-    def detect_contours(self, frame):
-
-        # Save color masks as configured
-        color_masks = self.compute_color_masks(frame)
+    @staticmethod
+    def detect_contours(frame):
 
         # Find all edges
         frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -217,65 +202,57 @@ class ShapeDetector:
         else:
             contours, hierarchy = cv2.findContours(edges.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
 
-        return contours, color_masks
+        return contours
 
-    # Save color masks as configured
-    def compute_color_masks(self, frame):
+    def find_most_frequent_hue(self, bbox, frame):
 
-        # Set red and blue mask
         frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
-        # Do some morphological corrections (fill 'holes' in masks)
-        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, KERNEL_SIZE)
+        # Save dimensions of the bounding box
+        (left_x, upper_y, width, height) = bbox
 
-        # Initialize a dictionary with color masks
-        # and all masks together
-        color_masks = {}
-        all_color_masks = None
+        # Calculate a new bounding box
+        # which is 25% of the old one
+        # and is placed in its middle
+        new_width = int(width / 2)
+        new_height = int(height / 2)
+        new_left_x = left_x + int(new_width / 2)
+        new_upper_y = upper_y + int(new_height / 2)
+        new_right_x = new_left_x + new_width
+        new_bottom_y = new_upper_y + new_height
 
-        # Save color masks as configured
+        # TODO: maybe make histogram without cv2.calcHist which needs the mask
+        # Clear the mask -> set it to black
+        self.histogram_mask[0:frame_hsv.shape[1], 0:frame_hsv.shape[0]] = 0
+
+        # Fill the mask with bounding box area
+        self.histogram_mask[new_upper_y:new_bottom_y, new_left_x:new_right_x] = 255
+
+        # Create a histogram (256x1 array), where an index correspond with the heu value
+        hue_histogram = cv2.calcHist([frame_hsv], HUE, self.histogram_mask, HIST_SIZE, RANGE)
+
+        # TODO: check if there is a faster solution?
+        # Find all hue values with the highest frequency
+        most_frequent_hue_values = np.where(hue_histogram == np.amax(hue_histogram))[0]
+
+        # Iterate through all configured color ranges
         for mask_color, mask_config in masks_configuration.items():
 
-            masks = None
-            mask_colors = None
-
-            # Save color masks as configured
+            # Check if found heu values
+            # are in any of configured color ranges
             for entry in mask_config:
-                mask = cv2.inRange(frame_hsv, entry[0], entry[1])
-                if masks is None:
-                    masks = mask
-                else:
-                    masks = masks + mask
 
-            # Use dilation to 'fill holes' if needed
-            dilate = cv2.dilate(masks, kernel, iterations=1)
-            if mask_colors is None:
-                mask_colors = dilate
-            else:
-                mask_colors = mask_colors + dilate
-            color_masks[mask_color] = mask_colors
+                # TODO: currently if the first most_frequent_hue_value is accepted will be returned as a detected color
+                for idx in range(len(most_frequent_hue_values)):
+                    if entry[0][0] <= most_frequent_hue_values[idx] <= entry[1][0]:
+                        detected_color = mask_color
 
-            # Save all masks together
-            if all_color_masks is None:
-                all_color_masks = color_masks[mask_color]
-            else:
-                all_color_masks = all_color_masks + color_masks[mask_color]
+                        # Return an accepted
+                        # detected color name
+                        print("detected", most_frequent_hue_values)
+                        return detected_color
 
-        # Show all masks together as a debug channel
-        self.output_stream.write_to_channel(LegoOutputChannel.CHANNEL_MASKS, all_color_masks)
+        # Return if no configured color detected
+        print("not detected", most_frequent_hue_values)
+        return LegoColor.UNKNOWN_COLOR
 
-        return color_masks
-
-    # Return the list of the contour pixels
-    @staticmethod
-    def compute_contour_pixels(contour, frame):
-
-        # Create a mask image that contains the contour filled in
-        # Create a blank image
-        contour_img = np.zeros_like(frame)
-        # Draw the filled-in contour in this blank image
-        cv2.drawContours(contour_img, [contour], 0, (255, 255, 255), cv2.FILLED)
-        # Access the image pixels
-        contour_pixels = np.where(contour_img == 255)
-
-        return contour_pixels

@@ -156,13 +156,13 @@ class Main:
         potential_lego_bricks_list = []
 
         # detect contours in area of interest
-        contours, color_masks = self.shape_detector.detect_contours(region_of_interest)
+        contours = self.shape_detector.detect_contours(region_of_interest)
 
         # Loop over the contours
         for contour in contours:
 
             # Check if the contour is a lego brick candidate (shape and color can be detected)
-            brick_candidate = self.shape_detector.detect_lego_brick(contour, region_of_interest, color_masks)
+            brick_candidate = self.shape_detector.detect_lego_brick(contour, region_of_interest)
 
             if brick_candidate:
                 # Update the properties list of all potential lego bricks which are found in the frame

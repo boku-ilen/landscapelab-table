@@ -11,7 +11,6 @@ import cv2  # TODO: fix the requirements.txt or provide library
 import numpy as np
 
 from LegoBricks import LegoBrick, LegoShape, LegoColor
-from LegoOutputStream import LegoOutputChannel
 
 
 # enable logger
@@ -154,11 +153,13 @@ class ShapeDetector:
 
         # Check if aspect ratio is near 1:1
         if MIN_SQ <= aspect_ratio <= MAX_SQ:
+            logger.debug("Rotated bbox size: {}".format(rotated_bbox_lengths))
             logger.debug("Square ratio: {}".format(aspect_ratio))
             return LegoShape.SQUARE_BRICK
 
         # Check if aspect ratio is near 2:1
         elif MIN_REC < aspect_ratio < MAX_REC:
+            logger.debug("Rotated bbox size: {}".format(rotated_bbox_lengths))
             logger.debug("Rectangle ratio: {}".format(aspect_ratio))
             return LegoShape.RECTANGLE_BRICK
 
@@ -180,7 +181,6 @@ class ShapeDetector:
         # Delete the highest length value, which is a diagonal of bounding box
         # Only two sides lengths, which have a common corner, are remaining in the array
         rotated_bbox_lengths = np.delete(sides_lengths_list, np.argmax(sides_lengths_list))
-        logger.debug("Rotated bbox size: {}".format(rotated_bbox_lengths))
 
         return rotated_bbox_lengths
 
@@ -236,7 +236,7 @@ class ShapeDetector:
         # Iterate through all configured color ranges
         for mask_color, mask_config in masks_configuration.items():
 
-            # Check if found heu values
+            # Check if found hue values
             # are in any of configured color ranges
             for entry in mask_config:
 

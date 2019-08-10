@@ -36,13 +36,12 @@ class LegoOutputChannel(Enum):
 
     CHANNEL_BOARD_DETECTION = 1
     CHANNEL_ROI = 2
-    CHANNEL_MASKS = 3
-    CHANNEL_WHITE_BLACK = 4
+    CHANNEL_WHITE_BLACK = 3
 
     def next(self):
         value = self.value + 1
-        if value > 4:
-            value = 4
+        if value > 3:
+            value = 3
         return LegoOutputChannel(value)
 
     def prev(self):

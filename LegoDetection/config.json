@@ -55,6 +55,18 @@
     "YELLOW_BRICK" : 8
   },
 
+  "MIN_ROTATED_SQUARE_LENGTH": {
+    "11" : 13,
+    "12" : 12,
+    "13" : 11,
+    "14" : 10,
+    "15" : 9,
+    "16" : 8,
+    "17" : 7,
+    "18" : 6,
+    "19" : 5
+  },
+
   "qgis_interaction": {
     "QGIS_IP": "127.0.0.1",
     "QGIS_READ_PORT": 5005,

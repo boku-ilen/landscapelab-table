@@ -16,19 +16,12 @@ from LegoBricks import LegoBrick, LegoShape, LegoColor
 # enable logger
 logger = logging.getLogger(__name__)
 
-# TODO: make all this configurable via config
-# Side of lego piece rotated bounding box  # TODO: automate
-MIN_ROTATED_LENGTH = 10
-MAX_ROTATED_LENGTH = 35
-MIN_AREA = 70
 # Aspect ratio for square and rectangle
 MIN_SQ = 0.7
 MAX_SQ = 1.35
 MIN_REC = 0.2
 MAX_REC = 2.5
-
-# FIXME: make it configurable ?
-KERNEL_SIZE = (5, 5)
+BRICK_LENGTH_BUFFER = 2
 
 # Hue histogram configurations
 # Color channel
@@ -56,7 +49,7 @@ masks_configuration = {
         (np.array([80, 50, 50]), np.array([140, 255, 255])),
     ],
     LegoColor.RED_BRICK: [
-        (np.array([0, 120, 50]), np.array([20, 255, 255])),
+        (np.array([0, 50, 50]), np.array([20, 255, 255])),
         (np.array([160, 50, 50]), np.array([180, 255, 255])),
     ]
 }
@@ -71,8 +64,20 @@ class ShapeDetector:
 
     histogram_mask = None
 
-    def __init__(self, output_stream):
+    # Initialize possible lego brick sizes
+    min_square_length = None
+    max_square_length = None
+    min_rectangle_length = None
+    max_rectangle_length = None
 
+    min_square_area = None
+    max_square_area = None
+    min_rectangle_area = None
+    max_rectangle_area = None
+
+    def __init__(self, config, output_stream):
+
+        self.config = config
         self.output_stream = output_stream
 
     # Check if the contour is a lego brick
@@ -98,9 +103,13 @@ class ShapeDetector:
                 centroid_x = int((moments_dict["m10"] / moments_dict["m00"]))
                 centroid_y = int((moments_dict["m01"] / moments_dict["m00"]))
 
-                # Eliminate very small contours
-                if cv2.contourArea(contour) < MIN_AREA:
+                # Eliminate too small contours
+                if cv2.contourArea(contour) < self.min_square_area:
                     logger.debug("Don't draw -> area too small")
+
+                # Eliminate too large contours
+                elif cv2.contourArea(contour) > self.max_rectangle_area:
+                    logger.debug("Don't draw -> area too large")
 
                 else:
 
@@ -118,11 +127,11 @@ class ShapeDetector:
                         # Compute the bounding box of the contour
                         bbox = cv2.boundingRect(approx)
 
-                        #cv2.drawContours(frame, [approx], 0, (0, 255, 0), 1)
-
                         # Find the most frequent color (heu value)
                         # in the bounding box
                         detected_color = self.find_most_frequent_hue(bbox, frame)
+
+                        #cv2.drawContours(frame, [approx], 0, (0, 255, 0), 1)
 
                         # Eliminate wrong colors contours
                         if detected_color == LegoColor.UNKNOWN_COLOR:
@@ -143,22 +152,31 @@ class ShapeDetector:
 
         rotated_bbox_lengths = self.calculate_rotated_bbox_lengths(rotated_bbox)
 
-        # Check if sides of the lego brick are not too short/long
-        if (MIN_ROTATED_LENGTH > rotated_bbox_lengths[0] > MAX_ROTATED_LENGTH) \
-                | (MIN_ROTATED_LENGTH > rotated_bbox_lengths[1] > MAX_ROTATED_LENGTH):
-            return LegoShape.UNKNOWN_SHAPE
-
         # Compute the aspect ratio of the two lengths
         aspect_ratio = int(rotated_bbox_lengths[0]) / int(rotated_bbox_lengths[1])
 
         # Check if aspect ratio is near 1:1
         if MIN_SQ <= aspect_ratio <= MAX_SQ:
+
+            # Check if sides of the square lego brick are not too short/long
+            if not (self.min_square_length < rotated_bbox_lengths[0] < self.max_square_length) \
+                    and (self.min_square_length < rotated_bbox_lengths[1] < self.max_square_length):
+                logger.debug("Wrong square sides lengths: {}".format(rotated_bbox_lengths))
+                return LegoShape.UNKNOWN_SHAPE
+
             logger.debug("Rotated bbox size: {}".format(rotated_bbox_lengths))
             logger.debug("Square ratio: {}".format(aspect_ratio))
             return LegoShape.SQUARE_BRICK
 
         # Check if aspect ratio is near 2:1
         elif MIN_REC < aspect_ratio < MAX_REC:
+
+            # Check if sides of the rectangle lego brick are not too short/long
+            if not (self.min_rectangle_length < rotated_bbox_lengths[0] < self.max_rectangle_length) \
+                    and (self.min_rectangle_length < rotated_bbox_lengths[1] < self.max_rectangle_length):
+                logger.debug("Wrong rectangle sides lengths: {}".format(rotated_bbox_lengths))
+                return LegoShape.UNKNOWN_SHAPE
+
             logger.debug("Rotated bbox size: {}".format(rotated_bbox_lengths))
             logger.debug("Rectangle ratio: {}".format(aspect_ratio))
             return LegoShape.RECTANGLE_BRICK
@@ -252,3 +270,36 @@ class ShapeDetector:
         # Return if no configured color detected
         return LegoColor.UNKNOWN_COLOR
 
+    # Estimate possible lego brick dimensions using distance to the board
+    # Estimated for resolution 1280/720
+    def estimate_possible_lego_dimensions(self, board_distance):
+
+        # Board distance -> square lego side length
+        # 1700 - 1799 -> 7-8
+        # 1600 - 1699 -> 8-9
+        # 1500 - 1599 -> 9-10 ...
+
+        # Take two first digits of the board distance
+        board_distance_estimation = int(board_distance / 100)
+
+        # FIXME: error handling
+        # Get min length for a square lego brick from the configurations
+        try:
+            self.min_square_length = int(self.config.get("MIN_ROTATED_SQUARE_LENGTH", str(board_distance_estimation)))
+        except:
+            logger.error("Not able to calculate a possible lego size, check board distance and configurations")
+
+        if self.min_square_length is not None:
+
+            # Add buffer
+            self.min_square_length -= BRICK_LENGTH_BUFFER
+            # Add buffer
+            self.max_square_length = self.min_square_length + 2 * BRICK_LENGTH_BUFFER
+
+            self.min_square_area = self.min_square_length * self.min_square_length
+            self.max_square_area = self.max_square_length * self.max_square_length
+
+            self.min_rectangle_length = 2 * self.min_square_length
+            self.max_rectangle_length = 2 * self.max_square_length
+            self.min_rectangle_area = self.min_square_length * self.min_rectangle_length
+            self.max_rectangle_area = self.max_square_length * self.max_rectangle_length

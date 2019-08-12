@@ -103,6 +103,7 @@ class ShapeDetector:
                 centroid_x = int((moments_dict["m10"] / moments_dict["m00"]))
                 centroid_y = int((moments_dict["m01"] / moments_dict["m00"]))
 
+                # TODO: Control if work correctly
                 # Eliminate too small contours
                 if cv2.contourArea(contour) < self.min_square_area:
                     logger.debug("Don't draw -> area too small")
@@ -151,6 +152,10 @@ class ShapeDetector:
     def check_if_square(self, rotated_bbox) -> LegoShape:
 
         rotated_bbox_lengths = self.calculate_rotated_bbox_lengths(rotated_bbox)
+
+        # Prevent division by zero
+        if int(rotated_bbox_lengths[1]) is 0:
+            return LegoShape.UNKNOWN_SHAPE
 
         # Compute the aspect ratio of the two lengths
         aspect_ratio = int(rotated_bbox_lengths[0]) / int(rotated_bbox_lengths[1])

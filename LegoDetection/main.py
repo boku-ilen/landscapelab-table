@@ -68,7 +68,7 @@ class Main:
         self.listener_thread.start()
 
         # initialize the lego detector
-        self.shape_detector = ShapeDetector(self.output_stream)
+        self.shape_detector = ShapeDetector(self.config, self.output_stream)
 
     # Run lego bricks detection and tracking code
     def run(self):
@@ -129,7 +129,6 @@ class Main:
 
         logger.debug("No QR-code detector result")
 
-        # TODO: use distance to set possible lego brick size
         self.input_stream.get_distance_to_board()
         logger.debug("Distance to the board is: {}".format(self.input_stream.board_distance))
 
@@ -138,6 +137,11 @@ class Main:
 
         # if all boarders were found change channel and start next stage
         if all_board_corners_found:
+
+            # Use distance to set possible lego brick size
+            logger.debug("Calculate possible lego brick size")
+            self.shape_detector.estimate_possible_lego_dimensions(self.input_stream.board_distance)
+
             logger.debug("Used threshold for qr-codes -> {}".format(self.board_detector.threshold_qrcode))
             self.output_stream.set_active_channel(LegoOutputChannel.CHANNEL_ROI)
             self.program_stage = self.program_stage.next()

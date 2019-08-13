@@ -1,6 +1,6 @@
 from LegoUI.UIElements.UIElement import UIActionType
 from LegoUI.UIElements.UIStructureBlock import UIStructureBlock
-from LegoBricks import LegoBrick
+from LegoBricks import LegoBrick, LegoStatus
 from typing import Callable, Tuple, Dict
 import numpy as np
 import cv2 as cv
@@ -55,13 +55,14 @@ class Button(UIStructureBlock):
 
             if self.pos_on_block(x, y):
 
-                if not self.pressed:
-                    self.call(UIActionType.PRESS, brick)
-                else:
-                    self.call(UIActionType.HOLD, brick)
+                if brick.status == LegoStatus.CANDIDATE_BRICK or brick.status == LegoStatus.INTERNAL_BRICK:
+                    if not self.pressed:
+                        self.call(UIActionType.PRESS, brick)
+                    else:
+                        self.call(UIActionType.HOLD, brick)
 
-                self.pressed_once = True
-                self.pressed = True
+                    self.pressed_once = True
+                    self.pressed = True
                 return True
 
             return super().brick_on_element(brick)

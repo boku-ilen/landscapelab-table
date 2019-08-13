@@ -28,10 +28,11 @@ MAX_VALUE = 255
 # Number of frames for
 # changing threshold_qrcode
 # when detecting the board corners
-MAX_FRAMES_NUMBER = 60
+MAX_FRAMES_NUMBER = 20
 
 # Adjusting threshold_qrcode step
-THRESHOLD_STEP = 5
+THRESHOLD_STEP = 16
+MAX_THRESHOLD = 255
 
 
 # this class manages the extent to detect and reference the extent of
@@ -61,6 +62,8 @@ class BoardDetector:
 
         # Array with all polygons of QR-Codes for board corners
         self.all_codes_polygons_points = [None, None, None, None]
+        self.found_codes_number = 0
+        self.code_found_flag = False
 
         # Get the resolution from config file
         self.frame_width = self.config.get("resolution", "width")
@@ -224,16 +227,21 @@ class BoardDetector:
         bottom_left_corner = None
         centroids = []
         all_board_corners_found = False
-        all_codes_flag = True
         centroid_corner_distance = None
 
-        # Check if all codes polygons points are available
-        for code_polygon in self.all_codes_polygons_points:
-            if code_polygon is None:
-                all_codes_flag = False
+        # Count found qr-codes
+        found_codes_number = sum(code is not None for code in self.all_codes_polygons_points)
 
-        # Continue if all needed data is available
-        if all_codes_flag:
+        # Update the flag
+        if found_codes_number > self.found_codes_number:
+
+            self.found_codes_number = found_codes_number
+            if self.code_found_flag is False:
+                self.code_found_flag = True
+                self.detect_corners_frames_number = 0
+
+            # Continue if all needed data is available
+        if self.found_codes_number == 4:
             # Iterate through the array with four sets of points for polygons
             for points_idx in range(len(self.all_codes_polygons_points)):
 
@@ -426,7 +434,7 @@ class BoardDetector:
         return False
 
     # Adjust cyclically the threshold for finding qr-codes
-    # Example: 60 -> 65 -> 55 -> 70 -> 50 ...
+    # Example: 60 -> 76 -> 44 -> 90 -> 18 -> ...
     def adjust_threshold_qrcode(self):
 
         # Count frames
@@ -435,12 +443,37 @@ class BoardDetector:
         # Every X frames change the threshold
         if self.detect_corners_frames_number % MAX_FRAMES_NUMBER == 0:
 
-            # Count the number of threshold change
+            # Count the number of threshold changes
             loop = int(self.detect_corners_frames_number / MAX_FRAMES_NUMBER)
+
+            # Use the configured step to change the threshold
+            if loop * THRESHOLD_STEP < MAX_THRESHOLD:
+                step = THRESHOLD_STEP
+
+            # If the whole range checked and no qr-code found
+            # Start again with smaller steps
+            else:
+                step = int(THRESHOLD_STEP / 2)
+                self.detect_corners_frames_number = 0
+
+            # If at lest one qr-code found do smaller steps
+            if self.code_found_flag:
+                step = int(step / 4)
+
+            else:
+                step = step
 
             # For odd loops changed the sign
             if loop % 2 == 0:
                 loop *= -1
 
-            # Adjust the threshold with +- step
-            self.threshold_qrcode += loop * THRESHOLD_STEP
+            # Adjust the threshold
+            self.threshold_qrcode += loop * step
+
+            # Allow only threshold 0-255
+            if self.threshold_qrcode < 0:
+                self.threshold_qrcode += MAX_THRESHOLD
+            elif self.threshold_qrcode > MAX_THRESHOLD:
+                self.threshold_qrcode -= MAX_THRESHOLD
+
+

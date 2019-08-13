@@ -221,6 +221,12 @@ class Tracker:
         # if the extent changed, set external bricks as outdated
         self.extent_changed = self.config.get("map_settings", "extent_changed")
         if self.extent_changed is True:
+
+            logger.info("recalculate virtual brick position")
+            for brick in self.virtual_bricks:
+                if brick.status == LegoStatus.EXTERNAL_BRICK:
+                    self.lego_position_converter.compute_board_coordinates(brick)
+
             logger.info("set bricks outdated because extent changed")
             for brick in self.confirmed_bricks:
                 if brick.status == LegoStatus.EXTERNAL_BRICK:

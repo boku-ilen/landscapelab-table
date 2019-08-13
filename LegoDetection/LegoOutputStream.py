@@ -25,6 +25,7 @@ BRICK_LABEL_OFFSET = 10
 BLUE = (255, 0, 0)
 GREEN = (0, 255, 0)
 RED = (0, 0, 255)
+DARK_GRAY = (40, 40, 40)
 FONT_SIZE = 0.4
 FONT_THICKNESS = 1
 CONTOUR_THICKNESS = 1
@@ -220,7 +221,7 @@ class LegoOutputStream:
     # mark the candidate in given frame
     @staticmethod
     def mark_candidates(frame, candidate_contour):
-        cv2.drawContours(frame, [candidate_contour], IDX_DRAW_ALL, BLUE, CONTOUR_THICKNESS)
+        cv2.drawContours(frame, [candidate_contour], IDX_DRAW_ALL, DARK_GRAY, CONTOUR_THICKNESS)
 
     # we label the identified lego bricks in the stream
     @staticmethod
@@ -231,12 +232,12 @@ class LegoOutputStream:
         tracked_lego_brick_position = tracked_lego_brick.centroid_x, tracked_lego_brick.centroid_y
         cv2.putText(frame, text, (tracked_lego_brick.centroid_x - BRICK_LABEL_OFFSET,
                                   tracked_lego_brick.centroid_y - BRICK_LABEL_OFFSET),
-                    cv2.FONT_HERSHEY_SIMPLEX, FONT_SIZE, BLUE, FONT_THICKNESS)
+                    cv2.FONT_HERSHEY_SIMPLEX, FONT_SIZE, DARK_GRAY, FONT_THICKNESS)
 
         # Draw lego bricks contour names
         # FIXME: put other caption like id of the lego brick
         cv2.putText(frame, tracked_lego_brick.status.name, tracked_lego_brick_position,
-                    cv2.FONT_HERSHEY_SIMPLEX, FONT_SIZE, BLUE, FONT_THICKNESS)
+                    cv2.FONT_HERSHEY_SIMPLEX, FONT_SIZE, DARK_GRAY, FONT_THICKNESS)
 
         # Draw lego bricks centroid points
         cv2.circle(frame, tracked_lego_brick_position, RADIUS, GREEN, cv2.FILLED)

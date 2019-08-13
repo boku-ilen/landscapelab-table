@@ -1,15 +1,36 @@
 {
   "resources": {
     "relative-path": ["..", "resources"],
-    "qr_bottom_left": ["QR_Codes", "bottom_left.png"],
-    "qr_bottom_right": ["QR_Codes", "bottom_right.png"],
-    "qr_top_left": ["QR_Codes", "top_left.png"],
-    "qr_top_right": ["QR_Codes", "top_right.png"],
+    "qr_bottom_left": {
+      "path": ["QR_Codes", "bottom_left.png"]
+    },
+    "qr_bottom_right": {
+      "path": ["QR_Codes", "bottom_right.png"]
+    },
+    "qr_top_left": {
+      "path": ["QR_Codes", "top_left.png"]
+    },
+    "qr_top_right": {
+      "path": ["QR_Codes", "top_right.png"]
+    },
     "qr_size": 300,
-    "outdated_brick": ["brick_overlays", "outdated.png"],
-    "outdated_brick-center": [32,32],
-    "windmill_brick": ["brick_overlays", "symbol_wind.png"],
-    "pv_brick": ["brick_overlays", "symbol_pv.png"]
+
+    "outdated_brick": {
+      "path": ["brick_overlays", "outdated.png"],
+      "center": [32,32]
+    },
+
+    "windmill_brick": {
+      "path":["brick_overlays", "symbol_wind.png"],
+      "size": [50,50],
+      "center": [25,25]
+    },
+
+    "pv_brick": {
+      "path": ["brick_overlays", "symbol_pv.png"],
+      "size": [50, 50],
+      "center": [25, 25]
+    }
   },
 
   "video_output": {

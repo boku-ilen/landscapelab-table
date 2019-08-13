@@ -82,7 +82,7 @@ class MapHandler:
 
         unused_slot = (self.current_image + 1) % 2
 
-        self.qgis_image[unused_slot] = cv.imread(self.image_path, 1)
+        self.qgis_image[unused_slot] = cv.imread(self.image_path, -1)
         self.current_image = unused_slot
 
         if not np.array_equal(self.current_extent, extent):

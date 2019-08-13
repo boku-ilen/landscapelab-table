@@ -344,9 +344,10 @@ class LegoOutputStream:
         im_back[bac_start_y:bac_end_y, bac_start_x:bac_end_x, 1] = (1. - alpha) * im_back[bac_start_y:bac_end_y, bac_start_x:bac_end_x, 1] + alpha * img[top_start_y:top_end_y, top_start_x:top_end_x, 1]
         im_back[bac_start_y:bac_end_y, bac_start_x:bac_end_x, 2] = (1. - alpha) * im_back[bac_start_y:bac_end_y, bac_start_x:bac_end_x, 2] + alpha * img[top_start_y:top_end_y, top_start_x:top_end_x, 2]
 
-        im_back[bac_start_y:bac_end_y, bac_start_x:bac_end_x, 3] = np.maximum(
-            im_back[bac_start_y:bac_end_y, bac_start_x:bac_end_x, 3], alpha * 255)
-        # NOTE unsure if correct alpha blending but results seem fine
+        if im_back.shape[2] == 4:
+            im_back[bac_start_y:bac_end_y, bac_start_x:bac_end_x, 3] = np.maximum(
+                im_back[bac_start_y:bac_end_y, bac_start_x:bac_end_x, 3], alpha * 255)
+            # NOTE unsure if correct alpha blending but results seem fine
         return im_back
 
     # renders only external virtual bricks since they should be displayed behind the ui unlike any other brick types

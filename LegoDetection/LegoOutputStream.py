@@ -6,7 +6,7 @@ from Tracker import Tracker
 from ConfigManager import ConfigManager
 from LegoUI.MapHandler import MapHandler
 from functools import partial
-from typing import Callable, Tuple, List
+from typing import Callable, Tuple, List, Dict
 from LegoUI.MapActions import MapActions
 from LegoUI.UIElements.UIElement import UIElement
 from LegoBricks import LegoBrick, LegoColor, LegoShape, LegoStatus
@@ -133,10 +133,17 @@ class LegoOutputStream:
         )
         qr_size = self.config.get("resources", "qr_size")
         # TODO calc optimal size on draw instead of scaling down to fixed size
-        self.qr_bottom_left = cv2.resize(self.load_image("qr_bottom_left"), (qr_size, qr_size))
-        self.qr_bottom_right = cv2.resize(self.load_image("qr_bottom_right"), (qr_size, qr_size))
-        self.qr_top_left = cv2.resize(self.load_image("qr_top_left"), (qr_size, qr_size))
-        self.qr_top_right = cv2.resize(self.load_image("qr_top_right"), (qr_size, qr_size))
+        self.qr_bottom_left = self.load_image("qr_bottom_left", (qr_size, qr_size))
+        self.qr_bottom_right = self.load_image("qr_bottom_right", (qr_size, qr_size))
+        self.qr_top_left = self.load_image("qr_top_left", (qr_size, qr_size))
+        self.qr_top_right = self.load_image("qr_top_right", (qr_size, qr_size))
+
+        # load brick overlay images
+
+        self.brick_outdated = self.load_image("outdated_brick")
+        self.brick_windmill = self.load_image("windmill_brick")
+        self.brick_pv = self.load_image("pv_brick")
+        # self.brick_internal = self.load_image("internal_brick")
 
     @staticmethod
     def set_beamer_config_info(config):
@@ -159,9 +166,21 @@ class LegoOutputStream:
             base_path = os.path.join(base_path, d)
         return base_path
 
-    def load_image(self, name):
+    def load_image(self, name, size=None):
         image_path = self.reconstruct_path(self.resource_path, self.config.get("resources", name))
-        return cv2.imread(image_path)
+        img = cv2.imread(image_path)
+
+        if size:
+            img = cv2.resize(img, size)
+
+        im_dict = {'image': img}
+
+        # if a center is defined add it to the dictionary
+        center = self.config.get("resources", "{}-center".format(name))
+        if center:
+            im_dict['center'] = center
+
+        return im_dict
 
     # Write the frame into the file
     def write_to_file(self, frame):
@@ -245,13 +264,13 @@ class LegoOutputStream:
             LegoOutputStream.draw_image_on_image(frame, self.qr_top_left,
                                                  (0, 0))
             LegoOutputStream.draw_image_on_image(frame, self.qr_top_right,
-                                                 (frame.shape[1] - self.qr_top_right.shape[1], 0))
+                                                 (frame.shape[1] - self.qr_top_right['image'].shape[1], 0))
             LegoOutputStream.draw_image_on_image(frame, self.qr_bottom_left,
-                                                 (0, frame.shape[0] - self.qr_bottom_left.shape[0]))
+                                                 (0, frame.shape[0] - self.qr_bottom_left['image'].shape[0]))
             LegoOutputStream.draw_image_on_image(frame, self.qr_bottom_right,
                                                  (
-                                                     frame.shape[1] - self.qr_bottom_right.shape[1],
-                                                     frame.shape[0] - self.qr_bottom_right.shape[0]
+                                                     frame.shape[1] - self.qr_bottom_right['image'].shape[1],
+                                                     frame.shape[0] - self.qr_bottom_right['image'].shape[0]
                                                  ))
             cv2.imshow(LegoOutputStream.WINDOW_NAME_BEAMER, frame)
 

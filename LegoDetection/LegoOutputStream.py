@@ -308,12 +308,6 @@ class LegoOutputStream:
                 MapHandler.MAP_REFRESHED = False
                 UIElement.UI_REFRESHED = False
 
-    @staticmethod
-    def draw_image_on_image(bottom_image, top_image, offset: Tuple[int, int]):
-        x_offset, y_offset = offset
-        bottom_image[y_offset:y_offset + top_image.shape[0], x_offset:x_offset + top_image.shape[1]] = top_image
-        return bottom_image
-
     # draws an image onto a given background
     # both images must have an alpha channel
     # while im_back is a simple np array im_top must be a dictionary containing the image

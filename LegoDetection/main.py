@@ -155,6 +155,7 @@ class Main:
 
         # Take only the region of interest from the color image
         region_of_interest = self.board_detector.rectify_image(region_of_interest, color_image)
+        region_of_interest_debug = region_of_interest.copy()
 
         # Initialize legos brick properties list
         potential_lego_bricks_list = []
@@ -173,7 +174,7 @@ class Main:
                 potential_lego_bricks_list.append(brick_candidate)
 
                 # mark potential lego brick contours
-                LegoOutputStream.mark_candidates(region_of_interest, contour)
+                LegoOutputStream.mark_candidates(region_of_interest_debug, contour)
 
         # Compute tracked lego bricks dictionary
         # using the centroid tracker and set of properties
@@ -181,13 +182,13 @@ class Main:
 
         # Loop over the tracked objects and label them in the stream
         for tracked_lego_brick in tracked_lego_bricks:
-            LegoOutputStream.labeling(region_of_interest, tracked_lego_brick)
+            LegoOutputStream.labeling(region_of_interest_debug, tracked_lego_brick)
 
         # write current frame to the stream output
-        self.output_stream.write_to_file(region_of_interest)
+        self.output_stream.write_to_file(region_of_interest_debug)
 
         # Render shape detection images
-        self.output_stream.write_to_channel(LegoOutputChannel.CHANNEL_ROI, region_of_interest)
+        self.output_stream.write_to_channel(LegoOutputChannel.CHANNEL_ROI, region_of_interest_debug)
 
 
 # execute the main class  ' TODO: meaningful rename

@@ -40,6 +40,8 @@ class MapHandler:
         extent_height[1] += extent_h_diff / 2
         self.current_extent = [extent_height[0], extent_width[0], extent_height[1], extent_width[1]]
 
+        self.crs = config.get("map_settings", "crs")
+
         # set socket & connection info
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.qgis_addr = (config.get('qgis_interaction', 'QGIS_IP'), config.get('qgis_interaction', 'QGIS_READ_PORT'))
@@ -112,7 +114,7 @@ class MapHandler:
 
     def request_render(self, extent):
         self.send(
-            '{}{} {} {} {} {}'.format(self.render_keyword, self.resolution_x, extent[0], extent[1], extent[2], extent[3])
+            '{}{} {} {} {} {} {}'.format(self.render_keyword, self.resolution_x, self.crs, extent[0], extent[1], extent[2], extent[3])
             .encode()
         )
 

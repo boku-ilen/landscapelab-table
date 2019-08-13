@@ -132,8 +132,6 @@ class ShapeDetector:
                         # in the bounding box
                         detected_color = self.find_most_frequent_hue(bbox, frame)
 
-                        #cv2.drawContours(frame, [approx], 0, (0, 255, 0), 1)
-
                         # Eliminate wrong colors contours
                         if detected_color == LegoColor.UNKNOWN_COLOR:
                             logger.debug("Don't draw -> unknown color")

@@ -5,7 +5,11 @@
     "qr_bottom_right": ["QR_Codes", "bottom_right.png"],
     "qr_top_left": ["QR_Codes", "top_left.png"],
     "qr_top_right": ["QR_Codes", "top_right.png"],
-    "qr_size": 300
+    "qr_size": 300,
+    "outdated_brick": ["brick_overlays", "outdated.png"],
+    "outdated_brick-center": [32,32],
+    "windmill_brick": ["brick_overlays", "symbol_wind.png"],
+    "pv_brick": ["brick_overlays", "symbol_pv.png"]
   },
 
   "video_output": {

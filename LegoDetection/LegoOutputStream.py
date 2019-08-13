@@ -380,13 +380,12 @@ class LegoOutputStream:
         pos = np.array((b.centroid_x, b.centroid_y))
         half_size = np.array((BRICK_DISPLAY_SIZE, BRICK_DISPLAY_SIZE))
 
-        color = GREEN
         if b.status == LegoStatus.OUTDATED_BRICK:
-            color = RED
+            LegoOutputStream.img_on_background(render_target, self.brick_outdated, (pos[0], pos[1]))
         elif b.status == LegoStatus.EXTERNAL_BRICK:
-            color = BLUE
-
-        cv2.rectangle(render_target, tuple(pos - half_size), tuple(pos + half_size), color, cv2.FILLED)
+            LegoOutputStream.img_on_background(render_target, self.brick_windmill, (pos[0], pos[1]))
+        else:
+            cv2.rectangle(render_target, tuple(pos - half_size), tuple(pos + half_size), GREEN, cv2.FILLED)
 
     # closing the outputstream if it is defined
     def close(self):

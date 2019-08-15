@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 # Constants for server communication
 HTTP = "http://"
-PREFIX = "/landscapelab"
+PREFIX = "/landscapelab-dev"
 CREATE_ASSET_POS = "/assetpos/create/"
 SET_ASSET_POS = "/assetpos/set/"
 REMOVE_ASSET_POS = "/assetpos/remove/"
@@ -53,9 +53,9 @@ class ServerCommunication:
 
         # Send request creating lego instance and save the response
         logger.debug(HTTP + self.ip + PREFIX + CREATE_ASSET_POS + str(lego_brick.asset_id)
-                     + "/" + str(lego_brick.map_pos_x) + "/" + str(lego_brick.map_pos_y))
+                     + "/" + str(lego_brick.map_pos_y) + "/" + str(lego_brick.map_pos_x))
         lego_instance_response = requests.get(HTTP + self.ip + PREFIX + CREATE_ASSET_POS + str(lego_brick.asset_id)
-                                              + "/" + str(lego_brick.map_pos_x) + "/" + str(lego_brick.map_pos_y))
+                                              + "/" + str(lego_brick.map_pos_y) + "/" + str(lego_brick.map_pos_x) + "/0") #TODO remove /0 at the end
 
         # Check if status code is 200
         if self.check_status_code_200(lego_instance_response.status_code):

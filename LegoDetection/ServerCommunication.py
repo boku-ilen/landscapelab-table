@@ -14,6 +14,8 @@ CREATE_ASSET_POS = "/assetpos/create/"
 SET_ASSET_POS = "/assetpos/set/"
 REMOVE_ASSET_POS = "/assetpos/remove/"
 
+DEFAULT_ROTATION = 0
+
 
 class ServerCommunication:
     """Creates and removes lego instances"""
@@ -52,10 +54,13 @@ class ServerCommunication:
         lego_brick.map_asset_id(self.config)
 
         # Send request creating lego instance and save the response
-        logger.debug(HTTP + self.ip + PREFIX + CREATE_ASSET_POS + str(lego_brick.asset_id)
-                     + "/" + str(lego_brick.map_pos_y) + "/" + str(lego_brick.map_pos_x))
-        lego_instance_response = requests.get(HTTP + self.ip + PREFIX + CREATE_ASSET_POS + str(lego_brick.asset_id)
-                                              + "/" + str(lego_brick.map_pos_y) + "/" + str(lego_brick.map_pos_x) + "/0") #TODO remove /0 at the end
+        create_instance_msg = "{http}{ip}{prefix}{command}{brick_id}/{brick_x}/{brick_y}/{default_rotation}".format(
+            http=HTTP, ip=self.ip, prefix=PREFIX, command=CREATE_ASSET_POS, brick_id=str(lego_brick.asset_id),
+            brick_x=str(lego_brick.map_pos_y), brick_y=str(lego_brick.map_pos_x), default_rotation=DEFAULT_ROTATION
+        )   # FIXME x and y coordinates are currently switched,
+
+        logger.debug(create_instance_msg)
+        lego_instance_response = requests.get(create_instance_msg)
 
         # Check if status code is 200
         if self.check_status_code_200(lego_instance_response.status_code):

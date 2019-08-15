@@ -63,9 +63,11 @@ class Main:
         self.board_detector = BoardDetector(self.config, self.config.get("qr_code", "threshold"),
                                             self.input_stream, self.output_stream)
 
-        # Initialize the QGIS listener Thread
+        # Initialize and start the QGIS listener Thread
+        # also request the first rendered map section
         self.listener_thread = ListenerThread(self.config, self.map_handler)
         self.listener_thread.start()
+        self.map_handler.request_render()
 
         # initialize the lego detector
         self.shape_detector = ShapeDetector(self.config, self.output_stream)

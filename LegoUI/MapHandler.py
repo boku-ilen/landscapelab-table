@@ -52,9 +52,6 @@ class MapHandler:
         self.render_keyword = config.get('qgis_interaction', 'RENDER_KEYWORD')
         self.exit_keyword = config.get('qgis_interaction', 'EXIT_KEYWORD')
 
-        # request first render
-        self.request_render(self.current_extent)
-
         # set extent modifiers
         pan_up_modifier = np.array([0, 1, 0, 1])
         pan_down_modifier = np.array([0, -1, 0, -1])
@@ -112,9 +109,16 @@ class MapHandler:
         # request render
         self.request_render(next_extent)
 
-    def request_render(self, extent):
+    def request_render(self, extent=None):
+
+        if not extent:
+            extent = self.current_extent
+
         self.send(
-            '{}{} {} {} {} {} {}'.format(self.render_keyword, self.resolution_x, self.crs, extent[0], extent[1], extent[2], extent[3])
+            '{keyword}{required_resolution} {crs} {extent0} {extent1} {extent2} {extent3}'.format(
+                keyword=self.render_keyword, required_resolution=self.resolution_x, crs=self.crs,
+                extent0=extent[0], extent1=extent[1], extent2=extent[2], extent3=extent[3]
+            )
             .encode()
         )
 

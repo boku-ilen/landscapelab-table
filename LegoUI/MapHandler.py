@@ -35,10 +35,20 @@ class MapHandler:
         extent_height = config.get('map_settings', 'extent_height')
         extent_w = abs(extent_width[0] - extent_width[1])
         extent_h = abs(extent_height[0] - extent_height[1])
-        extent_h_diff = beamer_ratio * extent_w - extent_h
-        extent_height[0] -= extent_h_diff / 2
-        extent_height[1] += extent_h_diff / 2
-        self.current_extent = [extent_height[0], extent_width[0], extent_height[1], extent_width[1]]
+        extent_h_diff = extent_w / beamer_ratio - extent_h
+        # adjust height so that extent has the same ratio as beamer resolution
+        if extent_height[0] < extent_height[1]:
+            extent_height[0] -= extent_h_diff / 2
+            extent_height[1] += extent_h_diff / 2
+        else:
+            extent_height[0] += extent_h_diff / 2
+            extent_height[1] -= extent_h_diff / 2
+        self.current_extent = [extent_width[0], extent_height[0], extent_width[1], extent_height[1]]
+        logger.info("extent: {}".format(str(self.current_extent)))
+        logger.debug("extent width: {}, height: {}".format(
+            self.current_extent[2] - self.current_extent[0],
+            self.current_extent[3] - self.current_extent[1]
+        ))
 
         self.crs = config.get("map_settings", "crs")
 
@@ -85,8 +95,8 @@ class MapHandler:
         if not np.array_equal(self.current_extent, extent):
             self.current_extent = extent
             self.config.set("map_settings", "extent_changed", True)
-            self.config.set("map_settings", "extent_width", [extent[1], extent[3]])
-            self.config.set("map_settings", "extent_height", [extent[0], extent[2]])
+            self.config.set("map_settings", "extent_width", [extent[0], extent[2]])
+            self.config.set("map_settings", "extent_height", [extent[1], extent[3]])
             logger.info("extent changed")
 
         MapHandler.MAP_REFRESHED = True

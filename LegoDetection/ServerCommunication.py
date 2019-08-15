@@ -57,7 +57,7 @@ class ServerCommunication:
         create_instance_msg = "{http}{ip}{prefix}{command}{brick_id}/{brick_x}/{brick_y}/{default_rotation}".format(
             http=HTTP, ip=self.ip, prefix=PREFIX, command=CREATE_ASSET_POS, brick_id=str(lego_brick.asset_id),
             brick_x=str(lego_brick.map_pos_y), brick_y=str(lego_brick.map_pos_x), default_rotation=DEFAULT_ROTATION
-        )   # FIXME x and y coordinates are currently switched,
+        )
 
         logger.debug(create_instance_msg)
         lego_instance_response = requests.get(create_instance_msg)

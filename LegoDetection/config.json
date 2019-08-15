@@ -123,10 +123,10 @@
 
   "map_settings": {
     "extent_width":[
-      5911550, 5911950
+      1535703, 1536103
     ],
     "extent_height":[
-      1535703, 1536103
+      5911550, 5911950
     ],
     "crs": "EPSG:3857",
     "extent_changed": "False",

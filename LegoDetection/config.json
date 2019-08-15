@@ -30,6 +30,12 @@
       "path": ["brick_overlays", "symbol_pv.png"],
       "size": [50, 50],
       "center": [25, 25]
+    },
+
+    "brick_backdrop": {
+      "path": ["brick_overlays", "backdrop.png"],
+      "size": [30, 30],
+      "center": [15, 15]
     }
   },
 

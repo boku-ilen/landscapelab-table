@@ -141,6 +141,7 @@ class LegoOutputStream:
 
         # load brick overlay images
 
+        self.brick_backdrop = self.load_image("brick_backdrop")
         self.brick_outdated = self.load_image("outdated_brick")
         self.brick_windmill = self.load_image("windmill_brick")
         self.brick_pv = self.load_image("pv_brick")
@@ -314,6 +315,7 @@ class LegoOutputStream:
     # while im_back is a simple np array im_top must be a dictionary containing the image
     # additional fields in im_top (e.g. center) will be considered in the drawing process
     # offset determines the x,y position of the image
+    # TODO move to more general context
     @staticmethod
     def img_on_background(im_back, im_top: Dict, offset: Tuple[int, int]):
         img = im_top['image']
@@ -356,7 +358,7 @@ class LegoOutputStream:
 
         overlay_target = render_target.copy()
         for brick in filter(lambda b: b.status == LegoStatus.EXTERNAL_BRICK, self.tracker.virtual_bricks):
-            self.render_brick(brick, overlay_target)
+            self.render_brick(brick, overlay_target, True)
         cv2.addWeighted(overlay_target, VIRTUAL_BRICK_ALPHA, render_target, 1 - VIRTUAL_BRICK_ALPHA, 0, render_target)
 
     # renders all bricks except external virtual ones since those get rendered earlier
@@ -368,20 +370,23 @@ class LegoOutputStream:
         # render virtual bricks
         overlay_target = render_target.copy()
         for brick in list(filter(lambda b: b.status != LegoStatus.EXTERNAL_BRICK, self.tracker.virtual_bricks)):
-            self.render_brick(brick, overlay_target)
+            self.render_brick(brick, overlay_target, True)
         cv2.addWeighted(overlay_target, VIRTUAL_BRICK_ALPHA, render_target, 1 - VIRTUAL_BRICK_ALPHA, 0, render_target)
 
-    def render_brick(self, brick, render_target):
+    def render_brick(self, brick, render_target, virtual=False):
         b = self.board_to_beamer(brick)
         pos = np.array((b.centroid_x, b.centroid_y))
         half_size = np.array((BRICK_DISPLAY_SIZE, BRICK_DISPLAY_SIZE))
 
         if b.status == LegoStatus.OUTDATED_BRICK:
             LegoOutputStream.img_on_background(render_target, self.brick_outdated, (pos[0], pos[1]))
-        elif b.status == LegoStatus.EXTERNAL_BRICK:
-            LegoOutputStream.img_on_background(render_target, self.brick_windmill, (pos[0], pos[1]))
+        elif not virtual:
+            LegoOutputStream.img_on_background(render_target, self.brick_backdrop, (pos[0], pos[1]))
         else:
-            cv2.rectangle(render_target, tuple(pos - half_size), tuple(pos + half_size), GREEN, cv2.FILLED)
+            if b.status == LegoStatus.INTERNAL_BRICK:
+                cv2.rectangle(render_target, tuple(pos - half_size), tuple(pos + half_size), GREEN, cv2.FILLED)
+            else:
+                LegoOutputStream.img_on_background(render_target, self.brick_windmill, (pos[0], pos[1]))
 
     # closing the outputstream if it is defined
     def close(self):

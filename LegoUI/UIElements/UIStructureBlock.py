@@ -16,7 +16,7 @@ class UIStructureBlock(UIElement):
         self.size = np.array(size)
 
         # set block color
-        self.color = (204, 204, 204)
+        self.color = (230, 230, 230)
 
     # draws the block onto an image
     def draw(self, img):

@@ -111,7 +111,7 @@ class MapHandler:
 
     def request_render(self, extent=None):
 
-        if not extent:
+        if extent is None:
             extent = self.current_extent
 
         self.send(

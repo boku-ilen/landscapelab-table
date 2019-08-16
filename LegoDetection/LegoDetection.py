@@ -24,12 +24,12 @@ MAX_REC = 2.5
 BRICK_LENGTH_BUFFER = 2
 
 # Hue histogram configurations
-# Color channel
-HUE = [0]
+# Color channels
+HUE = 0
+SATURATION = 1
+VALUE = 2
 # Histogram size
-HIST_SIZE = [181]
-# Range
-RANGE = [0, 181]
+HIST_SIZE = 181
 
 # TODO: make masks configurable ?
 # OpenCV supports:
@@ -43,16 +43,19 @@ masks_configuration = {
     #],
     # TODO: adjust green so black will be excluded
     #LegoColor.GREEN_BRICK: [
-    #    (np.array([40, 50, 50]), np.array([80, 255, 255])),
+    #    (np.array([40, 100, 50]), np.array([80, 255, 255])),
     #],
     LegoColor.BLUE_BRICK: [
-        (np.array([80, 50, 50]), np.array([140, 255, 255])),
+        (np.array([80, 100, 50]), np.array([140, 255, 255])),
     ],
     LegoColor.RED_BRICK: [
-        (np.array([0, 50, 50]), np.array([20, 255, 255])),
-        (np.array([160, 50, 50]), np.array([180, 255, 255])),
+        (np.array([0, 100, 50]), np.array([20, 255, 255])),
+        (np.array([160, 100, 50]), np.array([180, 255, 255])),
     ]
 }
+# TODO: set in masks_configuration only hue and saturation/value separately, the same for all colors?
+MIN_SATURATION = 100
+MAX_SATURATION = 255
 
 
 class ShapeDetector:
@@ -61,8 +64,6 @@ class ShapeDetector:
     tracker = None
 
     pipeline = None
-
-    histogram_mask = None
 
     # Initialize possible lego brick sizes
     min_square_length = None
@@ -120,11 +121,6 @@ class ShapeDetector:
                     if contour_shape is LegoShape.UNKNOWN_SHAPE:
                         logger.debug("Don't draw -> unknown shape")
                     else:
-
-                        # Create an empty histogram mask of the frame size
-                        if self.histogram_mask is None:
-                            self.histogram_mask = np.zeros(frame.shape[:2], np.uint8)
-
                         # Compute the bounding box of the contour
                         bbox = cv2.boundingRect(approx)
 
@@ -223,7 +219,8 @@ class ShapeDetector:
 
         return contours
 
-    def find_most_frequent_hue(self, bbox, frame):
+    @staticmethod
+    def find_most_frequent_hue(bbox, frame):
 
         frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
@@ -237,33 +234,39 @@ class ShapeDetector:
         new_height = int(height / 2)
         new_left_x = left_x + int(new_width / 2)
         new_upper_y = upper_y + int(new_height / 2)
-        new_right_x = new_left_x + new_width
-        new_bottom_y = new_upper_y + new_height
 
-        # TODO: maybe make histogram without cv2.calcHist which needs the mask
-        # Clear the mask -> set it to black
-        self.histogram_mask[0:frame_hsv.shape[1], 0:frame_hsv.shape[0]] = 0
+        # Create a histogram with hue values of pixels
+        # which already have a correct saturation
+        hue_histogram = np.zeros(HIST_SIZE)
+        max_frequency = 0
+        most_frequent_hue_value = None
+        for x in range(new_width):
+            for y in range(new_height):
 
-        # Fill the mask with bounding box area
-        self.histogram_mask[new_upper_y:new_bottom_y, new_left_x:new_right_x] = 255
+                # Take only the area of the lego brick bounding box
+                hsv_bbox = frame_hsv[new_upper_y + y, new_left_x + x]
 
-        # Create a histogram (256x1 array), where an index correspond with the heu value
-        hue_histogram = cv2.calcHist([frame_hsv], HUE, self.histogram_mask, HIST_SIZE, RANGE)
+                # Check if saturation is correct
+                if MIN_SATURATION <= hsv_bbox[SATURATION] <= MAX_SATURATION:
 
-        # TODO: check if there is a faster solution?
-        # Find all hue values with the highest frequency
-        most_frequent_hue_values = np.where(hue_histogram == np.amax(hue_histogram))[0]
+                    # Add hue value to the histogram
+                    hue_histogram[hsv_bbox[HUE]] += 1
 
-        # Iterate through all configured color ranges
-        for mask_color, mask_config in masks_configuration.items():
+                    # Save the most frequent hue value
+                    if hue_histogram[hsv_bbox[HUE]] > max_frequency:
+                        max_frequency = hue_histogram[hsv_bbox[HUE]]
+                        most_frequent_hue_value = hsv_bbox[HUE]
 
-            # Check if found hue values
-            # are in any of configured color ranges
-            for entry in mask_config:
+        if most_frequent_hue_value is not None:
+            # Iterate through all configured color ranges
+            for mask_color, mask_config in masks_configuration.items():
 
-                # TODO: currently if the first most_frequent_hue_value is accepted will be returned as a detected color
-                for idx in range(len(most_frequent_hue_values)):
-                    if entry[0][0] <= most_frequent_hue_values[idx] <= entry[1][0]:
+                # Check if found hue values
+                # are in any of configured color ranges
+                for entry in mask_config:
+
+                    # TODO: currently only one of the most frequent hue values will be returned as a detected color
+                    if entry[0][HUE] <= most_frequent_hue_value <= entry[1][HUE]:
                         detected_color = mask_color
 
                         # Return an accepted

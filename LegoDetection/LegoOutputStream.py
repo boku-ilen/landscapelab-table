@@ -162,12 +162,14 @@ class LegoOutputStream:
             config.set("beamer-resolution", "pos-x", beamer.x - 1)
             config.set("beamer-resolution", "pos-y", beamer.y - 1)
 
+    # TODO move to more general context
     @staticmethod
     def reconstruct_path(base_path, relative_path: List[str]):
         for d in relative_path:
             base_path = os.path.join(base_path, d)
         return base_path
 
+    # TODO make static and move to more general context
     def load_image(self, name, size=None):
         image_dict = self.config.get("resources", name)
 

@@ -14,19 +14,29 @@ class UIStructureBlock(UIElement):
         # set block position/size
         self.position = np.array(position)
         self.size = np.array(size)
+        self.is_ellipse = False
 
         # set block color
         self.color = (230, 230, 230)
+        self.show_background_color = True
 
     # draws the block onto an image
     def draw(self, img):
 
         if self.visible:
-            # get bounds
-            x_min, y_min, x_max, y_max = self.get_bounds()
+            if self.show_background_color:
+                # get bounds
+                x_min, y_min, x_max, y_max = self.get_bounds()
+                x_avg = int((x_min + x_max) / 2)
+                y_avg = int((y_min + y_max) / 2)
+                x_span = int((x_max - x_min) / 2)
+                y_span = int((y_max - y_min) / 2)
 
-            # draw the button
-            cv.rectangle(img, (x_min, y_min), (x_max, y_max), self.color, cv.FILLED)
+                # draw the block
+                if self.is_ellipse:
+                    cv.ellipse(img, (x_avg, y_avg), (x_span, y_span), 0, 0, 360, self.color, -1)
+                else:
+                    cv.rectangle(img, (x_min, y_min), (x_max, y_max), self.color, cv.FILLED)
 
             # draw hierarchy
             super().draw(img)

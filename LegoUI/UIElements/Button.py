@@ -2,6 +2,7 @@ from LegoUI.UIElements.UIElement import UIActionType
 from LegoUI.UIElements.UIStructureBlock import UIStructureBlock
 from LegoBricks import LegoBrick, LegoStatus
 from typing import Callable, Tuple, Dict
+from LegoOutputStream import LegoOutputStream
 import numpy as np
 import cv2 as cv
 import logging
@@ -27,8 +28,12 @@ class Button(UIStructureBlock):
 
         self.name: str = name
         self.show_name: bool = False
+
         self.border_thickness: float = 3
         self.border_color = (0, 0, 0)
+        self.show_border = True
+
+        self.is_ellipse = True
 
         # set button callback functions
         self.callbacks: Dict[UIActionType, Callable[[LegoBrick], None]] = {}
@@ -104,8 +109,23 @@ class Button(UIStructureBlock):
 
             # get bounds
             x_min, y_min, x_max, y_max = self.get_bounds()
+            x_avg = int((x_min + x_max) / 2)
+            y_avg = int((y_min + y_max) / 2)
+            x_span = int((x_max - x_min) / 2)
+            y_span = int((y_max - y_min) / 2)
 
             # draw the button
-            cv.rectangle(img, (x_min, y_min), (x_max, y_max), color, cv.FILLED)                             # background
-            # TODO draw icon to position                                                                    # icon
-            cv.rectangle(img, (x_min, y_min), (x_max, y_max), self.border_color, self.border_thickness)     # border
+            if self.show_background_color:                                                                  # background
+                if self.is_ellipse:
+                    cv.ellipse(img, (x_avg, y_avg), (x_span, y_span), 0, 0, 360, color, -1)
+                else:
+                    cv.rectangle(img, (x_min, y_min), (x_max, y_max), color, cv.FILLED)
+
+            if icon is not None:                                                                            # icon
+                LegoOutputStream.img_on_background(img, icon, (x_min, y_min))
+
+            if self.show_border:                                                                            # border
+                if self.is_ellipse:
+                    cv.ellipse(img, (x_avg, y_avg), (x_span, y_span), 0, 0, 360, self.border_color, self.border_thickness)
+                else:
+                    cv.rectangle(img, (x_min, y_min), (x_max, y_max), self.border_color, self.border_thickness)

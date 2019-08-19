@@ -1,4 +1,5 @@
 import logging
+from typing import Optional
 
 # Configure logging
 from enum import Enum
@@ -8,23 +9,23 @@ logger = logging.getLogger(__name__)
 
 # constants for color
 class LegoColor(Enum):
-    RED_BRICK = 0
-    BLUE_BRICK = 1
-    GREEN_BRICK = 2
-    UNKNOWN_COLOR = 3
+    UNKNOWN_COLOR = 0
+    RED_BRICK = 1
+    BLUE_BRICK = 2
+    GREEN_BRICK = 3
     YELLOW_BRICK = 4
 
 
 # constants for shape
 class LegoShape(Enum):
-    SQUARE_BRICK = 0
-    RECTANGLE_BRICK = 1
-    UNKNOWN_SHAPE = 2
+    UNKNOWN_SHAPE = 0
+    SQUARE_BRICK = 1
+    RECTANGLE_BRICK = 2
 
 
 # constants for the detection status
 # INTERNAL: used for buttons and controls
-# EXTERNAL: this has real geographical coordinates and an asset_id
+# EXTERNAL: this has real geographical coordinates and an assetpos_id
 # CANDIDATE: we not yet know if this is a real lego brick
 class LegoStatus(Enum):
     INTERNAL_BRICK = 0
@@ -38,8 +39,12 @@ class LegoBrick:
 
     def __init__(self, centroid_x: int, centroid_y: int, shape: LegoShape, color: LegoColor):
 
-        # the asset_id which the brick has on the server. this needs to be
+        # the assetpos_id which the brick has on the server. this needs to be
         # available if it is not a candidate and not internal
+        self.assetpos_id = None
+
+        # the asset_id which is mapped
+        # from color and shape
         self.asset_id = None
 
         # the x and y coordinates locally (in stream coordinates)
@@ -50,6 +55,22 @@ class LegoBrick:
         self.shape: LegoShape = shape
         self.color: LegoColor = color
         self.status: LegoStatus = LegoStatus.CANDIDATE_BRICK
+        # these values will ONLY be set if the brick status is EXTERNAL_BRICK
+        self.map_pos_x: Optional[float] = None
+        self.map_pos_y: Optional[float] = None
+
+    def map_asset_id(self, config):
+
+        # map the lego brick asset_id from color & shape
+        self.asset_id = config.get(str(self.shape.name), str(self.color.name))
+
+    def clone(self):
+        clone = LegoBrick(self.centroid_x, self.centroid_y, self.shape, self.color)
+        clone.status = self.status
+        clone.assetpos_id = self.assetpos_id
+        clone.map_pos_x = self.map_pos_x
+        clone.map_pos_y = self.map_pos_y
+        return clone
 
     def __eq__(self, other):
         # (type) safety first
@@ -65,4 +86,4 @@ class LegoBrick:
 
     def __str__(self):
         return "LegoBrick ({}, {}) [{}|{}|{}] {}".format(self.centroid_x, self.centroid_y,
-                                                         self.color, self.shape, self.status, self.asset_id)
+                                                         self.color, self.shape, self.status, self.assetpos_id)

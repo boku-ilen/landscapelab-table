@@ -8,7 +8,6 @@
 import logging
 from builtins import staticmethod
 import cv2  # TODO: fix the requirements.txt or provide library
-import colorsys
 import numpy as np
 
 from LegoBricks import LegoBrick, LegoShape, LegoColor
@@ -17,40 +16,46 @@ from LegoBricks import LegoBrick, LegoShape, LegoColor
 # enable logger
 logger = logging.getLogger(__name__)
 
-# TODO: make all this configurable via config
-# Side of lego piece rotated bounding box  # TODO: automate
-MIN_ROTATED_LENGTH = 10
-MAX_ROTATED_LENGTH = 35
-MIN_AREA = 70
 # Aspect ratio for square and rectangle
 MIN_SQ = 0.7
 MAX_SQ = 1.35
 MIN_REC = 0.2
 MAX_REC = 2.5
+BRICK_LENGTH_BUFFER = 2
 
-# TODO: use only lower, upper arrays
-# Accepted HSV colors
-BLUE_MIN = (0.53, 0.33, 105)
-BLUE_MAX = (0.65, 1, 255)
-RED_MIN = (0.92, 0.40, 140)
-RED_MAX = (1, 1, 255)
+# Hue histogram configurations
+# Color channels
+HUE = 0
+SATURATION = 1
+VALUE = 2
+# Histogram size
+HIST_SIZE = 181
 
 # TODO: make masks configurable ?
+# OpenCV supports:
+# H-value range (0 to 180)
+# S-value range (0 to 255)
+# V-value range (0 to 255)
 masks_configuration = {
-    LegoColor.YELLOW_BRICK: [
-        (np.array([10, 100, 100]), np.array([20, 255, 200])),
-    ],
-    LegoColor.GREEN_BRICK: [
-        (np.array([55, 50, 50]), np.array([95, 255, 255])),
-    ],
+    # TODO: adjust yellow so skin will be excluded
+    #LegoColor.YELLOW_BRICK: [
+    #    (np.array([10, 100, 100]), np.array([20, 255, 200])),
+    #],
+    # TODO: adjust green so black will be excluded
+    #LegoColor.GREEN_BRICK: [
+    #    (np.array([40, 100, 50]), np.array([80, 255, 255])),
+    #],
     LegoColor.BLUE_BRICK: [
-        (np.array([95, 150, 50]), np.array([150, 255, 180])),
+        (np.array([80, 100, 50]), np.array([140, 255, 255])),
     ],
     LegoColor.RED_BRICK: [
-        (np.array([0, 120, 120]), np.array([10, 255, 255])),
-        (np.array([170, 50, 120]), np.array([180, 255, 255])),
+        (np.array([0, 100, 50]), np.array([20, 255, 255])),
+        (np.array([160, 100, 50]), np.array([180, 255, 255])),
     ]
 }
+# TODO: set in masks_configuration only hue and saturation/value separately, the same for all colors?
+MIN_SATURATION = 100
+MAX_SATURATION = 255
 
 
 class ShapeDetector:
@@ -60,9 +65,25 @@ class ShapeDetector:
 
     pipeline = None
 
+    # Initialize possible lego brick sizes
+    min_square_length = None
+    max_square_length = None
+    min_rectangle_length = None
+    max_rectangle_length = None
+
+    min_square_area = None
+    max_square_area = None
+    min_rectangle_area = None
+    max_rectangle_area = None
+
+    def __init__(self, config, output_stream):
+
+        self.config = config
+        self.output_stream = output_stream
+
     # Check if the contour is a lego brick
     # TODO: remove frame if nothing to draw anymore
-    def detect_lego_brick(self, contour, frame, color_masks) -> LegoBrick:
+    def detect_lego_brick(self, contour, frame) -> LegoBrick:
 
         # Initialize the contour name and approximate the contour
         # with Douglas-Peucker algorithm
@@ -74,81 +95,97 @@ class ShapeDetector:
         # Check if the contour has 4 vertices
         if len(approx) == 4:
 
-            # Compute the bounding box of the contour
-            # (x, y, w, h) = cv2.boundingRect(approx)
-            # bbox = (x, y, w, h)
-            # Draw a blue bounding box (for testing purposes)
-            # cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
-
             # Compute contour moments, which include area,
             # its centroid, and information about its orientation
             moments_dict = cv2.moments(contour)
 
-            # Compute the centroid of the contour (cX, cY)
+            # Compute the centroid of the contour
             if moments_dict["m00"] != 0:
                 centroid_x = int((moments_dict["m10"] / moments_dict["m00"]))
                 centroid_y = int((moments_dict["m01"] / moments_dict["m00"]))
 
-                # Check color of the lego brick (currently only red, blue and green accepted)
-                for color, mask in color_masks.items():
-                    if mask[centroid_y, centroid_x] == 255:
-                        detected_color = color
-                        break
-
-                # TODO: remove if the above method is sufficient (masks/lower, upper arrays)
-                if detected_color == LegoColor.UNKNOWN_COLOR:
-                    detected_color = self.check_color(centroid_x, centroid_y, frame)
-
-                # TODO: set color using mask
-                # Eliminate wrong colors contours
-                if detected_color == LegoColor.UNKNOWN_COLOR:
-                    logger.debug("Don't draw -> wrong color")
-
-                # Eliminate very small contours
-                elif cv2.contourArea(contour) < MIN_AREA:
+                # TODO: Control if work correctly
+                # Eliminate too small contours
+                if cv2.contourArea(contour) < self.min_square_area:
                     logger.debug("Don't draw -> area too small")
+
+                # Eliminate too large contours
+                elif cv2.contourArea(contour) > self.max_rectangle_area:
+                    logger.debug("Don't draw -> area too large")
 
                 else:
 
-                    # Compute the rotated bounding box
-                    rect = cv2.minAreaRect(contour)
-                    rotated_bbox = np.int0(cv2.boxPoints(rect))
+                    # Check if contour is a rectangle or square
+                    contour_shape = self.check_if_square(approx)
 
-                    contour_shape = self.check_if_square(rotated_bbox)
+                    if contour_shape is LegoShape.UNKNOWN_SHAPE:
+                        logger.debug("Don't draw -> unknown shape")
+                    else:
+                        # Compute the bounding box of the contour
+                        bbox = cv2.boundingRect(approx)
 
-                    logger.debug("Draw contour:\n Shape: {}\n Color: {}\n "
-                                 "Center coordinates: {}, {}\n Contour area: {}".
-                                 format(contour_shape, detected_color,
-                                        centroid_x, centroid_y, cv2.contourArea(contour)))
+                        # Find the most frequent color (heu value)
+                        # in the bounding box
+                        detected_color = self.find_most_frequent_hue(bbox, frame)
 
-                    # return a LegoBrick with the detected parameters
-                    return LegoBrick(centroid_x, centroid_y, contour_shape, detected_color)
+                        # Eliminate wrong colors contours
+                        if detected_color == LegoColor.UNKNOWN_COLOR:
+                            logger.debug("Don't draw -> unknown color")
+                        else:
+                            logger.debug("Draw contour:\n Shape: {}\n Color: {}\n "
+                                         "Center coordinates: {}, {}\n Contour area: {}".
+                                         format(contour_shape, detected_color,
+                                                centroid_x, centroid_y, cv2.contourArea(contour)))
+
+                            # return a LegoBrick with the detected parameters
+                            return LegoBrick(centroid_x, centroid_y, contour_shape, detected_color)
 
         return None  # FIXME: CG: we might to differ?
 
     # Check if the contour has a lego brick shape: square or rectangle
     def check_if_square(self, rotated_bbox) -> LegoShape:
 
-        # Compute the aspect ratio of the two lengths
-        # Is set to 0, if the size of lego was not correct
-        aspect_ratio = self.calculate_sides_ratio(rotated_bbox)
+        rotated_bbox_lengths = self.calculate_rotated_bbox_lengths(rotated_bbox)
 
-        if aspect_ratio == 0:
+        # Prevent division by zero
+        if int(rotated_bbox_lengths[1]) is 0:
             return LegoShape.UNKNOWN_SHAPE
+
+        # Compute the aspect ratio of the two lengths
+        aspect_ratio = int(rotated_bbox_lengths[0]) / int(rotated_bbox_lengths[1])
 
         # Check if aspect ratio is near 1:1
         if MIN_SQ <= aspect_ratio <= MAX_SQ:
+
+            # Check if sides of the square lego brick are not too short/long
+            if not (self.min_square_length < rotated_bbox_lengths[0] < self.max_square_length) \
+                    and (self.min_square_length < rotated_bbox_lengths[1] < self.max_square_length):
+                logger.debug("Wrong square sides lengths: {}".format(rotated_bbox_lengths))
+                return LegoShape.UNKNOWN_SHAPE
+
+            logger.debug("Rotated bbox size: {}".format(rotated_bbox_lengths))
             logger.debug("Square ratio: {}".format(aspect_ratio))
             return LegoShape.SQUARE_BRICK
 
         # Check if aspect ratio is near 2:1
         elif MIN_REC < aspect_ratio < MAX_REC:
+
+            # Check if sides of the rectangle lego brick are not too short/long
+            if not (self.min_rectangle_length < rotated_bbox_lengths[0] < self.max_rectangle_length) \
+                    and (self.min_rectangle_length < rotated_bbox_lengths[1] < self.max_rectangle_length):
+                logger.debug("Wrong rectangle sides lengths: {}".format(rotated_bbox_lengths))
+                return LegoShape.UNKNOWN_SHAPE
+
+            logger.debug("Rotated bbox size: {}".format(rotated_bbox_lengths))
             logger.debug("Rectangle ratio: {}".format(aspect_ratio))
             return LegoShape.RECTANGLE_BRICK
 
+        else:
+            return LegoShape.UNKNOWN_SHAPE
+
     # Compute two sides lengths of the contour, which have a common corner
     @staticmethod
-    def calculate_sides_ratio(rotated_bbox):
+    def calculate_rotated_bbox_lengths(rotated_bbox):
 
         # Initialize a list for sides lengths of the contour
         sides_lengths_list = []
@@ -161,83 +198,114 @@ class ShapeDetector:
         # Delete the highest length value, which is a diagonal of bounding box
         # Only two sides lengths, which have a common corner, are remaining in the array
         rotated_bbox_lengths = np.delete(sides_lengths_list, np.argmax(sides_lengths_list))
-        logger.debug("Rotated bbox size: {}".format(rotated_bbox_lengths))
 
-        # Check if the lego brick is not too small/large
-        if (MIN_ROTATED_LENGTH > rotated_bbox_lengths[0] > MAX_ROTATED_LENGTH) \
-                | (MIN_ROTATED_LENGTH > rotated_bbox_lengths[1] > MAX_ROTATED_LENGTH):
-            logger.debug("Don't draw -> wrong size")
-            return 0
-
-        # Compute the aspect ratio of the two lengths
-        ratio = int(rotated_bbox_lengths[0]) / int(rotated_bbox_lengths[1])
-
-        # Return the aspect ratio of two sides lengths of the rotated bounding box
-        return ratio
-
-    # Compute the color name of the found lego brick
-    @staticmethod
-    # FIXME: this might be deprecated anyways?
-    def check_color(x, y, color_image) -> LegoColor:
-
-        # Calculate the mean color (RGB) in the middle of the found lego brick
-        color = cv2.mean(color_image[y:y+4, x:x+4])
-
-        # Change color in RGB to HSV
-        color_hsv = colorsys.rgb_to_hsv(color[2], color[1], color[0])
-        logger.debug("HSV: {}".format(color_hsv))
-
-        # Initialize the color name
-        color_name = LegoColor.UNKNOWN_COLOR
-
-        # Check if the color is red
-        # FIXME: CG: do this in a more generalized way to support more colors
-        if RED_MIN[0] <= color_hsv[0] <= RED_MAX[0] \
-                and RED_MIN[1] <= color_hsv[1] <= RED_MAX[1]\
-                and RED_MIN[2] <= color_hsv[2] <= RED_MAX[2]:
-            color_name = LegoColor.RED_BRICK
-
-        # Check if the color is blue
-        elif BLUE_MIN[0] <= color_hsv[0] <= BLUE_MAX[0]\
-                and BLUE_MIN[1] <= color_hsv[1] <= BLUE_MAX[1]\
-                and BLUE_MIN[2] <= color_hsv[2] <= BLUE_MAX[2]:
-            color_name = LegoColor.BLUE_BRICK
-
-        # Return the color name
-        return color_name
+        return rotated_bbox_lengths
 
     @staticmethod
     def detect_contours(frame):
 
-        # Set red and blue mask
-        frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+        # Find all edges
+        frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        frame_gray = 255 - frame_gray
+        edges = cv2.Canny(frame_gray, 30, 120)
 
-        # Do some morphological corrections (fill 'holes' in masks)
-        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))  # FIXME: make it configurable
-
-        mask_colors = None
-        color_masks = {}
-        for mask_color, mask_config in masks_configuration.items():
-            masks = None
-            for entry in mask_config:
-                mask = cv2.inRange(frame_hsv, entry[0], entry[1])
-                if masks is None:
-                    masks = mask
-                else:
-                    masks = masks + mask
-            dilate = cv2.dilate(masks, kernel, iterations=1)
-            if mask_colors is None:
-                mask_colors = dilate
-            else:
-                mask_colors = mask_colors + dilate
-            color_masks[mask_color] = mask_colors
-
-        # Find contours in the thresholded image
+        # Find contours in the edges image
         # Retrieve all of the contours without establishing any hierarchical relationships (RETR_LIST)
         major = cv2.__version__.split('.')[0]
         if major == '3':
-            _, contours, hierarchy = cv2.findContours(mask_colors.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+            _, contours, hierarchy = cv2.findContours(edges.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
         else:
-            contours, hierarchy = cv2.findContours(mask_colors.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+            contours, hierarchy = cv2.findContours(edges.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
 
-        return contours, color_masks
+        return contours
+
+    @staticmethod
+    def find_most_frequent_hue(bbox, frame):
+
+        frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+
+        # Save dimensions of the bounding box
+        (left_x, upper_y, width, height) = bbox
+
+        # Calculate a new bounding box
+        # which is 25% of the old one
+        # and is placed in its middle
+        new_width = int(width / 2)
+        new_height = int(height / 2)
+        new_left_x = left_x + int(new_width / 2)
+        new_upper_y = upper_y + int(new_height / 2)
+
+        # Create a histogram with hue values of pixels
+        # which already have a correct saturation
+        hue_histogram = np.zeros(HIST_SIZE)
+        max_frequency = 0
+        most_frequent_hue_value = None
+        for x in range(new_width):
+            for y in range(new_height):
+
+                # Take only the area of the lego brick bounding box
+                hsv_bbox = frame_hsv[new_upper_y + y, new_left_x + x]
+
+                # Check if saturation is correct
+                if MIN_SATURATION <= hsv_bbox[SATURATION] <= MAX_SATURATION:
+
+                    # Add hue value to the histogram
+                    hue_histogram[hsv_bbox[HUE]] += 1
+
+                    # Save the most frequent hue value
+                    if hue_histogram[hsv_bbox[HUE]] > max_frequency:
+                        max_frequency = hue_histogram[hsv_bbox[HUE]]
+                        most_frequent_hue_value = hsv_bbox[HUE]
+
+        if most_frequent_hue_value is not None:
+            # Iterate through all configured color ranges
+            for mask_color, mask_config in masks_configuration.items():
+
+                # Check if found hue values
+                # are in any of configured color ranges
+                for entry in mask_config:
+
+                    # TODO: currently only one of the most frequent hue values will be returned as a detected color
+                    if entry[0][HUE] <= most_frequent_hue_value <= entry[1][HUE]:
+                        detected_color = mask_color
+
+                        # Return an accepted
+                        # detected color name
+                        return detected_color
+
+        # Return if no configured color detected
+        return LegoColor.UNKNOWN_COLOR
+
+    # Estimate possible lego brick dimensions using distance to the board
+    # Estimated for resolution 1280/720
+    def estimate_possible_lego_dimensions(self, board_distance):
+
+        # Board distance -> square lego side length
+        # 1700 - 1799 -> 7-8
+        # 1600 - 1699 -> 8-9
+        # 1500 - 1599 -> 9-10 ...
+
+        # Take two first digits of the board distance
+        board_distance_estimation = int(board_distance / 100)
+
+        # FIXME: error handling
+        # Get min length for a square lego brick from the configurations
+        try:
+            self.min_square_length = int(self.config.get("MIN_ROTATED_SQUARE_LENGTH", str(board_distance_estimation)))
+        except:
+            logger.error("Not able to calculate a possible lego size, check board distance and configurations")
+
+        if self.min_square_length is not None:
+
+            # Add buffer
+            self.min_square_length -= BRICK_LENGTH_BUFFER
+            # Add buffer
+            self.max_square_length = self.min_square_length + 2 * BRICK_LENGTH_BUFFER
+
+            self.min_square_area = self.min_square_length * self.min_square_length
+            self.max_square_area = self.max_square_length * self.max_square_length
+
+            self.min_rectangle_length = 2 * self.min_square_length
+            self.max_rectangle_length = 2 * self.max_square_length
+            self.min_rectangle_area = self.min_square_length * self.min_rectangle_length
+            self.max_rectangle_area = self.max_square_length * self.max_rectangle_length

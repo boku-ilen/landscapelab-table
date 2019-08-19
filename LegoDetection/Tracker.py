@@ -2,6 +2,9 @@ import logging
 import typing
 from LegoBricks import LegoBrick, LegoStatus
 from LegoUI.UIElements.UIElement import UIElement
+from LegoPositionConverter import LegoPositionConverter
+from typing import Callable
+from functools import partial
 
 # configure logging
 logger = logging.getLogger(__name__)
@@ -13,24 +16,57 @@ MAX_DISAPPEARED = 40
 
 class Tracker:
 
+    BRICKS_REFRESHED = False
+
     server_communicator = None
     tracked_candidates = {}  # we hold candidates which are not confirmed yet for some ticks
     confirmed_bricks: typing.List[LegoBrick] = []
+    virtual_bricks: typing.List[LegoBrick] = []
     tracked_disappeared = {}  # we hold confirmed bricks marked for removal after some ticks
     min_distance: int = None
     min_appeared: int = None
     max_disappeared: int = None
 
-    def __init__(self, server_communicator, ui_root: UIElement, min_distance=MIN_DISTANCE,
+    def __init__(self, config, server_communicator, ui_root: UIElement, min_distance=MIN_DISTANCE,
                  min_appeared=MIN_APPEARED, max_disappeared=MAX_DISAPPEARED):
+        self.config = config
         self.server_communicator = server_communicator
         self.ui_root = ui_root
         self.min_distance = min_distance
         self.min_appeared = min_appeared
         self.max_disappeared = max_disappeared
+        self.get_board_to_beamer_conversion: Callable[[], Callable[[LegoBrick], LegoBrick]] = None
+
+        # Initialize a flag for
+        # changes in the map extent
+        self.extent_changed = False
+
+        # Initialize lego position converter
+        self.lego_position_converter = LegoPositionConverter(self.config)
 
     def update(self, lego_bricks_candidates: typing.List[LegoBrick]) -> typing.List[LegoBrick]:
 
+        # count frames certain bricks have been continuously visible / gone
+        self.do_brick_ticks(lego_bricks_candidates)
+
+        # remove all bricks that have been gone for too long
+        self.remove_overtime_disappeared_bricks()
+
+        # do ui update for all confirmed bricks
+        self.do_confirmed_ui_update()
+
+        self.select_and_classify_candidates()
+
+        # handle mouse placed bricks and
+        # do ui tick so that the button release event can be recognized and triggered
+        self.ui_root.ui_tick()
+
+        self.mark_external_bricks_outdated_if_map_updated()
+
+        # finally return the updated list of confirmed bricks
+        return self.confirmed_bricks
+
+    def do_brick_ticks(self, lego_bricks_candidates: typing.List[LegoBrick]):
         # copy the confirmed bricks
         possible_removed_bricks = self.confirmed_bricks.copy()
 
@@ -69,6 +105,9 @@ class Tracker:
             else:
                 self.tracked_disappeared[possible_removed_brick] = 0
 
+    # removes those bricks that have been invisible for too long
+    def remove_overtime_disappeared_bricks(self):
+
         # we temporarily save disappeared
         # elements to delete them from dicts
         bricks_to_remove = []
@@ -84,6 +123,7 @@ class Tracker:
 
                 # remove the disappeared elements from the confirmed list
                 self.confirmed_bricks.remove(brick)
+                Tracker.BRICKS_REFRESHED = True
 
                 # if the brick is associated with an asset also send a remove request to the server
                 if brick.status == LegoStatus.EXTERNAL_BRICK:
@@ -91,46 +131,67 @@ class Tracker:
 
         # remove the disappeared elements from dicts
         for brick in bricks_to_remove:
-
             del self.tracked_candidates[brick]
             del self.tracked_disappeared[brick]
 
-        # do ui update for all already confirmed bricks and mark as outdated if necessary
+    # does ui update for all already confirmed bricks and mark as outdated if necessary
+    def do_confirmed_ui_update(self):
+
         for brick in self.confirmed_bricks:
 
             # mark all bricks as outdated that previously were on ui and now lie on the map or vice versa
             # this might happen when a ui elements visibility gets toggled
-            if self.ui_root.brick_on_element(brick):
+            if self.brick_on_ui(brick):
                 if brick.status == LegoStatus.EXTERNAL_BRICK:
-                    brick.status = LegoStatus.OUTDATED_BRICK
+                    Tracker.set_brick_outdated(brick)
                     self.server_communicator.remove_lego_instance(brick)
             else:
                 if brick.status == LegoStatus.INTERNAL_BRICK:
-                    brick.status = LegoStatus.OUTDATED_BRICK
+                    Tracker.set_brick_outdated(brick)
 
+        for brick in self.virtual_bricks:
+            # remove any virtual internal bricks that do not lie on ui elements anymore
+            if brick.status == LegoStatus.INTERNAL_BRICK and not self.brick_on_ui(brick):
+                self.virtual_bricks.remove(brick)
+
+    # selects those candidates that appeared long enough to be considered confirmed and add them to the confirmed list
+    # also does ui update for those bricks and classifies them
+    def select_and_classify_candidates(self):
         # add the qualified candidates to the confirmed list and do ui update for them
         for candidate, amount in self.tracked_candidates.items():
 
             # check for the threshold value of new candidates
             if amount > self.min_appeared and candidate not in self.confirmed_bricks:
 
-                if self.ui_root.brick_on_element(candidate):
-                    candidate.status = LegoStatus.INTERNAL_BRICK
+                virtual_brick = self.check_min_distance(candidate, self.virtual_bricks)
+
+                if virtual_brick:
+                    self.virtual_bricks.remove(virtual_brick)
+                    candidate.status = LegoStatus.OUTDATED_BRICK
+
                 else:
-                    candidate.status = LegoStatus.EXTERNAL_BRICK
+                    if self.brick_on_ui(candidate):
+                        candidate.status = LegoStatus.INTERNAL_BRICK
+                    else:
+                        candidate.status = LegoStatus.EXTERNAL_BRICK
+                        # if the brick is associated with an asset also send a create request to the server
+                        self.server_communicator.create_lego_instance(candidate)
 
+                # add a new lego brick to the confirmed lego bricks list
                 self.confirmed_bricks.append(candidate)
-                # if the brick is associated with an asset also send a create request to the server
-                if candidate.status == LegoStatus.EXTERNAL_BRICK:
-                    self.server_communicator.create_lego_instance(candidate)
+                Tracker.BRICKS_REFRESHED = True
 
-        # handle mouse placed bricks and
-        # do ui tick so that the button release event can be recognized and triggered
-        self.ui_root.handle_mouse_bricks()
-        self.ui_root.ui_tick()
+        # loop through all virtual candidates (= all mouse placed bricks on first frame) and set correct status
+        for brick in filter(lambda b: b.status == LegoStatus.CANDIDATE_BRICK, self.virtual_bricks):
+            Tracker.BRICKS_REFRESHED = True
 
-        # finally return the updated list of confirmed bricks
-        return self.confirmed_bricks
+            logger.info("classifying mouse brick")
+
+            if self.brick_on_ui(brick):
+                brick.status = LegoStatus.INTERNAL_BRICK
+            else:
+                brick.status = LegoStatus.EXTERNAL_BRICK
+                self.server_communicator.create_lego_instance(brick)
 
     # Check if the lego brick lay within min distance to the any in the list
     def check_min_distance(self, brick, bricks_list):
@@ -153,3 +214,44 @@ class Tracker:
 
         # Return None, no neighbour brick found
         return neighbour_brick
+
+    # marks external bricks as outdated if the map was updated
+    # TODO add virtual brick to original position
+    def mark_external_bricks_outdated_if_map_updated(self):
+        # if the extent changed, set external bricks as outdated
+        self.extent_changed = self.config.get("map_settings", "extent_changed")
+        if self.extent_changed is True:
+
+            logger.info("recalculate virtual brick position")
+            for brick in self.virtual_bricks:
+                if brick.status == LegoStatus.EXTERNAL_BRICK:
+                    self.lego_position_converter.compute_board_coordinates(brick)
+
+            logger.info("set bricks outdated because extent changed")
+            for brick in self.confirmed_bricks:
+                if brick.status == LegoStatus.EXTERNAL_BRICK:
+                    # change status of lego bricks to outdated
+                    self.set_virtual_brick_at_global_pos_of(brick)
+                    # TODO the virtual brick should have the same position on the map as the original brick
+                    #  since the extent was altered there needs to be some way to reverse engineer the board position
+                    #  from map coordinates
+                    Tracker.set_brick_outdated(brick)
+
+            # set the flag back
+            self.config.set("map_settings", "extent_changed", False)
+
+    @staticmethod
+    def set_brick_outdated(brick: LegoBrick):
+        brick.status = LegoStatus.OUTDATED_BRICK
+        Tracker.BRICKS_REFRESHED = True
+
+    def set_virtual_brick_at_global_pos_of(self, brick: LegoBrick):
+        virtual_brick = brick.clone()
+        self.lego_position_converter.compute_board_coordinates(virtual_brick)
+
+        self.virtual_bricks.append(virtual_brick)
+        Tracker.BRICKS_REFRESHED = True
+
+    def brick_on_ui(self, brick):
+        board_to_beamer = self.get_board_to_beamer_conversion()
+        return self.ui_root.brick_on_element(board_to_beamer(brick))

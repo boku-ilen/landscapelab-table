@@ -20,6 +20,7 @@ class ListenerThread(threading.Thread):
 
         # remember update keyword
         self.update_keyword = config.get('qgis_interaction', 'UPDATE_KEYWORD')
+        self.exit_keyword = config.get('qgis_interaction', 'EXIT_KEYWORD')
 
         self.map_object = map_object
 
@@ -39,6 +40,6 @@ class ListenerThread(threading.Thread):
 
                 self.map_object.refresh(extent)
 
-            if data == 'exit':
+            if data == self.exit_keyword:
                 self.sock.close()
                 break

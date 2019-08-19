@@ -15,16 +15,42 @@ class MapHandler:
     MAP_REFRESHED = True
 
     def __init__(self, config: ConfigManager):
+
+        self.config = config
+
+        # get desired screen resolution
+        self.resolution_x = int(self.config.get("beamer-resolution", "width"))
+        self.resolution_y = int(self.config.get("beamer-resolution", "height"))
+
         # initialize two black images
         self.qgis_image = [
-            np.zeros((500, 500, 3), np.uint8),
-            np.zeros((500, 500, 3), np.uint8)
+            np.ones((self.resolution_y, self.resolution_x, 3), np.uint8) * 255,
+            np.ones((self.resolution_y, self.resolution_x, 3), np.uint8) * 255
         ]
         self.current_image = 0
 
-        # set extents
-        self.current_extent = config.get('map_settings', 'start_extent')
-        self.next_extent = self.current_extent
+        # fit extent to resolution and set it
+        beamer_ratio = self.resolution_x / self.resolution_y
+        extent_width = config.get('map_settings', 'extent_width')
+        extent_height = config.get('map_settings', 'extent_height')
+        extent_w = abs(extent_width[0] - extent_width[1])
+        extent_h = abs(extent_height[0] - extent_height[1])
+        extent_h_diff = extent_w / beamer_ratio - extent_h
+        # adjust height so that extent has the same ratio as beamer resolution
+        if extent_height[0] < extent_height[1]:
+            extent_height[0] -= extent_h_diff / 2
+            extent_height[1] += extent_h_diff / 2
+        else:
+            extent_height[0] += extent_h_diff / 2
+            extent_height[1] -= extent_h_diff / 2
+        self.current_extent = [extent_width[0], extent_height[0], extent_width[1], extent_height[1]]
+        logger.info("extent: {}".format(str(self.current_extent)))
+        logger.debug("extent width: {}, height: {}".format(
+            self.current_extent[2] - self.current_extent[0],
+            self.current_extent[3] - self.current_extent[1]
+        ))
+
+        self.crs = config.get("map_settings", "crs")
 
         # set socket & connection info
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -34,9 +60,7 @@ class MapHandler:
         # get communication info
         self.image_path = config.get('qgis_interaction', 'QGIS_IMAGE_PATH')
         self.render_keyword = config.get('qgis_interaction', 'RENDER_KEYWORD')
-
-        # request first render
-        self.request_render(self.current_extent)
+        self.exit_keyword = config.get('qgis_interaction', 'EXIT_KEYWORD')
 
         # set extent modifiers
         pan_up_modifier = np.array([0, 1, 0, 1])
@@ -61,11 +85,20 @@ class MapHandler:
 
     # reloads the viewport image
     def refresh(self, extent):
+        logger.info("refreshing map")
+
         unused_slot = (self.current_image + 1) % 2
 
-        self.qgis_image[unused_slot] = cv.imread(self.image_path, 1)
+        self.qgis_image[unused_slot] = cv.imread(self.image_path, -1)
         self.current_image = unused_slot
-        self.current_extent = extent
+
+        if not np.array_equal(self.current_extent, extent):
+            self.current_extent = extent
+            self.config.set("map_settings", "extent_changed", True)
+            self.config.set("map_settings", "extent_width", [extent[0], extent[2]])
+            self.config.set("map_settings", "extent_height", [extent[1], extent[3]])
+            logger.info("extent changed")
+
         MapHandler.MAP_REFRESHED = True
 
     # modifies the current extent and requests an updated render image
@@ -86,9 +119,16 @@ class MapHandler:
         # request render
         self.request_render(next_extent)
 
-    def request_render(self, extent):
+    def request_render(self, extent=None):
+
+        if extent is None:
+            extent = self.current_extent
+
         self.send(
-            '{}{} {} {} {}'.format(self.render_keyword, extent[0], extent[1], extent[2], extent[3])
+            '{keyword}{required_resolution} {crs} {extent0} {extent1} {extent2} {extent3}'.format(
+                keyword=self.render_keyword, required_resolution=self.resolution_x, crs=self.crs,
+                extent0=extent[0], extent1=extent[1], extent2=extent[2], extent3=extent[3]
+            )
             .encode()
         )
 
@@ -105,6 +145,6 @@ class MapHandler:
         return self.qgis_image[self.current_image]
 
     def end(self):
-        self.sock.sendto(b'exit', self.qgis_addr)
-        self.sock.sendto(b'exit', self.lego_addr)
+        # self.sock.sendto(self.exit_keyword.encode(), self.qgis_addr)
+        self.sock.sendto(self.exit_keyword.encode(), self.lego_addr)
         self.sock.close()

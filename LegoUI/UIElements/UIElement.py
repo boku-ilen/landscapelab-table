@@ -3,14 +3,9 @@ from typing import Optional, List
 import numpy as np
 from enum import Enum
 
-MOUSE_BRICK_SIZE = 10
-MOUSE_BRICKS: List[LegoBrick] = []
-
 
 # base class for UI element (other than the map itself) the user can interact with
 class UIElement:
-
-    UI_REFRESHED = True
 
     def __init__(self):
         self.position = np.array((0, 0))
@@ -24,11 +19,6 @@ class UIElement:
             if child.brick_on_element(brick):
                 return True
         return False
-
-    # checks all mouse bricks for
-    def handle_mouse_bricks(self):
-        for brick in MOUSE_BRICKS:
-            self.brick_on_element(brick)
 
     # call once all bricks in a frame have been processed so that e.g. buttons can call their release action
     def ui_tick(self):
@@ -52,11 +42,9 @@ class UIElement:
     def add_child(self, child):
         self.children.append(child)
         child.parent = self
-        UIElement.UI_REFRESHED = True
 
     def set_visible(self, visible: bool):
         self.visible = visible
-        UIElement.UI_REFRESHED = True
 
 
 # used for buttons etc

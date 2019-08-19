@@ -1,7 +1,9 @@
-from LegoUI.UIElements.UIElement import UIActionType, UIElement
+from LegoUI.UIElements.UIElement import UIActionType
 from LegoUI.UIElements.UIStructureBlock import UIStructureBlock
 from LegoBricks import LegoBrick, LegoStatus
 from typing import Callable, Tuple, Dict
+from LegoOutputStream import LegoOutputStream
+import numpy as np
 import cv2 as cv
 import logging
 
@@ -16,17 +18,22 @@ class Button(UIStructureBlock):
 
         super().__init__(position, size)
 
+        # TODO: adjust colors
         # set visuals
-        self.color = (255, 0, 0)
+        self.color = (255, 255, 255)
         self.icon = None
 
-        self.color_pressed = (0, 0, 255)
+        self.color_pressed = (200, 200, 200)
         self.icon_pressed = None
 
         self.name: str = name
         self.show_name: bool = False
+
         self.border_thickness: float = 3
         self.border_color = (0, 0, 0)
+        self.show_border = True
+
+        self.is_ellipse = True
 
         # set button callback functions
         self.callbacks: Dict[UIActionType, Callable[[LegoBrick], None]] = {}
@@ -51,16 +58,16 @@ class Button(UIStructureBlock):
         if self.visible:
             x, y = (brick.centroid_x, brick.centroid_y)
 
-            if self.pos_on_block(x, y) and brick.status == LegoStatus.CANDIDATE_BRICK:
+            if self.pos_on_block(x, y):
 
-                if not self.pressed:
-                    self.call(UIActionType.PRESS, brick)
-                    UIElement.UI_REFRESHED = True
-                else:
-                    self.call(UIActionType.HOLD, brick)
+                if brick.status == LegoStatus.CANDIDATE_BRICK or brick.status == LegoStatus.INTERNAL_BRICK:
+                    if not self.pressed:
+                        self.call(UIActionType.PRESS, brick)
+                    else:
+                        self.call(UIActionType.HOLD, brick)
 
-                self.pressed_once = True
-                self.pressed = True
+                    self.pressed_once = True
+                    self.pressed = True
                 return True
 
             return super().brick_on_element(brick)
@@ -72,7 +79,6 @@ class Button(UIStructureBlock):
         # if button was pressed until now but has not been pressed this frame it now is released
         if self.pressed and not self.pressed_once:
             self.pressed = False
-            UIElement.UI_REFRESHED = True
             self.call(UIActionType.RELEASE, None)
 
         self.pressed_once = False
@@ -103,8 +109,23 @@ class Button(UIStructureBlock):
 
             # get bounds
             x_min, y_min, x_max, y_max = self.get_bounds()
+            x_avg = int((x_min + x_max) / 2)
+            y_avg = int((y_min + y_max) / 2)
+            x_span = int((x_max - x_min) / 2)
+            y_span = int((y_max - y_min) / 2)
 
             # draw the button
-            cv.rectangle(img, (x_min, y_min), (x_max, y_max), color, cv.FILLED)                             # background
-            # TODO draw icon to position                                                                    # icon
-            cv.rectangle(img, (x_min, y_min), (x_max, y_max), self.border_color, self.border_thickness)     # border
+            if self.show_background_color:                                                                  # background
+                if self.is_ellipse:
+                    cv.ellipse(img, (x_avg, y_avg), (x_span, y_span), 0, 0, 360, color, -1)
+                else:
+                    cv.rectangle(img, (x_min, y_min), (x_max, y_max), color, cv.FILLED)
+
+            if icon is not None:                                                                            # icon
+                LegoOutputStream.img_on_background(img, icon, (x_min, y_min))
+
+            if self.show_border:                                                                            # border
+                if self.is_ellipse:
+                    cv.ellipse(img, (x_avg, y_avg), (x_span, y_span), 0, 0, 360, self.border_color, self.border_thickness)
+                else:
+                    cv.rectangle(img, (x_min, y_min), (x_max, y_max), self.border_color, self.border_thickness)

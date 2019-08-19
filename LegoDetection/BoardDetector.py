@@ -14,16 +14,43 @@ logger = logging.getLogger(__name__)
 # Objects in greater distance to the board than (1 +- CLIP) * x will be excluded from processing
 CLIP = 0.1
 
+# Number of frames for
+# computing background average
+MAX_LOOP_NUMBER = 30
+
+# accumulate weighted parameter
+INPUT_WEIGHT = 0.5
+
+# Maximum value to use
+# with the THRESH_BINARY
+MAX_VALUE = 255
+
+# Number of frames for
+# changing threshold_qrcode
+# when detecting the board corners
+MAX_FRAMES_NUMBER = 20
+
+# Adjusting threshold_qrcode step
+THRESHOLD_STEP = 16
+MAX_THRESHOLD = 255
+
 
 # this class manages the extent to detect and reference the extent of
 # the board related to the video stream
 class BoardDetector:
 
-    def __init__(self, config, threshold_qrcode, output_stream):
+    background = None
+
+    def __init__(self, config, threshold_qrcode, input_stream, output_stream):
+
+        self.config = config
 
         # Threshold for finding QR-Codes
         # To change the threshold use an optional parameter
         self.threshold_qrcode = threshold_qrcode
+
+        # the inputstream
+        self.input_stream = input_stream
 
         # the outputstream
         self.output_stream = output_stream
@@ -33,18 +60,18 @@ class BoardDetector:
         self.board_size_height = None
         self.board_corners = None
 
-        # the distance to the board
-        self.board_distance = None
-
         # Array with all polygons of QR-Codes for board corners
         self.all_codes_polygons_points = [None, None, None, None]
-
-        # ID of the map (metadata read from the code)
-        self.map_id = None
+        self.found_codes_number = 0
+        self.code_found_flag = False
 
         # Get the resolution from config file
-        self.frame_width = config.get("resolution", "width")
-        self.frame_height = config.get("resolution", "height")
+        self.frame_width = self.config.get("resolution", "width")
+        self.frame_height = self.config.get("resolution", "height")
+
+        self.current_loop = 0
+
+        self.detect_corners_frames_number = 0
 
     # Compute pythagoras value
     @staticmethod
@@ -145,14 +172,6 @@ class BoardDetector:
 
         return corner1, corner2
 
-    # Read metadata save at the end of the QR-Code data -> map_id
-    @staticmethod
-    def read_metadata_id(code_data):
-
-        # Split code data of the form: 'C_BL_1'
-        map_id = code_data.split('_')[2]
-        return map_id
-
     # Save four polygons of QR-Codes decoded over couple of frames and read metadata
     def read_qr_codes(self, decoded_codes):
 
@@ -161,10 +180,6 @@ class BoardDetector:
 
             # Decode binary data which is saved in QR-code
             code_data = code.data.decode()
-
-            # If map_id is not known yet
-            if self.map_id is None:
-                self.map_id = self.read_metadata_id(code_data)
 
             # If data in array with top left, top right, bottom right, bottom left
             # data is not set yet, add the new found data
@@ -182,22 +197,23 @@ class BoardDetector:
     # Detect the board using four QR-Codes in the board corners
     def detect_board(self, color_image):
 
-        # Decode QR or Bar-Codes
-        # Convert to black and white to find QR-Codes
-        # Threshold image to white in black
+        # Compute difference between background and the current frame
+        diff = self.subtract_background(color_image)
 
-        mask = cv2.inRange(color_image, (0, 0, 0),
-                           (self.threshold_qrcode, self.threshold_qrcode, self.threshold_qrcode))
-        white_in_black = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
-        # Invert image it to black in white
-        looking_for_qr_code_image = 255 - white_in_black
+        # Invert image
+        looking_for_qr_code_image = 255 - diff
+
+        # Decode QR or Bar-Codes from both
+        # black-white and color image
         decoded_codes = pyzbar.decode(looking_for_qr_code_image)
+        if not decoded_codes:
+            decoded_codes = pyzbar.decode(color_image)
 
         # Mark found QR-codes on the color image
         self.display_found_codes(color_image, decoded_codes)
 
         # Show mask for finding qr-codes
-        self.output_stream.write_to_channel(LegoOutputChannel.CHANNEL_WHITE_BLACK, white_in_black)
+        self.output_stream.write_to_channel(LegoOutputChannel.CHANNEL_WHITE_BLACK, looking_for_qr_code_image)
 
         # Read codes which were decoded in this frame:
         # save polygons in the array self.board_detector.all_codes_polygons_points
@@ -211,17 +227,21 @@ class BoardDetector:
         bottom_left_corner = None
         centroids = []
         all_board_corners_found = False
-        all_codes_flag = True
         centroid_corner_distance = None
 
-        # Check if all codes polygons points are available
-        for code_polygon in self.all_codes_polygons_points:
-            if code_polygon is None:
-                logger.debug("Not all codes polygons for board corners are available")
-                all_codes_flag = False
+        # Count found qr-codes
+        found_codes_number = sum(code is not None for code in self.all_codes_polygons_points)
 
-        # Continue if all needed data is available
-        if all_codes_flag:
+        # Update the flag
+        if found_codes_number > self.found_codes_number:
+
+            self.found_codes_number = found_codes_number
+            if self.code_found_flag is False:
+                self.code_found_flag = True
+                self.detect_corners_frames_number = 0
+
+            # Continue if all needed data is available
+        if self.found_codes_number == 4:
             # Iterate through the array with four sets of points for polygons
             for points_idx in range(len(self.all_codes_polygons_points)):
 
@@ -289,23 +309,39 @@ class BoardDetector:
         source_corners[2] = corners[2]
         source_corners[3] = corners[3]
 
-        # Compute width and height of the board
-        min_x, min_y, max_x, max_y = self.find_min_max(corners)
-        board_size_width = max_x - min_x
-        board_size_height = max_y - min_y
+        # If not done yet, compute width and height of the board
+        if not self.board_size_width or not self.board_size_width:
+
+            # Compute width and height of the board
+            self.compute_board_size(corners)
 
         # Construct destination points which will be used to map the board to a top-down view
         destination_corners = np.array([
             [0, 0],
-            [board_size_width - 1, 0],
-            [board_size_width - 1, board_size_height - 1],
-            [0, board_size_height - 1]], dtype="float32")
+            [self.board_size_width - 1, 0],
+            [self.board_size_width - 1, self.board_size_height - 1],
+            [0, self.board_size_height - 1]], dtype="float32")
 
         # Calculate the perspective transform matrix
         matrix = cv2.getPerspectiveTransform(source_corners, destination_corners)
-        rectified_image = cv2.warpPerspective(image, matrix, (board_size_width, board_size_height))
+        rectified_image = cv2.warpPerspective(image, matrix, (self.board_size_width, self.board_size_height))
 
-        return rectified_image, board_size_height, board_size_width
+        return rectified_image
+
+    # Compute board size and set in configs
+    def compute_board_size(self, corners):
+
+        min_x, min_y, max_x, max_y = self.find_min_max(corners)
+
+        # Compute board size
+        self.board_size_width = max_x - min_x
+        self.board_size_height = max_y - min_y
+
+        # TODO: do we need the board size in config?
+        # FIXME: create board as a business object
+        # Set board size in configs
+        self.config.set("board", "width", self.board_size_width)
+        self.config.set("board", "height", self.board_size_height)
 
     # Display QR-codes location
     @staticmethod
@@ -335,10 +371,10 @@ class BoardDetector:
 
         # clipping the color image to the area with the right distance values
         # TODO: find a working pythonic way
-        if self.board_distance:
+        if self.input_stream.board_distance:
             clipped_color_image = np.where(
-                (depth_image_3d > self.board_distance * (1 + CLIP)) |
-                (depth_image_3d < self.board_distance * (1 - CLIP)),
+                (depth_image_3d > self.input_stream.board_distance * (1 + CLIP)) |
+                (depth_image_3d < self.input_stream.board_distance * (1 - CLIP)),
             0, color_image)
         else:
             clipped_color_image = color_image
@@ -349,24 +385,95 @@ class BoardDetector:
 
         return clipped_color_image
 
-    def rectify_image(self, region_of_interest, color_image, ):
+    # Compute region of interest (board area) from the color image
+    def rectify_image(self, region_of_interest, color_image):
+
         # Check if found QR-code markers positions are included in the frame size
         if all([0, 0] < corners < [color_image.shape[1], color_image.shape[0]]
                for corners in self.board_corners):
 
             # Eliminate perspective transformations and show only the board
-            rectified_image, self.board_size_height, self.board_size_width = \
-                self.rectify(color_image, self.board_corners)
-            # rectified_image, self.board_size_height, self.board_size_width = \
-            #    self.board_detector.rectify(clipped_color_image, board_corners)
+            rectified_image = self.rectify(color_image, self.board_corners)
+            # TODO: use clipped color image
+            # rectified_image =  self.board_detector.rectify(clipped_color_image, board_corners)
 
             # Set ROI to black and add only the rectified board, where objects are searched
             region_of_interest[0:self.frame_height, 0:self.frame_width] = [0, 0, 0]
             region_of_interest[0:self.board_size_height, 0:self.board_size_width] = rectified_image
 
-            # TODO: else: include positions in the frame?
-
         return region_of_interest
 
-    def get_board_size(self):
-        return self.board_size_width, self.board_size_height
+    # Returns difference between
+    # background and current frame
+    def subtract_background(self, color_image):
+
+        # Subtract background
+        diff = cv2.absdiff(color_image, self.background.astype("uint8"))
+        diff = cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY)
+        ret_val, diff = cv2.threshold(diff, self.threshold_qrcode, MAX_VALUE, cv2.THRESH_BINARY)
+        logger.debug("Using threshold for qr-codes {}".format(self.threshold_qrcode))
+
+        # Return difference between
+        # the current frame and background
+        return diff
+
+    # saves the average image over a certain time period returns true if enough iterations were done
+    def compute_background(self, color_image):
+
+        # Save background
+        if self.current_loop == 0:
+            self.background = color_image.copy().astype("float")
+
+        if self.current_loop < MAX_LOOP_NUMBER:
+            # Update a running average
+            cv2.accumulateWeighted(color_image, self.background, INPUT_WEIGHT)
+            self.current_loop += 1
+        else:
+            return True
+
+        return False
+
+    # Adjust cyclically the threshold for finding qr-codes
+    # Example: 60 -> 76 -> 44 -> 90 -> 18 -> ...
+    def adjust_threshold_qrcode(self):
+
+        # Count frames
+        self.detect_corners_frames_number += 1
+
+        # Every X frames change the threshold
+        if self.detect_corners_frames_number % MAX_FRAMES_NUMBER == 0:
+
+            # Count the number of threshold changes
+            loop = int(self.detect_corners_frames_number / MAX_FRAMES_NUMBER)
+
+            # Use the configured step to change the threshold
+            if loop * THRESHOLD_STEP < MAX_THRESHOLD:
+                step = THRESHOLD_STEP
+
+            # If the whole range checked and no qr-code found
+            # Start again with smaller steps
+            else:
+                step = int(THRESHOLD_STEP / 2)
+                self.detect_corners_frames_number = 0
+
+            # If at lest one qr-code found do smaller steps
+            if self.code_found_flag:
+                step = int(step / 4)
+
+            else:
+                step = step
+
+            # For odd loops changed the sign
+            if loop % 2 == 0:
+                loop *= -1
+
+            # Adjust the threshold
+            self.threshold_qrcode += loop * step
+
+            # Allow only threshold 0-255
+            if self.threshold_qrcode < 0:
+                self.threshold_qrcode += MAX_THRESHOLD
+            elif self.threshold_qrcode > MAX_THRESHOLD:
+                self.threshold_qrcode -= MAX_THRESHOLD
+
+

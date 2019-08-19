@@ -2,7 +2,7 @@ from enum import Enum
 import cv2
 import screeninfo
 from ProgramStage import ProgramStage
-from Tracker import Tracker
+from LegoDetection.Tracker import Tracker
 from ConfigManager import ConfigManager
 from LegoUI.MapHandler import MapHandler
 from functools import partial

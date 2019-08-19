@@ -2,14 +2,14 @@ import logging.config
 import numpy as np
 
 from ProgramStage import ProgramStage
-from BoardDetector import BoardDetector
-from LegoDetection import ShapeDetector
+from LegoDetection.BoardDetector import BoardDetector
+from LegoDetection.ShapeDetector import ShapeDetector
 from LegoInputStream import LegoInputStream
 from LegoOutputStream import LegoOutputStream, LegoOutputChannel
 from LegoUI.MapHandler import MapHandler
 from LegoUI.UIElements.UISetup import setup_ui
 from ServerCommunication import ServerCommunication
-from Tracker import Tracker
+from LegoDetection.Tracker import Tracker
 from ConfigManager import ConfigManager
 from ParameterManager import ParameterManager
 from LegoUI.ListenerThread import ListenerThread

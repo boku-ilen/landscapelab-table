@@ -88,7 +88,7 @@
 
   "RECTANGLE_BRICK": {
     "RED_BRICK": 2,
-    "BLUE_BRICK" : 4,
+    "BLUE_BRICK" : 1,
     "GREEN_BRICK" : 6,
     "YELLOW_BRICK" : 8
   },

@@ -10,7 +10,7 @@ class ConfigManager:
 
     config_data = None
 
-    def __init__(self, configfile="config.json"):
+    def __init__(self, configfile="../config.json"):
 
         # Load config data
         try:

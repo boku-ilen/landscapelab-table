@@ -1,10 +1,10 @@
 import logging
 import typing
+from typing import Callable
+
 from LegoBricks import LegoBrick, LegoStatus
 from LegoUI.UIElements.UIElement import UIElement
 from LegoPositionConverter import LegoPositionConverter
-from typing import Callable
-from functools import partial
 
 # configure logging
 logger = logging.getLogger(__name__)

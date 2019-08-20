@@ -1,5 +1,6 @@
 from enum import Enum
 
+
 class MapActions(Enum):
     PAN_UP = 0,
     PAN_DOWN = 1,

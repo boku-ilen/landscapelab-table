@@ -1,4 +1,5 @@
 import logging
+
 from LegoBricks import LegoBrick
 
 # Configure logging

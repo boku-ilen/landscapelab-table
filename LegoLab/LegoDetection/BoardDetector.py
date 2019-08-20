@@ -7,7 +7,7 @@ import logging.config
 
 
 # configure logging
-from LegoOutputStream import LegoOutputStream, LegoOutputChannel
+from LegoOutputStream import LegoOutputChannel
 
 logger = logging.getLogger(__name__)
 

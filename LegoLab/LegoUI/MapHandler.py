@@ -1,10 +1,11 @@
 import numpy as np
 import cv2 as cv
 import socket
-from ConfigManager import ConfigManager
-from LegoUI.MapActions import MapActions
 from functools import partial
 import logging
+
+from ConfigManager import ConfigManager
+from LegoUI.MapActions import MapActions
 
 # Configure Logger
 logger = logging.getLogger(__name__)

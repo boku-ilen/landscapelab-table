@@ -1,6 +1,7 @@
 import logging
 import requests
 import json
+
 from LegoBricks import LegoBrick
 from LegoPositionConverter import LegoPositionConverter
 

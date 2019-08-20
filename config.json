@@ -1,4 +1,11 @@
 {
+  "general": {
+    "scenario": "Nockberge",
+    "starting_location": "auto select",
+    "NOTE": "starting_location overwrites the start location in the server response if an invalid value is given (e.g. 'auto select') it will be ignored",
+    "start_zoom": 5000
+  },
+
   "resources": {
     "relative-path": ["..", "resources"],
     "qr_bottom_left": {
@@ -129,10 +136,10 @@
 
   "map_settings": {
     "extent_width":[
-      1535703, 1536103
+      NaN, NaN
     ],
     "extent_height":[
-      5911550, 5911950
+      NaN, NaN
     ],
     "crs": "EPSG:3857",
     "extent_changed": "False",

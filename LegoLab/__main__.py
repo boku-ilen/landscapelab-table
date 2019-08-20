@@ -47,9 +47,10 @@ class LegoLab:
 
         # Initialize server communication class
         self.server = ServerCommunication(self.config)
+        self.scenario = self.server.get_scenario_info(self.config.get("general", "scenario"))
 
         # initialize map handler and ui
-        self.map_handler = MapHandler(self.config)
+        self.map_handler = MapHandler(self.config, self.scenario)
         ui_root = setup_ui(self.map_handler.action_map, self.config)
 
         # Initialize the centroid tracker

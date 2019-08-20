@@ -14,6 +14,7 @@ PREFIX = "/landscapelab-dev"
 CREATE_ASSET_POS = "/assetpos/create/"
 SET_ASSET_POS = "/assetpos/set/"
 REMOVE_ASSET_POS = "/assetpos/remove/"
+GET_SCENARIO_INFO = "/location/scenario/list.json"
 
 DEFAULT_ROTATION = 0
 
@@ -85,3 +86,25 @@ class ServerCommunication:
         lego_remove_instance_response = requests.get(HTTP + self.ip
                                                      + PREFIX + REMOVE_ASSET_POS + str(lego_instance.assetpos_id))
         logger.debug("remove instance {}, response {}".format(lego_instance, lego_remove_instance_response))
+
+    def get_scenario_info(self, scenario_name):
+        scenario_request_msg = "{http}{ip}{prefix}{command}".format(
+            http=HTTP, ip=self.ip, prefix=PREFIX, command=GET_SCENARIO_INFO
+        )
+
+        logger.debug(scenario_request_msg)
+        request_return = requests.get(scenario_request_msg)
+
+        if not self.check_status_code_200(request_return.status_code):
+            raise ConnectionError("Bad request")
+
+        scenarios = json.loads(request_return.text)
+
+        for scenario_key in scenarios:
+            scenario = scenarios[scenario_key]
+
+            if scenario['name'] == scenario_name:
+                return scenario
+
+        logger.error('Could not find scenario with name {}'.format(scenario_name))
+        raise LookupError('No scenario with name {} exists'.format(scenario_name))

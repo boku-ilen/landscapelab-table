@@ -5,8 +5,8 @@ from functools import partial
 from typing import Dict
 import logging
 
-from ConfigManager import ConfigManager
-from LegoUI.MapActions import MapActions
+from ..ConfigManager import ConfigManager
+from ..LegoUI.MapActions import MapActions
 
 # Configure Logger
 logger = logging.getLogger(__name__)

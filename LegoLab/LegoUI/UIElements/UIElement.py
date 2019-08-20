@@ -1,4 +1,4 @@
-from LegoBricks import LegoBrick
+from ...LegoBricks import LegoBrick
 from typing import Optional, List
 import numpy as np
 from enum import Enum

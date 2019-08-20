@@ -1,6 +1,6 @@
 import logging
 
-from LegoBricks import LegoBrick
+from .LegoBricks import LegoBrick
 
 # Configure logging
 logger = logging.getLogger(__name__)

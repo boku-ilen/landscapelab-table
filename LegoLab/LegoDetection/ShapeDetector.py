@@ -10,7 +10,7 @@ from builtins import staticmethod
 import cv2  # TODO: fix the requirements.txt or provide library
 import numpy as np
 
-from LegoBricks import LegoBrick, LegoShape, LegoColor
+from ..LegoBricks import LegoBrick, LegoShape, LegoColor
 
 
 # enable logger

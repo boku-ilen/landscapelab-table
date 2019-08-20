@@ -1,9 +1,9 @@
-from LegoUI.UIElements.UIElement import UIElement, UIActionType
-from LegoUI.UIElements.Button import Button
-from LegoUI.UIElements.UIStructureBlock import UIStructureBlock
-from ConfigManager import ConfigManager
+from ..UIElements.UIElement import UIElement, UIActionType
+from ..UIElements.Button import Button
+from ..UIElements.UIStructureBlock import UIStructureBlock
+from ...ConfigManager import ConfigManager
 from typing import Dict, Callable
-from LegoUI.MapActions import MapActions
+from ..MapActions import MapActions
 
 BUTTON_SIZE = (50, 50)
 

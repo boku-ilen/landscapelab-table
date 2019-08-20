@@ -1,5 +1,5 @@
-from LegoBricks import LegoBrick
-from LegoUI.UIElements.UIElement import UIElement
+from ...LegoBricks import LegoBrick
+from ..UIElements.UIElement import UIElement
 from typing import Tuple
 import numpy as np
 import cv2 as cv

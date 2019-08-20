@@ -2,8 +2,8 @@ import logging
 import requests
 import json
 
-from LegoBricks import LegoBrick
-from LegoPositionConverter import LegoPositionConverter
+from .LegoBricks import LegoBrick
+from .LegoPositionConverter import LegoPositionConverter
 
 # Configure logging
 logger = logging.getLogger(__name__)

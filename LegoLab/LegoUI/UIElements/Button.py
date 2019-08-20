@@ -1,9 +1,9 @@
-from LegoUI.UIElements.UIElement import UIActionType
-from LegoUI.UIElements.UIStructureBlock import UIStructureBlock
-from LegoBricks import LegoBrick, LegoStatus
+from ..UIElements.UIElement import UIActionType
+from ..UIElements.UIStructureBlock import UIStructureBlock
+from ...LegoBricks import LegoBrick, LegoStatus
 from typing import Callable, Tuple, Dict
-from LegoOutputStream import LegoOutputStream
-import numpy as np
+from ...LegoOutputStream import LegoOutputStream
+
 import cv2 as cv
 import logging
 

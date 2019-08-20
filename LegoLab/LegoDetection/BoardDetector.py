@@ -5,10 +5,10 @@ import math
 from shapely import geometry
 import logging.config
 
+from ..LegoOutputStream import LegoOutputChannel
+
 
 # configure logging
-from LegoOutputStream import LegoOutputChannel
-
 logger = logging.getLogger(__name__)
 
 # Objects in greater distance to the board than (1 +- CLIP) * x will be excluded from processing

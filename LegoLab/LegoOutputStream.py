@@ -7,13 +7,13 @@ import numpy as np
 import logging
 import os
 
-from ProgramStage import ProgramStage
-from LegoDetection.Tracker import Tracker
-from ConfigManager import ConfigManager
-from LegoUI.MapHandler import MapHandler
-from LegoUI.MapActions import MapActions
-from LegoUI.UIElements.UIElement import UIElement
-from LegoBricks import LegoBrick, LegoColor, LegoShape, LegoStatus
+from .ProgramStage import ProgramStage
+from .LegoDetection.Tracker import Tracker
+from .ConfigManager import ConfigManager
+from .LegoUI.MapHandler import MapHandler
+from .LegoUI.MapActions import MapActions
+from .LegoUI.UIElements.UIElement import UIElement
+from .LegoBricks import LegoBrick, LegoColor, LegoShape, LegoStatus
 
 # enable logger
 logger = logging.getLogger(__name__)

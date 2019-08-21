@@ -6,8 +6,8 @@ logger = logging.getLogger(__name__)
 
 class ConfigError(Exception):
 
-    def __init__(self, type1=None, type2=None):
-        super.__init__(type1, type2)
+    def __init__(self, *args, **kwargs):
+        super().__init__(args, kwargs)
 
 
 # TODO: make it a singleton

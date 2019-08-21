@@ -35,6 +35,9 @@ class ConfigManager:
             logger.debug("Get config data: {} -> {} with {}".format(group, key, value))
         except:
             logger.warning("Getting config data {} -> {} without success".format(group, key))
+            # NOTE it might be better to throw an exception here
+            #  there have been multiple occurrences where this has caused down the line
+            #  but the developers did not notice this as its source
 
         # Return searched config data value
         return value

@@ -53,7 +53,6 @@ class UIStructureBlock(UIElement):
                     if self.show_border:
                         cv.rectangle(img, (x_min, y_min), (x_max, y_max),self.border_color, self.border_thickness)
 
-
             # draw hierarchy
             super().draw(img)
 

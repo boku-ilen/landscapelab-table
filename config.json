@@ -28,21 +28,33 @@
     },
 
     "windmill_brick": {
+      "path":["brick_overlays", "wind_brick_indicator.png"],
+      "size": [100,100],
+      "center": [50,50]
+    },
+
+    "pv_brick": {
+      "path": ["brick_overlays", "pv_brick_indicator.png"],
+      "size": [100, 100],
+      "center": [50, 50]
+    },
+
+    "internal_brick": {
+      "path": ["brick_overlays", "internal_indicator.png"],
+      "size": [20, 20],
+      "center": [10, 10]
+    },
+
+    "windmill_icon": {
       "path":["brick_overlays", "symbol_wind.png"],
       "size": [50,50],
       "center": [25,25]
     },
 
-    "pv_brick": {
+    "pv_icon": {
       "path": ["brick_overlays", "symbol_pv.png"],
       "size": [50, 50],
       "center": [25, 25]
-    },
-
-    "brick_backdrop": {
-      "path": ["brick_overlays", "backdrop.png"],
-      "size": [30, 30],
-      "center": [15, 15]
     }
   },
 

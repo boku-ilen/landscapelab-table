@@ -143,7 +143,7 @@
     ],
     "crs": "EPSG:3857",
     "extent_changed": "False",
-    "pan_distance": [0.1, 0.25, 0.5],
+    "pan_distance": [0.5, 0.75, 0.85],
     "zoom_strength": [0.2, 0.5, 0.9]
   }
 }

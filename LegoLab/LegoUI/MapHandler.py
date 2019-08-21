@@ -5,7 +5,7 @@ from functools import partial
 from typing import Dict
 import logging
 
-from ..ConfigManager import ConfigManager
+from ..ConfigManager import ConfigManager, ConfigError
 from ..LegoUI.MapActions import MapActions
 
 # Configure Logger
@@ -93,7 +93,7 @@ class MapHandler:
     def get_start_extent(self, scenario):
 
         if len(scenario["locations"]) == 0:
-            raise AssertionError("No locations in scenario {}".format(scenario["name"]))
+            raise ConfigError("No locations in scenario {}".format(scenario["name"]))
 
         # find start location
         config_starting_location_name = self.config.get("general", "starting_location")

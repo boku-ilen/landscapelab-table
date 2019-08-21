@@ -9,7 +9,7 @@ import os
 
 from .ProgramStage import ProgramStage
 from .LegoDetection.Tracker import Tracker
-from .ConfigManager import ConfigManager
+from .ConfigManager import ConfigManager, ConfigError
 from .LegoUI.MapHandler import MapHandler
 from .LegoUI.MapActions import MapActions
 from .LegoUI.UIElements.UIElement import UIElement
@@ -175,8 +175,9 @@ class LegoOutputStream:
 
         # check that image has path
         if 'path' not in image_dict:
-            logger.error('image has no path specified')
-            raise AssertionError()
+            err_msg = 'image has no path specified'
+            logger.error(err_msg)
+            raise ConfigError(err_msg)
 
         image_path = self.reconstruct_path(self.resource_path, image_dict['path'])
         img = cv2.imread(image_path, -1)

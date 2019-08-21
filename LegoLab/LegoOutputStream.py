@@ -128,7 +128,7 @@ class LegoOutputStream:
         }
 
         # load qr code images
-        self.resource_path = LegoOutputStream.reconstruct_path(
+        self.resource_path = ConfigManager.reconstruct_path(
             os.getcwd(),
             self.config.get("resources", "relative-path")
         )
@@ -163,13 +163,6 @@ class LegoOutputStream:
             config.set("beamer-resolution", "pos-x", beamer.x - 1)
             config.set("beamer-resolution", "pos-y", beamer.y - 1)
 
-    # TODO move to more general context
-    @staticmethod
-    def reconstruct_path(base_path, relative_path: List[str]):
-        for d in relative_path:
-            base_path = os.path.join(base_path, d)
-        return base_path
-
     # TODO make static and move to more general context
     def load_image(self, name, size=None):
         image_dict = self.config.get("resources", name)
@@ -180,7 +173,7 @@ class LegoOutputStream:
             logger.error(err_msg)
             raise ConfigError(err_msg)
 
-        image_path = self.reconstruct_path(self.resource_path, image_dict['path'])
+        image_path = ConfigManager.reconstruct_path(self.resource_path, image_dict['path'])
         img = cv2.imread(image_path, -1)
 
         # resize if size is not None or size specified in config

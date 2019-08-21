@@ -1,5 +1,7 @@
+import os
 import json
 import logging
+from typing import List
 
 logger = logging.getLogger(__name__)
 
@@ -50,3 +52,9 @@ class ConfigManager:
             logger.debug("Overwriting config data {} -> {} with {}".format(group, key, value))
         except:
             logger.warning("Overwriting config data {} -> {} without success".format(group, key))
+
+    @staticmethod
+    def reconstruct_path(base_path, relative_path: List[str]):
+        for d in relative_path:
+            base_path = os.path.join(base_path, d)
+        return base_path

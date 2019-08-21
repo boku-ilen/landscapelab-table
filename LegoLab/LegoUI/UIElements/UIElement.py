@@ -20,6 +20,13 @@ class UIElement:
                 return True
         return False
 
+    # checks whether a yet unconfirmed LegoBrick would lie on top of this element or any of it's children
+    def brick_would_land_on_element(self, brick: LegoBrick) -> bool:
+        for child in self.children:
+            if child.brick_would_land_on_element(brick):
+                return True
+        return False
+
     # call once all bricks in a frame have been processed so that e.g. buttons can call their release action
     def ui_tick(self):
         for child in self.children:

@@ -11,6 +11,8 @@ logger = logging.getLogger(__name__)
 MIN_DISTANCE = 6
 MIN_APPEARED = 6
 MAX_DISAPPEARED = 40
+MIN_APPEARED_UI = 3
+MAX_DISAPPEARED_UI = 10
 
 
 class Tracker:
@@ -65,6 +67,7 @@ class Tracker:
         # finally return the updated list of confirmed bricks
         return self.confirmed_bricks
 
+    # iterates over all candidates and manages their tick counters
     def do_brick_ticks(self, lego_bricks_candidates: List[LegoBrick]):
         # copy the confirmed bricks
         possible_removed_bricks = self.confirmed_bricks.copy()
@@ -114,8 +117,14 @@ class Tracker:
         # remove the disappeared elements
         for brick, amount in self.tracked_disappeared.items():
 
+            # select correct threshold on whether the brick is internal or not
+            # (internal bricks disappear faster)
+            target_disappeared = self.max_disappeared
+            if brick.status == LegoStatus.INTERNAL_BRICK:
+                target_disappeared = MAX_DISAPPEARED_UI
+
             # check for the threshold value
-            if amount > self.max_disappeared:
+            if amount > target_disappeared:
 
                 # remember disappeared elements to delete them from dicts
                 bricks_to_remove.append(brick)
@@ -159,8 +168,16 @@ class Tracker:
         # add the qualified candidates to the confirmed list and do ui update for them
         for candidate, amount in self.tracked_candidates.items():
 
+            # select the correct threshold on whether or not the candidate would be internal
+            # (internal bricks appear faster)
+            target_appeared = self.min_appeared
+            if self.ui_root.brick_would_land_on_element(candidate):
+                target_appeared = MIN_APPEARED_UI
+            # NOTE calling brick_would_land_on_element every frame might cause performance hits
+            #  a cheaper solution would be to call it once the first frame the candidate registered and save the result
+
             # check for the threshold value of new candidates
-            if amount > self.min_appeared and candidate not in self.confirmed_bricks:
+            if amount > target_appeared and candidate not in self.confirmed_bricks:
 
                 virtual_brick = self.check_min_distance(candidate, self.virtual_bricks)
 

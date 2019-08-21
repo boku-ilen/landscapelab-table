@@ -56,12 +56,20 @@ class UIStructureBlock(UIElement):
             # draw hierarchy
             super().draw(img)
 
-    # checks if a given brick lies on top of the block
+    # checks if a given brick lies on top of the block or any of it's children
     def brick_on_element(self, brick: LegoBrick) -> bool:
         if self.visible:
             x, y = (brick.centroid_x, brick.centroid_y)
 
             return super().brick_on_element(brick) or self.pos_on_block(x, y)
+        return False
+
+    # checks if a given (unconfirmed) brick would land on top of the block or any of it's children
+    def brick_would_land_on_element(self, brick: LegoBrick) -> bool:
+        if self.visible:
+            x, y = (brick.centroid_x, brick.centroid_y)
+
+            return super().brick_would_land_on_element(brick) or self.pos_on_block(x, y)
         return False
 
     # checks if any screen coordinate lies on top of

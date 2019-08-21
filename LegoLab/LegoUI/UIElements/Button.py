@@ -63,7 +63,7 @@ class Button(UIStructureBlock):
     def callback_do_nothing(self, brick):
         pass
 
-    # checks if a given brick lies on top of the button
+    # checks if a given brick lies on top of the button or any of it's children
     # also executes callback functions press and hold
     def brick_on_element(self, brick: LegoBrick) -> bool:
         if self.visible:

@@ -1,7 +1,7 @@
 from ..UIElements.UIElement import UIActionType
 from ..UIElements.UIStructureBlock import UIStructureBlock
 from ...LegoBricks import LegoBrick, LegoStatus
-from ...LegoOutputStream import LegoOutputStream
+from ..ImageHandler import ImageHandler
 from ...ConfigManager import ConfigManager
 from typing import Callable, Dict
 import numpy as np
@@ -130,7 +130,7 @@ class Button(UIStructureBlock):
                     cv.rectangle(img, (x_min, y_min), (x_max, y_max), color, cv.FILLED)
 
             if icon is not None:                                                                            # icon
-                LegoOutputStream.img_on_background(img, icon, (x_min, y_min))
+                ImageHandler.img_on_background(img, icon, (x_min, y_min))
 
             if self.show_border:                                                                            # border
                 if self.is_ellipse:

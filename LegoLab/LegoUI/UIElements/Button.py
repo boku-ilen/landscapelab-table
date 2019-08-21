@@ -1,8 +1,10 @@
 from ..UIElements.UIElement import UIActionType
 from ..UIElements.UIStructureBlock import UIStructureBlock
 from ...LegoBricks import LegoBrick, LegoStatus
-from typing import Callable, Tuple, Dict
 from ...LegoOutputStream import LegoOutputStream
+from ...ConfigManager import ConfigManager
+from typing import Callable, Dict
+import numpy as np
 
 import cv2 as cv
 import logging
@@ -14,23 +16,29 @@ logger = logging.getLogger(__name__)
 # a rectangular button that calls specified functions once a brick enters/leaves the button
 class Button(UIStructureBlock):
 
-    def __init__(self, position: Tuple[float, float], size: Tuple[float, float], name: str = ''):
+    def __init__(self, config: ConfigManager, position: np.ndarray, size: np.ndarray, name: str = ''):
 
-        super().__init__(position, size)
+        super().__init__(config, position, size)
 
-        # TODO: adjust colors
+        # get defaults
+        default_color = config.get("ui-settings", "button-background-color")
+        default_active_color = config.get("ui-settings", "button-active-background-color")
+        default_border_color = config.get("ui-settings", "button-border-color")
+        default_border_weight = config.get("ui-settings", "button-border-weight")
+        # TODO allow overwriting defaults with params
+
         # set visuals
-        self.color = (255, 255, 255)
+        self.color = (default_color[0], default_color[1], default_color[2])
         self.icon = None
 
-        self.color_pressed = (200, 200, 200)
+        self.color_pressed = (default_active_color[0], default_active_color[1], default_active_color[2])
         self.icon_pressed = None
 
         self.name: str = name
         self.show_name: bool = False
 
-        self.border_thickness: float = 3
-        self.border_color = (0, 0, 0)
+        self.border_thickness: float = default_border_weight
+        self.border_color = (default_border_color[0], default_border_color[1], default_border_color[2])
         self.show_border = True
 
         self.is_ellipse = True

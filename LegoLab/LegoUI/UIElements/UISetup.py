@@ -2,26 +2,38 @@ from ..UIElements.UIElement import UIElement, UIActionType
 from ..UIElements.Button import Button
 from ..UIElements.UIStructureBlock import UIStructureBlock
 from ...ConfigManager import ConfigManager
-from typing import Dict, Callable
 from ..MapActions import MapActions
-
-BUTTON_SIZE = (50, 50)
+from typing import Dict, Callable
+import numpy as np
 
 
 def setup_ui(action_map: Dict[MapActions, Callable], config: ConfigManager) -> UIElement:
+
+    # get config settings
+    scale_factor = config.get("ui-settings", "scale-factor")
+    button_size = np.asarray((50 * scale_factor, 50 * scale_factor))
+
+    # define constants
+    nav_toggle_pos = np.asarray((20 * scale_factor, 20 * scale_factor))
+    nav_block_pos = np.asarray((-10 * scale_factor, -10 * scale_factor))
+    nav_block_size = np.asarray((300 * scale_factor, 300 * scale_factor))
+    x_offset = np.multiply(button_size, np.asarray((1, 0)))
+    y_offset = np.multiply(button_size, np.asarray((0, 1)))
+    cross_offset = x_offset * 0.5 + y_offset * 1.5  # default button offset for the pan controls
+    pan_offset = cross_offset + x_offset * 4  # default button offset for the zoom controls
 
     # create root element
     root = UIElement()
 
     # create other elements
-    toggle_nav_block_button = Button((20, 20), BUTTON_SIZE, 'toggle navigation block')
-    navigation_block = UIStructureBlock((-10, -10), (300, 300))
-    pan_up_button = Button((75, 75), BUTTON_SIZE, 'pan up')
-    pan_down_button = Button((75, 175), BUTTON_SIZE, 'pan down')
-    pan_left_button = Button((25, 125), BUTTON_SIZE, 'pan left')
-    pan_right_button = Button((125, 125), BUTTON_SIZE, 'pan right')
-    zoom_in_button = Button((225, 75), BUTTON_SIZE, 'zoom in')
-    zoom_out_button = Button((225, 175), BUTTON_SIZE, 'zoom out')
+    toggle_nav_block_button = Button(config, nav_toggle_pos, button_size, 'toggle navigation block')
+    navigation_block = UIStructureBlock(config, nav_block_pos, nav_block_size)
+    pan_up_button = Button(config, cross_offset + x_offset, button_size, 'pan up')
+    pan_down_button = Button(config, cross_offset + x_offset + y_offset * 2, button_size, 'pan down')
+    pan_left_button = Button(config, cross_offset + y_offset, button_size, 'pan left')
+    pan_right_button = Button(config, cross_offset + y_offset + x_offset * 2, button_size, 'pan right')
+    zoom_in_button = Button(config, pan_offset, button_size, 'zoom in')
+    zoom_out_button = Button(config, pan_offset + y_offset * 2, button_size, 'zoom out')
 
     # setup hierarchy
     root.add_child(toggle_nav_block_button)

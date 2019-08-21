@@ -1,6 +1,6 @@
 from ...LegoBricks import LegoBrick
 from ..UIElements.UIElement import UIElement
-from typing import Tuple
+from ...ConfigManager import ConfigManager
 import numpy as np
 import cv2 as cv
 
@@ -8,17 +8,27 @@ import cv2 as cv
 # UI element used for hierarchical structuring of other ui elements
 class UIStructureBlock(UIElement):
 
-    def __init__(self, position: Tuple[float, float], size: Tuple[float, float]):
+    def __init__(self, config: ConfigManager, position: np.ndarray, size: np.ndarray):
         super().__init__()
 
+        # get defaults
+        default_color = config.get("ui-settings", "nav-block-background-color")
+        default_border_color = config.get("ui-settings", "nav-block-border-color")
+        default_border_weight = config.get("ui-settings", "nav-block-border-weight")
+        # TODO allow overwriting defaults with params
+
         # set block position/size
-        self.position = np.array(position)
-        self.size = np.array(size)
+        self.position = position.astype(int)
+        self.size = size.astype(int)
         self.is_ellipse = False
 
         # set block color
-        self.color = (230, 230, 230)
+        self.color = (default_color[0], default_color[1], default_color[2])
         self.show_background_color = True
+
+        self.border_thickness: float = default_border_weight
+        self.border_color = (default_border_color[0], default_border_color[1], default_border_color[2])
+        self.show_border = True
 
     # draws the block onto an image
     def draw(self, img):
@@ -35,8 +45,14 @@ class UIStructureBlock(UIElement):
                 # draw the block
                 if self.is_ellipse:
                     cv.ellipse(img, (x_avg, y_avg), (x_span, y_span), 0, 0, 360, self.color, -1)
+                    if self.show_border:
+                        cv.ellipse(img, (x_avg, y_avg), (x_span, y_span), 0, 0, 360,
+                                   self.border_color, self.border_thickness)
                 else:
                     cv.rectangle(img, (x_min, y_min), (x_max, y_max), self.color, cv.FILLED)
+                    if self.show_border:
+                        cv.rectangle(img, (x_min, y_min), (x_max, y_max),self.border_color, self.border_thickness)
+
 
             # draw hierarchy
             super().draw(img)

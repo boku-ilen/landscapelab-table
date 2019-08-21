@@ -120,7 +120,17 @@
   },
 
   "ui-settings": {
-    "nav-block-toggle": true
+    "scale-factor": 1.25,
+    "nav-block-toggle": true,
+
+    "button-background-color": [255, 255, 255],
+    "button-active-background-color": [200, 200, 200],
+    "button-border-color": [100, 100, 100],
+    "button-border-weight": 3,
+
+    "nav-block-background-color": [255, 255, 255],
+    "nav-block-border-color": [200, 200, 200],
+    "nav-block-border-weight": 2
   },
 
   "button_map": {

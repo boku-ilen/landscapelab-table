@@ -1,6 +1,5 @@
 import logging
-import typing
-from typing import Callable
+from typing import Callable, List
 
 from ..LegoBricks import LegoBrick, LegoStatus
 from ..LegoUI.UIElements.UIElement import UIElement
@@ -20,8 +19,8 @@ class Tracker:
 
     server_communicator = None
     tracked_candidates = {}  # we hold candidates which are not confirmed yet for some ticks
-    confirmed_bricks: typing.List[LegoBrick] = []
-    virtual_bricks: typing.List[LegoBrick] = []
+    confirmed_bricks: List[LegoBrick] = []
+    virtual_bricks: List[LegoBrick] = []
     tracked_disappeared = {}  # we hold confirmed bricks marked for removal after some ticks
     min_distance: int = None
     min_appeared: int = None
@@ -44,7 +43,7 @@ class Tracker:
         # Initialize lego position converter
         self.lego_position_converter = LegoPositionConverter(self.config)
 
-    def update(self, lego_bricks_candidates: typing.List[LegoBrick]) -> typing.List[LegoBrick]:
+    def update(self, lego_bricks_candidates: List[LegoBrick]) -> List[LegoBrick]:
 
         # count frames certain bricks have been continuously visible / gone
         self.do_brick_ticks(lego_bricks_candidates)
@@ -66,7 +65,7 @@ class Tracker:
         # finally return the updated list of confirmed bricks
         return self.confirmed_bricks
 
-    def do_brick_ticks(self, lego_bricks_candidates: typing.List[LegoBrick]):
+    def do_brick_ticks(self, lego_bricks_candidates: List[LegoBrick]):
         # copy the confirmed bricks
         possible_removed_bricks = self.confirmed_bricks.copy()
 

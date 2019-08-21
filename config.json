@@ -117,6 +117,8 @@
     "threshold": 60
   },
 
+  "tracker"
+
   "SQUARE_BRICK": {
     "RED_BRICK": 1,
     "BLUE_BRICK" : 3,

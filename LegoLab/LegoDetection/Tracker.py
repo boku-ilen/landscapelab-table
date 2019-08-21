@@ -215,7 +215,6 @@ class Tracker:
         return neighbour_brick
 
     # marks external bricks as outdated if the map was updated
-    # TODO add virtual brick to original position
     def mark_external_bricks_outdated_if_map_updated(self):
         # if the extent changed, set external bricks as outdated
         self.extent_changed = self.config.get("map_settings", "extent_changed")
@@ -231,9 +230,6 @@ class Tracker:
                 if brick.status == LegoStatus.EXTERNAL_BRICK:
                     # change status of lego bricks to outdated
                     self.set_virtual_brick_at_global_pos_of(brick)
-                    # TODO the virtual brick should have the same position on the map as the original brick
-                    #  since the extent was altered there needs to be some way to reverse engineer the board position
-                    #  from map coordinates
                     Tracker.set_brick_outdated(brick)
 
             # set the flag back

@@ -22,6 +22,7 @@
     },
     "qr_size": 300,
 
+
     "outdated_brick": {
       "path": ["brick_overlays", "outdated.png"],
       "center": [32,32]
@@ -55,6 +56,31 @@
       "path": ["brick_overlays", "symbol_pv.png"],
       "size": [50, 50],
       "center": [25, 25]
+    },
+
+
+    "button_left": {
+      "path": ["button_icons", "left.png"]
+    },
+
+    "button_right": {
+      "path": ["button_icons", "right.png"]
+    },
+
+    "button_up": {
+      "path": ["button_icons", "up.png"]
+    },
+
+    "button_down": {
+      "path": ["button_icons", "down.png"]
+    },
+
+    "button_zoom_in": {
+      "path": ["button_icons", "zoom_in.png"]
+    },
+
+    "button_zoom_out": {
+      "path": ["button_icons", "zoom_out.png"]
     }
   },
 

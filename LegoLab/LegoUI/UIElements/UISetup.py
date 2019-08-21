@@ -28,12 +28,12 @@ def setup_ui(action_map: Dict[MapActions, Callable], config: ConfigManager) -> U
     # create other elements
     toggle_nav_block_button = Button(config, nav_toggle_pos, button_size, 'toggle navigation block')
     navigation_block = UIStructureBlock(config, nav_block_pos, nav_block_size)
-    pan_up_button = Button(config, cross_offset + x_offset, button_size, 'pan up')
-    pan_down_button = Button(config, cross_offset + x_offset + y_offset * 2, button_size, 'pan down')
-    pan_left_button = Button(config, cross_offset + y_offset, button_size, 'pan left')
-    pan_right_button = Button(config, cross_offset + y_offset + x_offset * 2, button_size, 'pan right')
-    zoom_in_button = Button(config, pan_offset, button_size, 'zoom in')
-    zoom_out_button = Button(config, pan_offset + y_offset * 2, button_size, 'zoom out')
+    pan_up_button = Button(config, cross_offset + x_offset, button_size, 'pan up', 'button_up')
+    pan_down_button = Button(config, cross_offset + x_offset + y_offset * 2, button_size, 'pan down', 'button_down')
+    pan_left_button = Button(config, cross_offset + y_offset, button_size, 'pan left', 'button_left')
+    pan_right_button = Button(config, cross_offset + y_offset + x_offset * 2, button_size, 'pan right', 'button_right')
+    zoom_in_button = Button(config, pan_offset, button_size, 'zoom in', 'button_zoom_in')
+    zoom_out_button = Button(config, pan_offset + y_offset * 2, button_size, 'zoom out', 'button_zoom_out')
 
     # setup hierarchy
     root.add_child(toggle_nav_block_button)

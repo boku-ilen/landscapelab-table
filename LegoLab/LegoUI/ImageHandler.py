@@ -1,5 +1,5 @@
 from ..ConfigManager import ConfigManager, ConfigError
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Optional
 import numpy as np
 import logging
 import cv2
@@ -19,7 +19,13 @@ class ImageHandler:
             self.config.get("resources", "relative-path")
         )
 
-    def load_image(self, name, size=None):
+    def load_image(
+            self,
+            name: str,
+            size: Optional[Tuple[int, int]] = None,
+            relative_center: Optional[Tuple[float, float]] = None,
+            center: Optional[Tuple[int, int]] = None
+    ):
         image_dict = self.config.get("resources", name)
 
         # check that image has path
@@ -32,10 +38,24 @@ class ImageHandler:
         img = cv2.imread(image_path, -1)
 
         # resize if size is not None or size specified in config
+        # also ensure size exists in image_dict
         if size:
             img = cv2.resize(img, size)
+            image_dict["size"] = [0, 0]
+            image_dict["size"][0], image_dict["size"][1] = size
         elif 'size' in image_dict:
             img = cv2.resize(img, (image_dict['size'][0], image_dict['size'][1]))
+        else:
+            image_dict["size"] = [0, 0]
+            image_dict["size"][0] = img.shape[1]
+            image_dict["size"][1] = img.shape[0]
+
+        # overwrite center if defined in params
+        if relative_center:
+            rel_x, rel_y = relative_center
+            image_dict['center'] = [int(rel_x * image_dict['size'][0]), int(rel_y * image_dict['size'][1])]
+        if center:
+            image_dict['center'] = center
 
         # add alpha channel if not already here
         if img.shape[2] == 3:

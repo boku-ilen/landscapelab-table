@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 # a rectangular button that calls specified functions once a brick enters/leaves the button
 class Button(UIStructureBlock):
 
-    def __init__(self, config: ConfigManager, position: np.ndarray, size: np.ndarray, name: str = ''):
+    def __init__(self, config: ConfigManager, position: np.ndarray, size: np.ndarray, name: str = '', icon_name: str = None):
 
         super().__init__(config, position, size)
 
@@ -30,6 +30,9 @@ class Button(UIStructureBlock):
         # set visuals
         self.color = (default_color[0], default_color[1], default_color[2])
         self.icon = None
+        if icon_name is not None:
+            img_handler = ImageHandler(config)
+            self.icon = img_handler.load_image(icon_name, (int(size[0]), int(size[1])))
 
         self.color_pressed = (default_active_color[0], default_active_color[1], default_active_color[2])
         self.icon_pressed = None

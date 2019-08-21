@@ -117,7 +117,14 @@
     "threshold": 60
   },
 
-  "tracker"
+  "tracker-thresholds": {
+    "min-distance": 6,
+
+    "external-min-appeared": 6,
+    "external-max-disappeared": 40,
+    "internal-min-appeared": 3,
+    "internal-max-disappeared": 10
+  },
 
   "SQUARE_BRICK": {
     "RED_BRICK": 1,

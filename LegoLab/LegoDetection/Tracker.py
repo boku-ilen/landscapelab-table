@@ -8,12 +8,6 @@ from ..LegoPositionConverter import LegoPositionConverter
 # configure logging
 logger = logging.getLogger(__name__)
 
-MIN_DISTANCE = 6
-MIN_APPEARED = 6
-MAX_DISAPPEARED = 40
-MIN_APPEARED_UI = 3
-MAX_DISAPPEARED_UI = 10
-
 
 class Tracker:
 
@@ -25,18 +19,21 @@ class Tracker:
     virtual_bricks: List[LegoBrick] = []
     tracked_disappeared = {}  # we hold confirmed bricks marked for removal after some ticks
     min_distance: int = None
-    min_appeared: int = None
-    max_disappeared: int = None
+    external_min_appeared: int = None
+    external_max_disappeared: int = None
 
-    def __init__(self, config, server_communicator, ui_root: UIElement, min_distance=MIN_DISTANCE,
-                 min_appeared=MIN_APPEARED, max_disappeared=MAX_DISAPPEARED):
+    def __init__(self, config, server_communicator, ui_root: UIElement):
         self.config = config
         self.server_communicator = server_communicator
         self.ui_root = ui_root
-        self.min_distance = min_distance
-        self.min_appeared = min_appeared
-        self.max_disappeared = max_disappeared
         self.get_board_to_beamer_conversion: Callable[[], Callable[[LegoBrick], LegoBrick]] = None
+
+        # get ticker thresholds from config
+        self.min_distance = config.get("tracker-thresholds", "min-distance")
+        self.external_min_appeared = config.get("tracker-thresholds", "external-min-appeared")
+        self.external_max_disappeared = config.get("tracker-thresholds", "external-max-disappeared")
+        self.internal_min_appeared = config.get("tracker-thresholds", "internal-min-appeared")
+        self.internal_max_disappeared = config.get("tracker-thresholds", "internal-max-disappeared")
 
         # Initialize a flag for
         # changes in the map extent
@@ -119,9 +116,9 @@ class Tracker:
 
             # select correct threshold on whether the brick is internal or not
             # (internal bricks disappear faster)
-            target_disappeared = self.max_disappeared
+            target_disappeared = self.external_max_disappeared
             if brick.status == LegoStatus.INTERNAL_BRICK:
-                target_disappeared = MAX_DISAPPEARED_UI
+                target_disappeared = self.internal_max_disappeared
 
             # check for the threshold value
             if amount > target_disappeared:
@@ -170,17 +167,17 @@ class Tracker:
 
             # select the correct threshold on whether or not the candidate would be internal
             # (internal bricks appear faster)
-            target_appeared = self.min_appeared
-            if self.ui_root.brick_would_land_on_element(candidate):
-                target_appeared = MIN_APPEARED_UI
-            # NOTE calling brick_would_land_on_element every frame might cause performance hits
+            target_appeared = self.external_min_appeared
+            if self.brick_would_land_on_ui(candidate):
+                target_appeared = self.internal_min_appeared
+            # NOTE calling brick_would_land_on_ui every frame might cause performance hits
             #  a cheaper solution would be to call it once the first frame the candidate registered and save the result
 
             # check for the threshold value of new candidates
             if amount > target_appeared and candidate not in self.confirmed_bricks:
 
+                # if the brick is on top of a virtual brick, remove it and mark the brick as outdated
                 virtual_brick = self.check_min_distance(candidate, self.virtual_bricks)
-
                 if virtual_brick:
                     self.virtual_bricks.remove(virtual_brick)
                     candidate.status = LegoStatus.OUTDATED_BRICK
@@ -267,3 +264,7 @@ class Tracker:
     def brick_on_ui(self, brick):
         board_to_beamer = self.get_board_to_beamer_conversion()
         return self.ui_root.brick_on_element(board_to_beamer(brick))
+
+    def brick_would_land_on_ui(self, brick):
+        board_to_beamer = self.get_board_to_beamer_conversion()
+        return self.ui_root.brick_would_land_on_element(board_to_beamer(brick))

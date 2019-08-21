@@ -4,6 +4,12 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+class ConfigError(Exception):
+
+    def __init__(self, type1=None, type2=None):
+        super.__init__(type1, type2)
+
+
 # TODO: make it a singleton
 class ConfigManager:
     """Loads config file and gives access to the data"""
@@ -18,7 +24,7 @@ class ConfigManager:
                 self.config_data = json.load(config_file)
         except:
             logger.warning("Error opening config file: {}".format(configfile))
-            self.config_data = {}
+            raise ConfigError("Could not load config data from {}".format(configfile))
 
     # Return searched json data
     def get(self, group, key):

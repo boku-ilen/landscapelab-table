@@ -5,7 +5,7 @@ import math
 from shapely import geometry
 import logging.config
 
-from ..LegoOutputStream import LegoOutputChannel
+from ..Board import Board
 
 
 # configure logging
@@ -41,24 +41,16 @@ class BoardDetector:
 
     background = None
 
-    def __init__(self, config, threshold_qrcode, input_stream, output_stream):
+    def __init__(self, config, threshold_qrcode):
 
         self.config = config
+
+        # Initialize the board
+        self.board = Board()
 
         # Threshold for finding QR-Codes
         # To change the threshold use an optional parameter
         self.threshold_qrcode = threshold_qrcode
-
-        # the inputstream
-        self.input_stream = input_stream
-
-        # the outputstream
-        self.output_stream = output_stream
-
-        # Get board detection property
-        self.board_size_width = None
-        self.board_size_height = None
-        self.board_corners = None
 
         # Array with all polygons of QR-Codes for board corners
         self.all_codes_polygons_points = [None, None, None, None]
@@ -212,9 +204,6 @@ class BoardDetector:
         # Mark found QR-codes on the color image
         self.display_found_codes(color_image, decoded_codes)
 
-        # Show mask for finding qr-codes
-        self.output_stream.write_to_channel(LegoOutputChannel.CHANNEL_WHITE_BLACK, looking_for_qr_code_image)
-
         # Read codes which were decoded in this frame:
         # save polygons in the array self.board_detector.all_codes_polygons_points
         # and read metadata
@@ -252,9 +241,10 @@ class BoardDetector:
                 logger.debug("QR-code centroid found: {}".format(code_centroid))
 
                 # Compute the distance between the centroid and the first of corners
-                centroid_corner_distance = BoardDetector.calculate_distance(self.all_codes_polygons_points[points_idx][0].x,
-                                                                   self.all_codes_polygons_points[points_idx][0].y,
-                                                                   code_polygon.centroid.x, code_polygon.centroid.y)
+                centroid_corner_distance = BoardDetector.calculate_distance\
+                    (self.all_codes_polygons_points[points_idx][0].x,
+                     self.all_codes_polygons_points[points_idx][0].y,
+                     code_polygon.centroid.x, code_polygon.centroid.y)
 
                 # Save all centroids in an array -> [top left, top right, bottom right, bottom left]
                 centroids.append(code_centroid)
@@ -280,11 +270,11 @@ class BoardDetector:
         if top_left_corner is not None and top_right_corner is not None and \
                 bottom_right_corner is not None and bottom_left_corner is not None:
 
-            self.board_corners = [top_left_corner, top_right_corner, bottom_right_corner, bottom_left_corner]
-            logger.debug("board_corners: {}".format(self.board_corners))
+            self.board.corners = [top_left_corner, top_right_corner, bottom_right_corner, bottom_left_corner]
+            logger.debug("board_corners: {}".format(self.board.corners))
             all_board_corners_found = True
 
-        return all_board_corners_found, self.board_corners
+        return all_board_corners_found
 
     # Find min and max for x and y position of the board
     @staticmethod
@@ -310,7 +300,7 @@ class BoardDetector:
         source_corners[3] = corners[3]
 
         # If not done yet, compute width and height of the board
-        if not self.board_size_width or not self.board_size_width:
+        if not self.board.width or not self.board.width:
 
             # Compute width and height of the board
             self.compute_board_size(corners)
@@ -318,13 +308,13 @@ class BoardDetector:
         # Construct destination points which will be used to map the board to a top-down view
         destination_corners = np.array([
             [0, 0],
-            [self.board_size_width - 1, 0],
-            [self.board_size_width - 1, self.board_size_height - 1],
-            [0, self.board_size_height - 1]], dtype="float32")
+            [self.board.width - 1, 0],
+            [self.board.width - 1, self.board.height - 1],
+            [0, self.board.height - 1]], dtype="float32")
 
         # Calculate the perspective transform matrix
         matrix = cv2.getPerspectiveTransform(source_corners, destination_corners)
-        rectified_image = cv2.warpPerspective(image, matrix, (self.board_size_width, self.board_size_height))
+        rectified_image = cv2.warpPerspective(image, matrix, (self.board.width, self.board.height))
 
         return rectified_image
 
@@ -334,14 +324,8 @@ class BoardDetector:
         min_x, min_y, max_x, max_y = self.find_min_max(corners)
 
         # Compute board size
-        self.board_size_width = max_x - min_x
-        self.board_size_height = max_y - min_y
-
-        # TODO: do we need the board size in config?
-        # FIXME: create board as a business object
-        # Set board size in configs
-        self.config.set("board", "width", self.board_size_width)
-        self.config.set("board", "height", self.board_size_height)
+        self.board.width = max_x - min_x
+        self.board.height = max_y - min_y
 
     # Display QR-codes location
     @staticmethod
@@ -371,10 +355,10 @@ class BoardDetector:
 
         # clipping the color image to the area with the right distance values
         # TODO: find a working pythonic way
-        if self.input_stream.board_distance:
+        if self.board.distance:
             clipped_color_image = np.where(
-                (depth_image_3d > self.input_stream.board_distance * (1 + CLIP)) |
-                (depth_image_3d < self.input_stream.board_distance * (1 - CLIP)),
+                (depth_image_3d > self.board.distance * (1 + CLIP)) |
+                (depth_image_3d < self.board.distance * (1 - CLIP)),
             0, color_image)
         else:
             clipped_color_image = color_image
@@ -390,16 +374,16 @@ class BoardDetector:
 
         # Check if found QR-code markers positions are included in the frame size
         if all([0, 0] < corners < [color_image.shape[1], color_image.shape[0]]
-               for corners in self.board_corners):
+               for corners in self.board.corners):
 
             # Eliminate perspective transformations and show only the board
-            rectified_image = self.rectify(color_image, self.board_corners)
+            rectified_image = self.rectify(color_image, self.board.corners)
             # TODO: use clipped color image
             # rectified_image =  self.board_detector.rectify(clipped_color_image, board_corners)
 
             # Set ROI to black and add only the rectified board, where objects are searched
             region_of_interest[0:self.frame_height, 0:self.frame_width] = [0, 0, 0]
-            region_of_interest[0:self.board_size_height, 0:self.board_size_width] = rectified_image
+            region_of_interest[0:self.board.height, 0:self.board.width] = rectified_image
 
         return region_of_interest
 

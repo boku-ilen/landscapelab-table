@@ -24,7 +24,7 @@ class LegoInputStream:
     aligned_depth_frame = None
 
     # initialize the input stream (from live camera or bag file)
-    def __init__(self, config, usestream=None):
+    def __init__(self, config, board, usestream=None):
 
         self.pipeline = rs.pipeline()
         self.realsense_config = rs.config()
@@ -33,8 +33,7 @@ class LegoInputStream:
         self.width = config.get("resolution", "width")
         self.height = config.get("resolution", "height")
 
-        # TODO: save it in a class Board
-        self.board_distance = None
+        self.board = board
 
         # FIXME: missing frames when using videostream or too slow processing
         # https://github.com/IntelRealSense/librealsense/issues/2216
@@ -107,7 +106,8 @@ class LegoInputStream:
         # if not 0 -> happen when the depth data
         # is not correctly computed
         if board_distance:
-            self.board_distance = board_distance
+            self.board.distance = board_distance
+        logger.debug("Distance to the board is: {}".format(self.board.distance))
 
     def close(self):
         # Stop streaming

@@ -22,7 +22,7 @@ DEFAULT_ROTATION = 0
 class ServerCommunication:
     """Creates and removes lego instances"""
 
-    def __init__(self, config):
+    def __init__(self, config, board):
 
         self.config = config
 
@@ -30,7 +30,7 @@ class ServerCommunication:
         self.ip = self.config.get("server", "ip")
 
         # Initialize lego position converter
-        self.lego_position_converter = LegoPositionConverter(self.config)
+        self.lego_position_converter = LegoPositionConverter(self.config, board)
 
     # Check status code of the response
     # Return True if 200, else return False

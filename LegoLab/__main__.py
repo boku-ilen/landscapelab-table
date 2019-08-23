@@ -45,8 +45,12 @@ class LegoLab:
         self.parser = ParameterManager(self.config)
         self.used_stream = self.parser.used_stream
 
+        # Initialize board detection
+        self.board_detector = BoardDetector(self.config, self.config.get("qr_code", "threshold"))
+        self.board = self.board_detector.board
+
         # Initialize server communication class
-        self.server = ServerCommunication(self.config)
+        self.server = ServerCommunication(self.config, self.board)
         self.scenario = self.server.get_scenario_info(self.config.get("general", "scenario"))
 
         # initialize map handler and ui
@@ -54,15 +58,11 @@ class LegoLab:
         ui_root = setup_ui(self.map_handler.action_map, self.config)
 
         # Initialize the centroid tracker
-        self.tracker = Tracker(self.config, self.server, ui_root)
+        self.tracker = Tracker(self.config, self.board, self.server, ui_root)
 
         # initialize the input and output stream
-        self.output_stream = LegoOutputStream(self.map_handler, ui_root, self.tracker, self.config)
-        self.input_stream = LegoInputStream(self.config, usestream=self.used_stream)
-
-        # Initialize board detection
-        self.board_detector = BoardDetector(self.config, self.config.get("qr_code", "threshold"),
-                                            self.input_stream, self.output_stream)
+        self.output_stream = LegoOutputStream(self.map_handler, ui_root, self.tracker, self.config, self.board)
+        self.input_stream = LegoInputStream(self.config, self.board, usestream=self.used_stream)
 
         # Initialize and start the QGIS listener Thread
         # also request the first rendered map section
@@ -77,7 +77,7 @@ class LegoLab:
     def run(self):
 
         # initialize the input stream
-        self.input_stream = LegoInputStream(self.config, usestream=self.used_stream)
+        self.input_stream = LegoInputStream(self.config, self.board, usestream=self.used_stream)
 
         # Initialize ROI as a black RGB-image
         region_of_interest = np.zeros((self.config.get("resolution", "height"),
@@ -132,18 +132,18 @@ class LegoLab:
 
         logger.debug("No QR-code detector result")
 
+        # Compute distance to the board
         self.input_stream.get_distance_to_board()
-        logger.debug("Distance to the board is: {}".format(self.input_stream.board_distance))
 
         # Find position of board corners
-        all_board_corners_found, board_corners = self.board_detector.detect_board(color_image)
+        all_board_corners_found = self.board_detector.detect_board(color_image)
 
         # if all boarders were found change channel and start next stage
         if all_board_corners_found:
 
             # Use distance to set possible lego brick size
             logger.debug("Calculate possible lego brick size")
-            self.shape_detector.estimate_possible_lego_dimensions(self.input_stream.board_distance)
+            self.shape_detector.estimate_possible_lego_dimensions(self.board.distance)
 
             logger.debug("Used threshold for qr-codes -> {}".format(self.board_detector.threshold_qrcode))
             self.output_stream.set_active_channel(LegoOutputChannel.CHANNEL_ROI)

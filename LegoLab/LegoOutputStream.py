@@ -37,12 +37,11 @@ class LegoOutputChannel(Enum):
 
     CHANNEL_BOARD_DETECTION = 1
     CHANNEL_ROI = 2
-    CHANNEL_WHITE_BLACK = 3
 
     def next(self):
         value = self.value + 1
-        if value > 3:
-            value = 3
+        if value > 2:
+            value = 2
         return LegoOutputChannel(value)
 
     def prev(self):
@@ -65,9 +64,10 @@ class LegoOutputStream:
                  ui_root: UIElement,
                  tracker: Tracker,
                  config: ConfigManager,
-                 video_output_name=None):
+                 board, video_output_name=None):
 
         self.config = config
+        self.board = board
 
         self.active_channel = LegoOutputChannel.CHANNEL_BOARD_DETECTION
         self.active_window = LegoOutputStream.WINDOW_NAME_DEBUG  # TODO: implement window handling
@@ -342,7 +342,7 @@ class LegoOutputStream:
         return ret
 
     def get_board_res(self):
-        return self.config.get("board", "width"), self.config.get("board", "height")
+        return self.board.width, self.board.height
 
     def get_beamer_res(self):
         return self.config.get("beamer-resolution", "width"), self.config.get("beamer-resolution", "height")

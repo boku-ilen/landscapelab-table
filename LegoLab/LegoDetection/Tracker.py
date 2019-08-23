@@ -22,7 +22,7 @@ class Tracker:
     external_min_appeared: int = None
     external_max_disappeared: int = None
 
-    def __init__(self, config, server_communicator, ui_root: UIElement):
+    def __init__(self, config, board, server_communicator, ui_root: UIElement):
         self.config = config
         self.server_communicator = server_communicator
         self.ui_root = ui_root
@@ -40,7 +40,7 @@ class Tracker:
         self.extent_changed = False
 
         # Initialize lego position converter
-        self.lego_position_converter = LegoPositionConverter(self.config)
+        self.lego_position_converter = LegoPositionConverter(self.config, board)
 
     def update(self, lego_bricks_candidates: List[LegoBrick]) -> List[LegoBrick]:
 

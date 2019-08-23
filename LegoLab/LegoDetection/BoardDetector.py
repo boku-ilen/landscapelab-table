@@ -300,7 +300,7 @@ class BoardDetector:
         source_corners[3] = corners[3]
 
         # If not done yet, compute width and height of the board
-        if not self.board.width or not self.board.width:
+        if self.board.width == 1:
 
             # Compute width and height of the board
             self.compute_board_size(corners)

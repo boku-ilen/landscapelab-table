@@ -23,6 +23,12 @@ MIN_REC = 0.2
 MAX_REC = 2.5
 BRICK_LENGTH_BUFFER = 2
 
+# Distance to the board where detected
+# lego brick is already very small -> max 2 px
+# eg. 22 means more than 2200 cm
+MIN_BOARD_DISTANCE_ESTIMATION = 8
+MAX_BOARD_DISTANCE_ESTIMATION = 22
+
 # Hue histogram configurations
 # Color channels
 HUE = 0
@@ -278,15 +284,21 @@ class ShapeDetector:
 
     # Estimate possible lego brick dimensions using distance to the board
     # Estimated for resolution 1280/720
+    # TODO: calculate instead of estimation
     def estimate_possible_lego_dimensions(self, board_distance):
 
         # Board distance -> square lego side length
+        # Based on observation:
         # 1700 - 1799 -> 7-8
         # 1600 - 1699 -> 8-9
         # 1500 - 1599 -> 9-10 ...
 
         # Take two first digits of the board distance
         board_distance_estimation = int(board_distance / 100)
+        if board_distance_estimation > MAX_BOARD_DISTANCE_ESTIMATION:
+            board_distance_estimation = MAX_BOARD_DISTANCE_ESTIMATION
+        elif board_distance_estimation < MIN_BOARD_DISTANCE_ESTIMATION:
+            board_distance_estimation = MIN_BOARD_DISTANCE_ESTIMATION
 
         # FIXME: error handling
         # Get min length for a square lego brick from the configurations

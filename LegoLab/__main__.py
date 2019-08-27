@@ -143,7 +143,9 @@ class LegoLab:
 
             # Use distance to set possible lego brick size
             logger.debug("Calculate possible lego brick size")
+            # TODO: test the new method (commented) and use it instead of estimating
             self.shape_detector.estimate_possible_lego_dimensions(self.board.distance)
+            # self.shape_detector.calculate_possible_lego_dimensions(self.board.distance)
 
             logger.debug("Used threshold for qr-codes -> {}".format(self.board_detector.threshold_qrcode))
             self.output_stream.set_active_channel(LegoOutputChannel.CHANNEL_ROI)

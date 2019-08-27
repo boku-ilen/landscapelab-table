@@ -9,6 +9,7 @@ import logging
 from builtins import staticmethod
 import cv2  # TODO: fix the requirements.txt or provide library
 import numpy as np
+import math
 
 from ..LegoBricks import LegoBrick, LegoShape, LegoColor
 
@@ -28,6 +29,13 @@ BRICK_LENGTH_BUFFER = 2
 # eg. 22 means more than 2200 cm
 MIN_BOARD_DISTANCE_ESTIMATION = 8
 MAX_BOARD_DISTANCE_ESTIMATION = 22
+
+# Camera's depth field of view
+HORIZONTAL_ANGLE = 65
+VERTICAL_ANGLE = 40
+# Lego brick real size in cm
+LEGO_BRICK_SHORT_SIDE = 1.58
+LEGO_BRICK_LONG_SIDE = 3.18
 
 # Hue histogram configurations
 # Color channels
@@ -86,6 +94,7 @@ class ShapeDetector:
 
         self.config = config
         self.output_stream = output_stream
+        self.resolution_width = config.get("resolution", "width")
 
     # Check if the contour is a lego brick
     # TODO: remove frame if nothing to draw anymore
@@ -282,9 +291,43 @@ class ShapeDetector:
         # Return if no configured color detected
         return LegoColor.UNKNOWN_COLOR
 
+    @staticmethod
+    def calculate_sinus(angle):
+
+        sinus = math.sin(angle * math.pi / 180)
+        return sinus
+
+    # Calculate possible lego brick dimensions using distance to the board
+    def calculate_possible_lego_dimensions(self, board_distance):
+
+        # Use the sine law, an equation relating the lengths
+        # of the sides of a triangle (any shape) to the sines of its angles
+        horizontal_second_angle = (180 - HORIZONTAL_ANGLE) / 2
+        horizontal_side_length = 2 * board_distance * self.calculate_sinus(HORIZONTAL_ANGLE/2)\
+                                 / self.calculate_sinus(horizontal_second_angle)
+        one_cm_in_pixel = 10 * self.resolution_width / horizontal_side_length
+
+        # Calculate the squared lego brick side
+        square_length = one_cm_in_pixel * LEGO_BRICK_SHORT_SIDE
+        # Add buffer
+        self.min_square_length = square_length - BRICK_LENGTH_BUFFER
+        self.max_square_length = square_length + BRICK_LENGTH_BUFFER
+        # Calculate the squared lego brick area
+        self.min_square_area = self.min_square_length * self.min_square_length
+        self.max_square_area = self.max_square_length * self.max_square_length
+
+        # Calculate the long side of a rectangle lego brick
+        rectangle_length = one_cm_in_pixel * LEGO_BRICK_LONG_SIDE
+        # Add buffer
+        self.min_rectangle_length = rectangle_length - BRICK_LENGTH_BUFFER
+        self.max_rectangle_length = rectangle_length + BRICK_LENGTH_BUFFER
+        # Calculate the squared lego brick area
+        self.min_rectangle_area = self.min_square_length * self.min_rectangle_length
+        self.max_rectangle_area = self.max_square_length * self.max_rectangle_length
+
     # Estimate possible lego brick dimensions using distance to the board
     # Estimated for resolution 1280/720
-    # TODO: calculate instead of estimation
+    # TODO: use calculating instead of estimation
     def estimate_possible_lego_dimensions(self, board_distance):
 
         # Board distance -> square lego side length

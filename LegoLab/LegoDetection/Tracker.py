@@ -179,6 +179,7 @@ class Tracker:
                 # if the brick is on top of a virtual brick, remove it and mark the brick as outdated
                 virtual_brick = self.check_min_distance(candidate, self.virtual_bricks)
                 if virtual_brick:
+                    self.server_communicator.remove_lego_instance(virtual_brick)
                     self.virtual_bricks.remove(virtual_brick)
                     candidate.status = LegoStatus.OUTDATED_BRICK
 

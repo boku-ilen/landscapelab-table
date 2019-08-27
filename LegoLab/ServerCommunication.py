@@ -58,7 +58,7 @@ class ServerCommunication:
         # Send request creating lego instance and save the response
         create_instance_msg = "{http}{ip}{prefix}{command}{brick_id}/{brick_x}/{brick_y}/{default_rotation}".format(
             http=HTTP, ip=self.ip, prefix=PREFIX, command=CREATE_ASSET_POS, brick_id=str(lego_brick.asset_id),
-            brick_x=str(lego_brick.map_pos_y), brick_y=str(lego_brick.map_pos_x), default_rotation=DEFAULT_ROTATION
+            brick_x=str(lego_brick.map_pos_x), brick_y=str(lego_brick.map_pos_y), default_rotation=DEFAULT_ROTATION
         )
 
         logger.debug(create_instance_msg)

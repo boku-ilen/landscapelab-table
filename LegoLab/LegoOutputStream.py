@@ -32,8 +32,11 @@ CONTOUR_THICKNESS = 1
 IDX_DRAW_ALL = -1
 RADIUS = 3
 
+# drawing debug information constants
 DEBUG_INFORMATION_FONT_SIZE = 0.8
-DEBUG_INFORMATION_POSITION = (20, 20)
+POSITION_X = 20
+POSITION_Y = 20
+LINE_HEIGHT = 20
 
 
 class LegoOutputChannel(Enum):
@@ -217,10 +220,15 @@ class LegoOutputStream:
 
     # Add some additional information to the debug window
     def add_debug_information(self, frame):
-        threshold_text = "threshold: " + str(self.board.threshold_qrcode)
-        # Add used threshold for qr-codes to the debug window
-        cv2.putText(frame, threshold_text, DEBUG_INFORMATION_POSITION,
-                    cv2.FONT_HERSHEY_SIMPLEX, DEBUG_INFORMATION_FONT_SIZE, GREEN, FONT_THICKNESS)
+
+        text = "threshold: " + str(self.board.threshold_qrcode) \
+                         + "\nnumber of found qr-codes: " + str(self.board.found_codes_number)
+
+        # Add text line by line
+        for line_number, line in enumerate(text.split("\n")):
+            position_y = POSITION_Y + line_number * LINE_HEIGHT
+            cv2.putText(frame, line, (POSITION_X, position_y),
+                        cv2.FONT_HERSHEY_SIMPLEX, DEBUG_INFORMATION_FONT_SIZE, GREEN, FONT_THICKNESS)
 
     # called every frame, updates the beamer image
     # recognizes and handles button presses

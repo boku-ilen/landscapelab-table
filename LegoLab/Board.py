@@ -11,6 +11,8 @@ class Board:
 
     # threshold needed to find qr-codes
     threshold_qrcode = None
+    # number of found qr-codes
+    found_codes_number = None
 
     def __init__(self):
 

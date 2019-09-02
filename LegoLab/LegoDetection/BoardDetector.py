@@ -219,12 +219,12 @@ class BoardDetector:
         centroid_corner_distance = None
 
         # Count found qr-codes
-        found_codes_number = sum(code is not None for code in self.all_codes_polygons_points)
+        self.board.found_codes_number = sum(code is not None for code in self.all_codes_polygons_points)
 
         # Update the flag
-        if found_codes_number > self.found_codes_number:
+        if self.board.found_codes_number > self.found_codes_number:
 
-            self.found_codes_number = found_codes_number
+            self.found_codes_number = self.board.found_codes_number
             if self.code_found_flag is False:
                 self.code_found_flag = True
                 self.detect_corners_frames_number = 0

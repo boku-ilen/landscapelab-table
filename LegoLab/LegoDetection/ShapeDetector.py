@@ -24,12 +24,6 @@ MIN_REC = 0.2
 MAX_REC = 2.5
 BRICK_LENGTH_BUFFER = 2
 
-# Distance to the board where detected
-# lego brick is already very small -> max 2 px
-# eg. 22 means more than 2200 cm
-MIN_BOARD_DISTANCE_ESTIMATION = 8
-MAX_BOARD_DISTANCE_ESTIMATION = 22
-
 # Camera's depth field of view
 HORIZONTAL_ANGLE = 65
 VERTICAL_ANGLE = 40
@@ -292,19 +286,17 @@ class ShapeDetector:
         return LegoColor.UNKNOWN_COLOR
 
     @staticmethod
-    def calculate_sinus(angle):
+    def calculate_tangent(angle):
 
-        sinus = math.sin(angle * math.pi / 180)
-        return sinus
+        tangent = math.tan(angle * math.pi / 180)
+        return tangent
 
     # Calculate possible lego brick dimensions using distance to the board
     def calculate_possible_lego_dimensions(self, board_distance):
 
-        # Use the sine law, an equation relating the lengths
-        # of the sides of a triangle (any shape) to the sines of its angles
-        horizontal_second_angle = (180 - HORIZONTAL_ANGLE) / 2
-        horizontal_side_length = 2 * board_distance * self.calculate_sinus(HORIZONTAL_ANGLE/2)\
-                                 / self.calculate_sinus(horizontal_second_angle)
+        # Use a tangent of the half of horizontal angle to calculate the display width in mm
+        horizontal_side_length = 2 * board_distance * self.calculate_tangent(HORIZONTAL_ANGLE / 2)
+        # Calculate how many pixels give one centimeter
         one_cm_in_pixel = 10 * self.resolution_width / horizontal_side_length
 
         # Calculate the squared lego brick side
@@ -324,43 +316,3 @@ class ShapeDetector:
         # Calculate the squared lego brick area
         self.min_rectangle_area = self.min_square_length * self.min_rectangle_length
         self.max_rectangle_area = self.max_square_length * self.max_rectangle_length
-
-    # Estimate possible lego brick dimensions using distance to the board
-    # Estimated for resolution 1280/720
-    # TODO: use calculating instead of estimation
-    def estimate_possible_lego_dimensions(self, board_distance):
-
-        # Board distance -> square lego side length
-        # Based on observation:
-        # 1700 - 1799 -> 7-8
-        # 1600 - 1699 -> 8-9
-        # 1500 - 1599 -> 9-10 ...
-
-        # Take two first digits of the board distance
-        board_distance_estimation = int(board_distance / 100)
-        if board_distance_estimation > MAX_BOARD_DISTANCE_ESTIMATION:
-            board_distance_estimation = MAX_BOARD_DISTANCE_ESTIMATION
-        elif board_distance_estimation < MIN_BOARD_DISTANCE_ESTIMATION:
-            board_distance_estimation = MIN_BOARD_DISTANCE_ESTIMATION
-
-        # FIXME: error handling
-        # Get min length for a square lego brick from the configurations
-        try:
-            self.min_square_length = int(self.config.get("MIN_ROTATED_SQUARE_LENGTH", str(board_distance_estimation)))
-        except:
-            logger.error("Not able to calculate a possible lego size, check board distance and configurations")
-
-        if self.min_square_length is not None:
-
-            # Add buffer
-            self.min_square_length -= BRICK_LENGTH_BUFFER
-            # Add buffer
-            self.max_square_length = self.min_square_length + 2 * BRICK_LENGTH_BUFFER
-
-            self.min_square_area = self.min_square_length * self.min_square_length
-            self.max_square_area = self.max_square_length * self.max_square_length
-
-            self.min_rectangle_length = 2 * self.min_square_length
-            self.max_rectangle_length = 2 * self.max_square_length
-            self.min_rectangle_area = self.min_square_length * self.min_rectangle_length
-            self.max_rectangle_area = self.max_square_length * self.max_rectangle_length

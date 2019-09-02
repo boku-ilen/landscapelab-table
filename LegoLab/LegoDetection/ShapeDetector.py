@@ -292,19 +292,17 @@ class ShapeDetector:
         return LegoColor.UNKNOWN_COLOR
 
     @staticmethod
-    def calculate_sinus(angle):
+    def calculate_tangent(angle):
 
-        sinus = math.sin(angle * math.pi / 180)
-        return sinus
+        tangent = math.tan(angle * math.pi / 180)
+        return tangent
 
     # Calculate possible lego brick dimensions using distance to the board
     def calculate_possible_lego_dimensions(self, board_distance):
 
-        # Use the sine law, an equation relating the lengths
-        # of the sides of a triangle (any shape) to the sines of its angles
-        horizontal_second_angle = (180 - HORIZONTAL_ANGLE) / 2
-        horizontal_side_length = 2 * board_distance * self.calculate_sinus(HORIZONTAL_ANGLE/2)\
-                                 / self.calculate_sinus(horizontal_second_angle)
+        # Use a tangent of the half of horizontal angle to calculate the display width in mm
+        horizontal_side_length = 2 * board_distance * self.calculate_tangent(HORIZONTAL_ANGLE / 2)
+        # Calculate how many pixels give one centimeter
         one_cm_in_pixel = 10 * self.resolution_width / horizontal_side_length
 
         # Calculate the squared lego brick side

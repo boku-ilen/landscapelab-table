@@ -7,6 +7,7 @@ import logging
 
 from ..ConfigManager import ConfigManager, ConfigError
 from ..LegoUI.MapActions import MapActions
+from ..LegoUI.ImageHandler import ImageHandler
 
 # Configure Logger
 logger = logging.getLogger(__name__)
@@ -132,9 +133,21 @@ class MapHandler:
 
         unused_slot = (self.current_image + 1) % 2
 
-        self.qgis_image[unused_slot] = cv.imread(self.image_path, -1)
+        image = cv.imread(self.image_path, -1)
+        image = ImageHandler.ensure_alpha_channel(image)
+
+        # put image on white background to eliminate issues with 4 channel image display
+        alpha = image[:, :, 3] / 255.0
+        image[:, :, 0] = (1. - alpha) * 255 + alpha * image[:, :, 0]
+        image[:, :, 1] = (1. - alpha) * 255 + alpha * image[:, :, 1]
+        image[:, :, 2] = (1. - alpha) * 255 + alpha * image[:, :, 2]
+        image[:, :, 3] = 255
+
+        # assign image and set slot correctly
+        self.qgis_image[unused_slot] = image
         self.current_image = unused_slot
 
+        # update extent and set extent changes flag unless extent stayed the same
         if not np.array_equal(self.current_extent, extent):
             self.current_extent = extent
             self.config.set("map_settings", "extent_changed", True)

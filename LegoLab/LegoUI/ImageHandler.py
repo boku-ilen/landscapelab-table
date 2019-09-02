@@ -57,11 +57,7 @@ class ImageHandler:
         if center:
             image_dict['center'] = center
 
-        # add alpha channel if not already here
-        if img.shape[2] == 3:
-            b, g, r = cv2.split(img)
-            a = np.ones(b.shape, dtype=b.dtype) * 255
-            img = cv2.merge((b, g, r, a))
+        img = ImageHandler.ensure_alpha_channel(img)
 
         # add image to dictionary and return
         image_dict['image'] = img
@@ -109,3 +105,14 @@ class ImageHandler:
                 im_back[bac_start_y:bac_end_y, bac_start_x:bac_end_x, 3], alpha * 255)
             # NOTE unsure if correct alpha blending but results seem fine
         return im_back
+
+    @staticmethod
+    def ensure_alpha_channel(image):
+
+        # add alpha channel if not already here
+        if image.shape[2] == 3:
+            b, g, r = cv2.split(image)
+            a = np.ones(b.shape, dtype=b.dtype) * 255
+            image = cv2.merge((b, g, r, a))
+
+        return image

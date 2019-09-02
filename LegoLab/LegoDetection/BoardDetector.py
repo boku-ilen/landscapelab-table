@@ -50,7 +50,7 @@ class BoardDetector:
 
         # Threshold for finding QR-Codes
         # To change the threshold use an optional parameter
-        self.threshold_qrcode = threshold_qrcode
+        self.board.threshold_qrcode = threshold_qrcode
 
         # Array with all polygons of QR-Codes for board corners
         self.all_codes_polygons_points = [None, None, None, None]
@@ -394,8 +394,8 @@ class BoardDetector:
         # Subtract background
         diff = cv2.absdiff(color_image, self.background.astype("uint8"))
         diff = cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY)
-        ret_val, diff = cv2.threshold(diff, self.threshold_qrcode, MAX_VALUE, cv2.THRESH_BINARY)
-        logger.debug("Using threshold for qr-codes {}".format(self.threshold_qrcode))
+        ret_val, diff = cv2.threshold(diff, self.board.threshold_qrcode, MAX_VALUE, cv2.THRESH_BINARY)
+        logger.debug("Using threshold for qr-codes {}".format(self.board.threshold_qrcode))
 
         # Return difference between
         # the current frame and background
@@ -452,12 +452,13 @@ class BoardDetector:
                 loop *= -1
 
             # Adjust the threshold
-            self.threshold_qrcode += loop * step
+            self.board.threshold_qrcode += loop * step
 
             # Allow only threshold 0-255
-            if self.threshold_qrcode < 0:
-                self.threshold_qrcode += MAX_THRESHOLD
-            elif self.threshold_qrcode > MAX_THRESHOLD:
-                self.threshold_qrcode -= MAX_THRESHOLD
+            if self.board.threshold_qrcode < 0:
+                self.board.threshold_qrcode += MAX_THRESHOLD
+            elif self.board.threshold_qrcode > MAX_THRESHOLD:
+                self.board.threshold_qrcode -= MAX_THRESHOLD
+            print(self.board.threshold_qrcode)
 
 

@@ -9,6 +9,9 @@ class Board:
     # initialize distance to the board from the camera
     distance = None
 
+    # threshold needed to find qr-codes
+    threshold_qrcode = None
+
     def __init__(self):
 
         # initialize dimensions of the board

@@ -6,7 +6,7 @@ from .LegoDetection.BoardDetector import BoardDetector
 from .LegoDetection.ShapeDetector import ShapeDetector
 from .LegoInputStream import LegoInputStream
 from .LegoOutputStream import LegoOutputStream, LegoOutputChannel
-from .LegoUI.MapHandler import MapHandler
+from .LegoUI.MainMap import MainMap
 from .LegoUI.UIElements.UISetup import setup_ui
 from .ServerCommunication import ServerCommunication
 from .LegoDetection.Tracker import Tracker
@@ -53,21 +53,21 @@ class LegoLab:
         self.scenario = self.server.get_scenario_info(self.config.get("general", "scenario"))
 
         # initialize map handler and ui
-        self.map_handler = MapHandler(self.config, self.scenario)
-        ui_root = setup_ui(self.map_handler.action_map, self.config)
+        self.main_map = MainMap(self.config, self.scenario)
+        ui_root = setup_ui(self.main_map.action_map, self.config)
 
         # Initialize the centroid tracker
         self.tracker = Tracker(self.config, self.board, self.server, ui_root)
 
         # initialize the input and output stream
-        self.output_stream = LegoOutputStream(self.map_handler, ui_root, self.tracker, self.config, self.board)
+        self.output_stream = LegoOutputStream(self.main_map, ui_root, self.tracker, self.config, self.board)
         self.input_stream = LegoInputStream(self.config, self.board, usestream=self.used_stream)
 
         # Initialize and start the QGIS listener Thread
         # also request the first rendered map section
-        self.listener_thread = ListenerThread(self.config, self.map_handler)
+        self.listener_thread = ListenerThread(self.config, self.main_map)
         self.listener_thread.start()
-        self.map_handler.request_render()
+        self.main_map.request_render()
 
         # initialize the lego detector
         self.shape_detector = ShapeDetector(self.config, self.output_stream)
@@ -116,7 +116,7 @@ class LegoLab:
             # make sure the stream ends correctly
             self.input_stream.close()
 
-            self.map_handler.end()
+            self.main_map.end()
 
     def white_balance(self, color_image):
 

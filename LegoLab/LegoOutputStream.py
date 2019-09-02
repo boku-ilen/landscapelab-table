@@ -281,8 +281,7 @@ class LegoOutputStream:
     # called every frame when in ProgramStage LEGO_DETECTION
     def redraw_lego_detection(self):
         # check flags if any part of the frame has changed
-        if MapHandler.MAP_REFRESHED \
-                or UIElement.UI_REFRESHED \
+        if self.config.get("map_settings", 'map_refreshed') \
                 or Tracker.BRICKS_REFRESHED \
                 or LegoOutputStream.MOUSE_BRICKS_REFRESHED:
 
@@ -303,8 +302,7 @@ class LegoOutputStream:
             self.last_frame = frame
 
             # reset flags
-            MapHandler.MAP_REFRESHED = False
-            UIElement.UI_REFRESHED = False
+            self.config.set("map_settings", "map_refreshed", False)
             Tracker.BRICKS_REFRESHED = False
             LegoOutputStream.MOUSE_BRICKS_REFRESHED = False
 
@@ -403,9 +401,6 @@ class LegoOutputStream:
     # creates or deletes virtual bricks on mouse click
     # parameters flags and param are necessary so that function can be registered as openCV mouse callback function
     def beamer_mouse_callback(self, event, x, y, flags, param):
-        # set mouse brick refreshed flag
-        LegoOutputStream.MOUSE_BRICKS_REFRESHED = True
-
         # create brick on mouse position
         mouse_brick = self.beamer_to_board(LegoBrick(x, y, LegoShape.RECTANGLE_BRICK, LegoColor.BLUE_BRICK))
 
@@ -419,3 +414,6 @@ class LegoOutputStream:
             else:
                 # otherwise add the mouse brick
                 self.tracker.virtual_bricks.append(mouse_brick)
+
+            # set mouse brick refreshed flag
+            LegoOutputStream.MOUSE_BRICKS_REFRESHED = True

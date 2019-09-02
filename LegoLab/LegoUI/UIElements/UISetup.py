@@ -2,7 +2,7 @@ from ..UIElements.UIElement import UIElement, UIActionType
 from ..UIElements.Button import Button
 from ..UIElements.UIStructureBlock import UIStructureBlock
 from ...ConfigManager import ConfigManager
-from ..MapActions import MapActions
+from LegoUI.MapActions import MapActions
 from typing import Dict, Callable
 import numpy as np
 

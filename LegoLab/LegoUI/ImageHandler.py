@@ -1,4 +1,4 @@
-from ..ConfigManager import ConfigManager, ConfigError
+from ConfigManager import ConfigManager, ConfigError
 from typing import Dict, Tuple, Optional
 import numpy as np
 import logging

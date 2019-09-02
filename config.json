@@ -200,7 +200,8 @@
       NaN, NaN
     ],
     "crs": "EPSG:3857",
-    "extent_changed": "False",
+    "extent_changed": false,
+    "map_refreshed": true,
     "pan_distance": [0.5, 0.75, 0.85],
     "zoom_strength": [0.2, 0.5, 0.9]
   }

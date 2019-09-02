@@ -2,7 +2,9 @@ import socket
 import logging
 import threading
 import numpy as np
-# from LegoDetection.ConfigManager import ConfigManager
+
+from LegoUI.MapHandler import MapHandler
+from ConfigManager import ConfigManager
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -10,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 class ListenerThread(threading.Thread):
 
-    def __init__(self, config, map_object):
+    def __init__(self, config: ConfigManager, map_object: MapHandler):
         threading.Thread.__init__(self)
 
         # create socket

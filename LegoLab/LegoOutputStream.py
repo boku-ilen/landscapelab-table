@@ -147,6 +147,7 @@ class LegoOutputStream:
         self.icon_windmill = image_handler.load_image("windmill_icon")
         self.icon_pv = image_handler.load_image("pv_icon")
 
+    # fetches the correct monitor for the beamer output and writes it's data to the ConfigManager
     @staticmethod
     def set_beamer_config_info(config):
         beamer_id = config.get("beamer-resolution", "screen-id")
@@ -178,10 +179,12 @@ class LegoOutputStream:
     def set_active_channel(self, channel):
         self.active_channel = channel
 
+    # changes to the next channel
     def channel_up(self):
         logger.info("changed active channel one up")
         self.set_active_channel(self.active_channel.next())
 
+    # changes to the previous channel
     def channel_down(self):
         logger.info("changed active channel one down")
         self.set_active_channel(self.active_channel.prev())
@@ -194,7 +197,6 @@ class LegoOutputStream:
     # we label the identified lego bricks in the stream
     @staticmethod
     def labeling(frame, tracked_lego_brick: LegoBrick):
-
         # Draw lego bricks IDs
         text = "ID {}".format(tracked_lego_brick.assetpos_id)
         tracked_lego_brick_position = tracked_lego_brick.centroid_x, tracked_lego_brick.centroid_y
@@ -210,69 +212,95 @@ class LegoOutputStream:
         # Draw lego bricks centroid points
         cv2.circle(frame, tracked_lego_brick_position, RADIUS, GREEN, cv2.FILLED)
 
+    # called every frame, updates the beamer image
+    # recognizes and handles button presses
     def update(self, program_stage: ProgramStage) -> bool:
-
+        # update beamer image if necessary
         self.redraw_beamer_image(program_stage)
 
+        # check if key pressed
         key = cv2.waitKeyEx(1)
 
+        # call button callback
         if key in self.BUTTON_MAP:
             self.BUTTON_MAP[key]()
 
         # Break with Esc  # FIXME: CG: keyboard might not be available - use signals?
         if key == 27:
             return True
-        else:
-            return False
+        return False
 
-    # redraws the beamer image
+    # redraws the beamer image if necessary
+    # applies different logic for each program_stage
     def redraw_beamer_image(self, program_stage: ProgramStage):
 
         if program_stage == ProgramStage.WHITE_BALANCE:
-            frame = np.ones([
-                self.config.get("beamer-resolution", "height"),
-                self.config.get("beamer-resolution", "width"),
-                4
-            ]) * 255
-            cv2.imshow(LegoOutputStream.WINDOW_NAME_BEAMER, frame)
-            self.last_frame = frame
+            self.draw_white_frame()
 
         elif program_stage == ProgramStage.FIND_CORNERS:
-
-            frame = self.last_frame
-            # TODO make code pretty
-            ImageHandler.img_on_background(frame, self.qr_top_left,
-                                                 (0, 0))
-            ImageHandler.img_on_background(frame, self.qr_top_right,
-                                                 (frame.shape[1] - self.qr_top_right['image'].shape[1], 0))
-            ImageHandler.img_on_background(frame, self.qr_bottom_left,
-                                                 (0, frame.shape[0] - self.qr_bottom_left['image'].shape[0]))
-            ImageHandler.img_on_background(frame, self.qr_bottom_right,
-                                                 (
-                                                     frame.shape[1] - self.qr_bottom_right['image'].shape[1],
-                                                     frame.shape[0] - self.qr_bottom_right['image'].shape[0]
-                                                 ))
-            cv2.imshow(LegoOutputStream.WINDOW_NAME_BEAMER, frame)
+            self.draw_corner_qr_codes()
 
         elif program_stage == ProgramStage.LEGO_DETECTION:
+            self.redraw_lego_detection()
 
-            if MapHandler.MAP_REFRESHED \
-                    or UIElement.UI_REFRESHED \
-                    or Tracker.BRICKS_REFRESHED \
-                    or LegoOutputStream.MOUSE_BRICKS_REFRESHED:
-                frame = self.map_handler.get_frame().copy()
+    # displays a white screen
+    # so that the board detector can more easily detect the qr-codes later
+    # called every frame when in ProgramStage WHITE_BALANCE
+    def draw_white_frame(self):
+        frame = np.ones([
+            self.config.get("beamer-resolution", "height"),
+            self.config.get("beamer-resolution", "width"),
+            4
+        ]) * 255
+        cv2.imshow(LegoOutputStream.WINDOW_NAME_BEAMER, frame)
+        self.last_frame = frame
 
-                # render virtual external bricks behind ui
-                self.render_external_virtual_bricks(frame)
+    # displays qr-codes in each corner
+    # so that the board detector can correctly identify the beamer projection edges
+    # called every frame when in ProgramStage FIND_CORNERS
+    def draw_corner_qr_codes(self):
+        frame = self.last_frame
 
-                # render ui
-                self.ui_root.draw(frame)
+        # calculate qr-code offsets
+        pos_top_left = (0, 0)
+        pos_top_right = (frame.shape[1] - self.qr_top_right['image'].shape[1], 0)
+        pos_bottom_left = (0, frame.shape[0] - self.qr_bottom_left['image'].shape[0])
+        pos_bottom_right = (
+            frame.shape[1] - self.qr_bottom_right['image'].shape[1],
+            frame.shape[0] - self.qr_bottom_right['image'].shape[0]
+        )
 
-                # render remaining bricks in front of ui
-                self.render_bricks(frame)
+        # display images with calculated offsets
+        ImageHandler.img_on_background(frame, self.qr_top_left, pos_top_left)
+        ImageHandler.img_on_background(frame, self.qr_top_right, pos_top_right)
+        ImageHandler.img_on_background(frame, self.qr_bottom_left, pos_bottom_left)
+        ImageHandler.img_on_background(frame, self.qr_bottom_right, pos_bottom_right)
+        cv2.imshow(LegoOutputStream.WINDOW_NAME_BEAMER, frame)
 
-                cv2.imshow(LegoOutputStream.WINDOW_NAME_BEAMER, frame)
-                self.last_frame = frame
+    # checks if the frame has updated and redraws it if this is the case
+    # called every frame when in ProgramStage LEGO_DETECTION
+    def redraw_lego_detection(self):
+        # check flags if any part of the frame has changed
+        if MapHandler.MAP_REFRESHED \
+                or UIElement.UI_REFRESHED \
+                or Tracker.BRICKS_REFRESHED \
+                or LegoOutputStream.MOUSE_BRICKS_REFRESHED:
+
+            # get map image from map handler
+            frame = self.map_handler.get_frame().copy()
+
+            # render virtual external bricks on top of map
+            self.render_external_virtual_bricks(frame)
+
+            # render ui over map and external virtual bricks
+            self.ui_root.draw(frame)
+
+            # render remaining bricks in front of ui
+            self.render_bricks(frame)
+
+            # display and save frame
+            cv2.imshow(LegoOutputStream.WINDOW_NAME_BEAMER, frame)
+            self.last_frame = frame
 
             # reset flags
             MapHandler.MAP_REFRESHED = False
@@ -280,42 +308,57 @@ class LegoOutputStream:
             Tracker.BRICKS_REFRESHED = False
             LegoOutputStream.MOUSE_BRICKS_REFRESHED = False
 
-    # renders only external virtual bricks since they should be displayed behind the ui unlike any other brick types
+    # renders only external virtual bricks
+    # since they should be displayed behind the ui unlike any other brick types
     def render_external_virtual_bricks(self, render_target):
-
+        # render bricks on top of transparent overlay_target
         overlay_target = render_target.copy()
+
+        # filter external bricks out of the virtual brick list and iterate over them
         for brick in filter(lambda b: b.status == LegoStatus.EXTERNAL_BRICK, self.tracker.virtual_bricks):
             self.render_brick(brick, overlay_target, True)
+
+        # add overlay_target to render_target with alpha_value
         cv2.addWeighted(overlay_target, VIRTUAL_BRICK_ALPHA, render_target, 1 - VIRTUAL_BRICK_ALPHA, 0, render_target)
 
     # renders all bricks except external virtual ones since those get rendered earlier
     def render_bricks(self, render_target):
-        # render all confirmed bricks
+        # render all confirmed bricks without transparency
         for brick in self.tracker.confirmed_bricks:
             self.render_brick(brick, render_target)
 
-        # render virtual bricks
+        # render virtual bricks on top of transparent overlay_target
         overlay_target = render_target.copy()
+        # iterate over all non-external virtual bricks and draw them to the overlay_target
         for brick in list(filter(lambda b: b.status != LegoStatus.EXTERNAL_BRICK, self.tracker.virtual_bricks)):
             self.render_brick(brick, overlay_target, True)
+
+        # add overlay_target to render_target with alpha_value
         cv2.addWeighted(overlay_target, VIRTUAL_BRICK_ALPHA, render_target, 1 - VIRTUAL_BRICK_ALPHA, 0, render_target)
 
+    # renders a given brick onto a given render target
+    # fetches the correct icon with get_brick_icon
     def render_brick(self, brick, render_target, virtual=False):
         b = self.board_to_beamer(brick)
         pos = (b.centroid_x, b.centroid_y)
+        icon = self.get_brick_icon(brick, virtual)
 
-        ImageHandler.img_on_background(render_target, self.get_brick_icon(brick, virtual), pos)
+        ImageHandler.img_on_background(render_target, icon, pos)
 
+    # returns the correct brick icon for any given brick
     def get_brick_icon(self, brick, virtual):
 
         if brick.status == LegoStatus.OUTDATED_BRICK:
             return self.brick_outdated
+
         elif brick.status == LegoStatus.INTERNAL_BRICK:
             return self.brick_internal
+
         elif virtual:
             if brick.color == LegoColor.BLUE_BRICK:
                 return self.icon_windmill
             return self.icon_pv
+
         else:
             if brick.color == LegoColor.BLUE_BRICK:
                 return self.brick_windmill
@@ -327,37 +370,52 @@ class LegoOutputStream:
         if self.video_handler:
             self.video_handler.release()
 
+    # used to convert brick coordinates form board to beamer and vice-versa
+    # returns a cloned version of the input brick with coordinates in the target_res context
     @staticmethod
-    def remap_brick(source_res: Callable[[], Tuple[int, int]],
-                    target_res: Callable[[], Tuple[int, int]],
-                    brick: LegoBrick):
+    def remap_brick(
+            source_res: Callable[[], Tuple[int, int]],
+            target_res: Callable[[], Tuple[int, int]],
+            brick: LegoBrick
+    ):
+        # clone brick
         ret = brick.clone()
 
+        # get resolution info
         source_width, source_height = source_res()
         target_width, target_height = target_res()
 
-        # logger.info("source res: {} {}, target res: {} {}"
-        #             .format(source_width, source_height, target_width, target_height))
-
+        # calculate new coordinates
         ret.centroid_x = int((ret.centroid_x / source_width) * target_width)
         ret.centroid_y = int((ret.centroid_y / source_height) * target_height)
 
         return ret
 
+    # returns resolution info for lego board
     def get_board_res(self):
         return self.board.width, self.board.height
 
+    # returns resolution info for beamer image
     def get_beamer_res(self):
-        return self.config.get("beamer-resolution", "width"), self.config.get("beamer-resolution", "height")
+        return self.config.get("beamer-resolution", "width"),\
+               self.config.get("beamer-resolution", "height")
 
+    # creates or deletes virtual bricks on mouse click
+    # parameters flags and param are necessary so that function can be registered as openCV mouse callback function
     def beamer_mouse_callback(self, event, x, y, flags, param):
-        mouse_pos = self.beamer_to_board(LegoBrick(x, y, LegoShape.RECTANGLE_BRICK, LegoColor.BLUE_BRICK))
+        # set mouse brick refreshed flag
         LegoOutputStream.MOUSE_BRICKS_REFRESHED = True
 
+        # create brick on mouse position
+        mouse_brick = self.beamer_to_board(LegoBrick(x, y, LegoShape.RECTANGLE_BRICK, LegoColor.BLUE_BRICK))
+
         if event == cv2.EVENT_LBUTTONDOWN or event == cv2.EVENT_RBUTTONDOWN:
-            virtual_brick = self.tracker.check_min_distance(mouse_pos, self.tracker.virtual_bricks)
+            # check for nearby virtual bricks
+            virtual_brick = self.tracker.check_min_distance(mouse_brick, self.tracker.virtual_bricks)
 
             if virtual_brick:
+                # if mouse brick is on top of other virtual brick, remove that brick
                 self.tracker.virtual_bricks.remove(virtual_brick)
             else:
-                self.tracker.virtual_bricks.append(mouse_pos)
+                # otherwise add the mouse brick
+                self.tracker.virtual_bricks.append(mouse_brick)

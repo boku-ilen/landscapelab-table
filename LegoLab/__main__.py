@@ -96,8 +96,12 @@ class LegoLab:
                 # Analyze only objects on the board / table
                 clipped_color_image = self.board_detector.clip_board(color_image, depth_image_3d)
 
+                # Add some additional information to the debug window
+                color_image_debug = color_image.copy()
+                self.output_stream.add_debug_information(color_image_debug)
+
                 # always write the current frame to the board detection channel
-                self.output_stream.write_to_channel(LegoOutputChannel.CHANNEL_BOARD_DETECTION, color_image)
+                self.output_stream.write_to_channel(LegoOutputChannel.CHANNEL_BOARD_DETECTION, color_image_debug)
 
                 # call different functions depending on program state
                 if self.program_stage == ProgramStage.WHITE_BALANCE:
@@ -145,7 +149,7 @@ class LegoLab:
             # TODO: test it with different distances
             self.shape_detector.calculate_possible_lego_dimensions(self.board.distance)
 
-            logger.debug("Used threshold for qr-codes -> {}".format(self.board_detector.threshold_qrcode))
+            logger.debug("Used threshold for qr-codes -> {}".format(self.board.threshold_qrcode))
             self.output_stream.set_active_channel(LegoOutputChannel.CHANNEL_ROI)
             self.program_stage = self.program_stage.next()
 

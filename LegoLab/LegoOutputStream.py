@@ -32,6 +32,9 @@ CONTOUR_THICKNESS = 1
 IDX_DRAW_ALL = -1
 RADIUS = 3
 
+DEBUG_INFORMATION_FONT_SIZE = 0.8
+DEBUG_INFORMATION_POSITION = (20, 20)
+
 
 class LegoOutputChannel(Enum):
 
@@ -211,6 +214,13 @@ class LegoOutputStream:
 
         # Draw lego bricks centroid points
         cv2.circle(frame, tracked_lego_brick_position, RADIUS, GREEN, cv2.FILLED)
+
+    # Add some additional information to the debug window
+    def add_debug_information(self, frame):
+        threshold_text = "threshold: " + str(self.board.threshold_qrcode)
+        # Add used threshold for qr-codes to the debug window
+        cv2.putText(frame, threshold_text, DEBUG_INFORMATION_POSITION,
+                    cv2.FONT_HERSHEY_SIMPLEX, DEBUG_INFORMATION_FONT_SIZE, GREEN, FONT_THICKNESS)
 
     # called every frame, updates the beamer image
     # recognizes and handles button presses

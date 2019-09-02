@@ -274,8 +274,11 @@ class LegoOutputStream:
                 cv2.imshow(LegoOutputStream.WINDOW_NAME_BEAMER, frame)
                 self.last_frame = frame
 
-                MapHandler.MAP_REFRESHED = False
-                UIElement.UI_REFRESHED = False
+            # reset flags
+            MapHandler.MAP_REFRESHED = False
+            UIElement.UI_REFRESHED = False
+            Tracker.BRICKS_REFRESHED = False
+            LegoOutputStream.MOUSE_BRICKS_REFRESHED = False
 
     # renders only external virtual bricks since they should be displayed behind the ui unlike any other brick types
     def render_external_virtual_bricks(self, render_target):

@@ -68,7 +68,6 @@ class ImageHandler:
     # while im_back is a simple np array im_top must be a dictionary containing the image
     # additional fields in im_top (e.g. center) will be considered in the drawing process
     # offset determines the x,y position of the image
-    # TODO move to more general context
     @staticmethod
     def img_on_background(im_back, im_top: Dict, offset: Tuple[int, int]):
         img = im_top['image']

@@ -29,7 +29,6 @@ except:
 CHANNELS_NUMBER = 3
 
 
-# TODO: rename
 # this class manages the base workflow and handles the main loop
 class LegoLab:
 

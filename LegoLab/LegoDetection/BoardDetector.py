@@ -459,6 +459,5 @@ class BoardDetector:
                 self.board.threshold_qrcode += MAX_THRESHOLD
             elif self.board.threshold_qrcode > MAX_THRESHOLD:
                 self.board.threshold_qrcode -= MAX_THRESHOLD
-            print(self.board.threshold_qrcode)
 
 

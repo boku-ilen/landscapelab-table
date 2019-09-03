@@ -20,6 +20,12 @@ class LegoExtent:
 
         self.y_inverted: bool = y_up_is_positive
 
+    # creates and returns a new LegoExtent from a given tuple
+    @staticmethod
+    def from_tuple(borders: Tuple[float, float, float, float], y_up_is_positive=False):
+        x_min, y_min, x_max, y_max = borders
+        return LegoExtent(x_min, y_min, x_max, y_max, y_up_is_positive)
+
     # creates and returns a new LegoExtent based on it's left upper corner and it's size
     @staticmethod
     def from_rectangle(x_min, y_min, width, height) -> 'LegoExtent':
@@ -64,6 +70,10 @@ class LegoExtent:
 
         self.y_min -= diff / 2
         self.y_max += diff / 2
+
+    # returns the height per width aspect ratio
+    def get_aspect_ratio(self):
+        return self.get_height() / self.get_width()
 
     # returns clone of self
     def clone(self) -> 'LegoExtent':

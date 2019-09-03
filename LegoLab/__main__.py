@@ -53,8 +53,9 @@ class LegoLab:
         self.scenario = self.server.get_scenario_info(self.config.get("general", "scenario"))
 
         # initialize map handler and ui
-        self.main_map = MainMap(self.config, self.scenario)
-        ui_root = setup_ui(self.main_map.action_map, self.config)
+        self.main_map = MainMap(self.config, 'main_map', self.scenario)
+        ui_root, mini_map = setup_ui(self.main_map, self.config)
+        map_dict = {self.main_map.name: self.main_map, mini_map.name: mini_map}
 
         # Initialize the centroid tracker
         self.tracker = Tracker(self.config, self.board, self.server, ui_root)
@@ -65,9 +66,10 @@ class LegoLab:
 
         # Initialize and start the QGIS listener Thread
         # also request the first rendered map section
-        self.listener_thread = ListenerThread(self.config, self.main_map)
+        self.listener_thread = ListenerThread(self.config, map_dict)
         self.listener_thread.start()
         self.main_map.request_render()
+        mini_map.request_render()
 
         # initialize the lego detector
         self.shape_detector = ShapeDetector(self.config, self.output_stream)

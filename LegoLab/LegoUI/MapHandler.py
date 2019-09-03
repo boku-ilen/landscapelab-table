@@ -15,8 +15,8 @@ logger = logging.getLogger(__name__)
 
 class MapHandler:
 
-    def __init__(self, config: ConfigManager, extent: LegoExtent, resolution: Tuple[int, int]):
-
+    def __init__(self, config: ConfigManager, name: str, extent: LegoExtent, resolution: Tuple[int, int]):
+        self.name = name
         self.config = config
         self.extent_tracker = ExtentTracker.get_instance()
 
@@ -27,8 +27,8 @@ class MapHandler:
 
         # initialize two black images
         self.map_image = [
-            np.ones((self.resolution_y, self.resolution_x, 3), np.uint8) * 255,
-            np.ones((self.resolution_y, self.resolution_x, 3), np.uint8) * 255
+            ImageHandler.ensure_alpha_channel(np.ones((self.resolution_y, self.resolution_x, 3), np.uint8) * 255),
+            ImageHandler.ensure_alpha_channel(np.ones((self.resolution_y, self.resolution_x, 3), np.uint8) * 255)
         ]
         self.current_image = 0
 
@@ -40,7 +40,7 @@ class MapHandler:
         self.lego_addr = (config.get('qgis_interaction', 'QGIS_IP'), config.get('qgis_interaction', 'LEGO_READ_PORT'))
 
         # get communication info
-        self.image_path = config.get('qgis_interaction', 'QGIS_IMAGE_PATH')
+        self.image_path: str = config.get('qgis_interaction', 'QGIS_IMAGE_PATH')
         self.render_keyword = config.get('qgis_interaction', 'RENDER_KEYWORD')
         self.exit_keyword = config.get('qgis_interaction', 'EXIT_KEYWORD')
 
@@ -50,7 +50,7 @@ class MapHandler:
 
         unused_slot = (self.current_image + 1) % 2
 
-        image = cv.imread(self.image_path, -1)
+        image = cv.imread(self.image_path.format(self.name), -1)
         image = ImageHandler.ensure_alpha_channel(image)
 
         # put image on white background to eliminate issues with 4 channel image display
@@ -80,8 +80,8 @@ class MapHandler:
             extent = self.current_extent
 
         self.send(
-            '{keyword}{required_resolution} {crs} {extent0} {extent1} {extent2} {extent3}'.format(
-                keyword=self.render_keyword, required_resolution=self.resolution_x, crs=self.crs,
+            '{keyword}{target_name} {required_resolution} {crs} {extent0} {extent1} {extent2} {extent3}'.format(
+                keyword=self.render_keyword, target_name=self.name, required_resolution=self.resolution_x, crs=self.crs,
                 extent0=extent.x_min, extent1=extent.y_min, extent2=extent.x_max, extent3=extent.y_max
             )
             .encode()

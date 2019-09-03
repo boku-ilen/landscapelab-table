@@ -1,7 +1,7 @@
 import socket
 import logging
 import threading
-import numpy as np
+from typing import Dict
 
 from LegoUI.MapHandler import MapHandler
 from ConfigManager import ConfigManager
@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 class ListenerThread(threading.Thread):
 
-    def __init__(self, config: ConfigManager, map_object: MapHandler):
+    def __init__(self, config: ConfigManager, map_dict: Dict[str, MapHandler]):
         threading.Thread.__init__(self)
 
         # create socket
@@ -25,7 +25,7 @@ class ListenerThread(threading.Thread):
         self.update_keyword = config.get('qgis_interaction', 'UPDATE_KEYWORD')
         self.exit_keyword = config.get('qgis_interaction', 'EXIT_KEYWORD')
 
-        self.map_object = map_object
+        self.map_dict = map_dict
 
     def run(self):
         logger.info("starting to listen for messages")
@@ -37,11 +37,14 @@ class ListenerThread(threading.Thread):
             if data.startswith(self.update_keyword):
 
                 # convert extent to numpy array
-                extent_info = data[len(self.update_keyword):]
-                extent = extent_info.split(' ')
+                info = data[len(self.update_keyword):]
+                info = info.split(' ')
+                target_name = info[0]
+                extent = info[1:5]
                 extent = LegoExtent(float(extent[0]), float(extent[1]), float(extent[2]), float(extent[3]), True)
 
-                self.map_object.refresh(extent)
+                if target_name in self.map_dict:
+                    self.map_dict[target_name].refresh(extent)
 
             if data == self.exit_keyword:
                 self.sock.close()

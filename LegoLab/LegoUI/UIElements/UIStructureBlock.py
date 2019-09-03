@@ -18,6 +18,7 @@ class UIStructureBlock(UIElement):
         # TODO allow overwriting defaults with params
 
         # set block position/size
+        # TODO maybe save position & size as LegoExtent?
         self.position = position.astype(int)
         self.size = size.astype(int)
         self.is_ellipse = False

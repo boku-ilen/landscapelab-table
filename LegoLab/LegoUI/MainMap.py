@@ -10,7 +10,7 @@ from LegoExtent import LegoExtent
 
 class MainMap(MapHandler):
 
-    def __init__(self, config: ConfigManager, scenario: Dict):
+    def __init__(self, config: ConfigManager, name, scenario: Dict):
 
         self.config = config
 
@@ -20,6 +20,7 @@ class MainMap(MapHandler):
 
         super().__init__(
             config,
+            name,
             self.get_start_extent(scenario),
             (resolution_x, resolution_y)
         )

@@ -8,3 +8,4 @@ numpy
 shapely
 scipy
 requests  # is not builtin by default
+webmercator

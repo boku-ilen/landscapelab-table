@@ -1,10 +1,11 @@
 from functools import partial
-from typing import Dict
+from typing import Dict, Tuple
 import numpy as np
 
 from LegoUI.MapHandler import MapHandler
 from LegoUI.MapActions import MapActions
 from ConfigManager import ConfigManager, ConfigError
+from LegoExtent import LegoExtent
 
 
 class MainMap(MapHandler):
@@ -17,11 +18,15 @@ class MainMap(MapHandler):
         resolution_x = int(config.get("beamer-resolution", "width"))
         resolution_y = int(config.get("beamer-resolution", "height"))
 
-        super().__init__(config, self.get_start_extent(scenario), (resolution_x, resolution_y))
+        super().__init__(
+            config,
+            self.get_start_extent(scenario),
+            (resolution_x, resolution_y)
+        )
 
         # set new extent
-        config.set("map_settings", "extent_width", [self.current_extent[0], self.current_extent[2]])
-        config.set("map_settings", "extent_height", [self.current_extent[1], self.current_extent[3]])
+        config.set("map_settings", "extent_width", [self.current_extent.x_min, self.current_extent.x_max])
+        config.set("map_settings", "extent_height", [self.current_extent.y_min, self.current_extent.y_max])
 
         # set extent modifiers
         pan_up_modifier = np.array([0, 1, 0, 1])
@@ -46,6 +51,14 @@ class MainMap(MapHandler):
 
     def get_start_extent(self, scenario):
 
+        starting_location = self.get_start_location(scenario)
+
+        # extrude start location to start extent
+        zoom = self.config.get("general", "start_zoom")
+
+        return LegoExtent.around_center(starting_location, zoom, 1)
+
+    def get_start_location(self, scenario) -> Tuple[float, float]:
         if len(scenario["locations"]) == 0:
             raise ConfigError("No locations in scenario {}".format(scenario["name"]))
 
@@ -73,26 +86,22 @@ class MainMap(MapHandler):
             first_key = next(iter(scenario["locations"]))
             starting_location = scenario["locations"][first_key]["location"]
 
-        # extrude start location to start extent
-        zoom = self.config.get("general", "start_zoom") / 2
-        start_extent_width = [starting_location[0] - zoom, starting_location[0] + zoom]
-        start_extent_height = [starting_location[1]-zoom, starting_location[1] + zoom]
-
-        return start_extent_width, start_extent_height
+        return starting_location
 
     # modifies the current extent and requests an updated render image
     # param brick gets ignored so that UIElements can call the function
     def init_render(self, extent_modifier, strength, brick):
         # modify extent
-        width = abs(self.current_extent[2] - self.current_extent[0])
-        height = abs(self.current_extent[3] - self.current_extent[1])
+        width = self.current_extent.get_width()
+        height = self.current_extent.get_height()
 
         move_extent = np.multiply(
             extent_modifier,
             np.array([width, height, width, height])
         ) * strength[0]
 
-        next_extent = np.add(self.current_extent, move_extent)
+        next_extent = self.current_extent.clone()
+        next_extent.add_extent_modifier(move_extent)
 
         # request render
         self.request_render(next_extent)

@@ -3,7 +3,8 @@ from typing import Callable, List
 
 from ..LegoBricks import LegoBrick, LegoStatus
 from ..LegoUI.UIElements.UIElement import UIElement
-from ..LegoPositionConverter import LegoPositionConverter
+from ExtentTracker import ExtentTracker
+from LegoExtent import LegoExtent
 
 # configure logging
 logger = logging.getLogger(__name__)
@@ -24,9 +25,9 @@ class Tracker:
 
     def __init__(self, config, board, server_communicator, ui_root: UIElement):
         self.config = config
+        self.extent_tracker = ExtentTracker.get_instance()
         self.server_communicator = server_communicator
         self.ui_root = ui_root
-        self.get_board_to_beamer_conversion: Callable[[], Callable[[LegoBrick], LegoBrick]] = None
 
         # get ticker thresholds from config
         self.min_distance = config.get("tracker-thresholds", "min-distance")
@@ -38,9 +39,6 @@ class Tracker:
         # Initialize a flag for
         # changes in the map extent
         self.extent_changed = False
-
-        # Initialize lego position converter
-        self.lego_position_converter = LegoPositionConverter(self.config, board)
 
     def update(self, lego_bricks_candidates: List[LegoBrick]) -> List[LegoBrick]:
 
@@ -232,13 +230,13 @@ class Tracker:
     # marks external bricks as outdated if the map was updated
     def mark_external_bricks_outdated_if_map_updated(self):
         # if the extent changed, set external bricks as outdated
-        self.extent_changed = self.config.get("map_settings", "extent_changed")
+        self.extent_changed = self.extent_tracker.extent_changed
         if self.extent_changed is True:
 
             logger.info("recalculate virtual brick position")
             for brick in self.virtual_bricks:
                 if brick.status == LegoStatus.EXTERNAL_BRICK:
-                    self.lego_position_converter.compute_board_coordinates(brick)
+                    LegoExtent.calc_local_pos(brick, self.extent_tracker.board, self.extent_tracker.map_extent)
 
             logger.info("set bricks outdated because extent changed")
             for brick in self.confirmed_bricks:
@@ -248,7 +246,7 @@ class Tracker:
                     Tracker.set_brick_outdated(brick)
 
             # set the flag back
-            self.config.set("map_settings", "extent_changed", False)
+            self.extent_tracker.extent_changed = False
 
     @staticmethod
     def set_brick_outdated(brick: LegoBrick):
@@ -257,15 +255,15 @@ class Tracker:
 
     def set_virtual_brick_at_global_pos_of(self, brick: LegoBrick):
         virtual_brick = brick.clone()
-        self.lego_position_converter.compute_board_coordinates(virtual_brick)
+        LegoExtent.calc_local_pos(virtual_brick, self.extent_tracker.board, self.extent_tracker.map_extent)
 
         self.virtual_bricks.append(virtual_brick)
         Tracker.BRICKS_REFRESHED = True
 
     def brick_on_ui(self, brick):
-        board_to_beamer = self.get_board_to_beamer_conversion()
-        return self.ui_root.brick_on_element(board_to_beamer(brick))
+        brick_on_beamer = LegoExtent.remap(brick, self.extent_tracker.board, self.extent_tracker.beamer)
+        return self.ui_root.brick_on_element(brick_on_beamer)
 
     def brick_would_land_on_ui(self, brick):
-        board_to_beamer = self.get_board_to_beamer_conversion()
-        return self.ui_root.brick_would_land_on_element(board_to_beamer(brick))
+        brick_on_beamer = LegoExtent.remap(brick, self.extent_tracker.board, self.extent_tracker.beamer)
+        return self.ui_root.brick_would_land_on_element(brick_on_beamer)

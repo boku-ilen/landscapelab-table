@@ -5,6 +5,7 @@ import numpy as np
 
 from LegoUI.MapHandler import MapHandler
 from ConfigManager import ConfigManager
+from LegoExtent import LegoExtent
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -38,7 +39,7 @@ class ListenerThread(threading.Thread):
                 # convert extent to numpy array
                 extent_info = data[len(self.update_keyword):]
                 extent = extent_info.split(' ')
-                extent = np.array([float(extent[0]), float(extent[1]), float(extent[2]), float(extent[3])])
+                extent = LegoExtent(float(extent[0]), float(extent[1]), float(extent[2]), float(extent[3]), True)
 
                 self.map_object.refresh(extent)
 

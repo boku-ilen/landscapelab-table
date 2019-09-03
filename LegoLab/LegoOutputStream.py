@@ -2,18 +2,19 @@ from enum import Enum
 import cv2
 import screeninfo
 from functools import partial
-from typing import Callable, Tuple
 import numpy as np
 import logging
 
 from .ProgramStage import ProgramStage
 from .LegoDetection.Tracker import Tracker
 from .ConfigManager import ConfigManager
-from .LegoUI.MapHandler import MapHandler
+from .LegoUI.MainMap import MainMap
 from .LegoUI.MapActions import MapActions
 from .LegoUI.UIElements.UIElement import UIElement
 from .LegoBricks import LegoBrick, LegoColor, LegoShape, LegoStatus
 from .LegoUI.ImageHandler import ImageHandler
+from ExtentTracker import ExtentTracker
+from LegoExtent import LegoExtent
 
 # enable logger
 logger = logging.getLogger(__name__)
@@ -66,13 +67,14 @@ class LegoOutputStream:
     MOUSE_BRICKS_REFRESHED = False
 
     def __init__(self,
-                 map_handler: MapHandler,
+                 map_handler: MainMap,
                  ui_root: UIElement,
                  tracker: Tracker,
                  config: ConfigManager,
                  board, video_output_name=None):
 
         self.config = config
+        self.extent_tracker = ExtentTracker.get_instance()
         self.board = board
 
         self.active_channel = LegoOutputChannel.CHANNEL_BOARD_DETECTION
@@ -110,15 +112,10 @@ class LegoOutputStream:
 
         self.last_frame = None
 
-        # create conversion methods
-        self.board_to_beamer = partial(LegoOutputStream.remap_brick, self.get_board_res, self.get_beamer_res)
-        self.beamer_to_board = partial(LegoOutputStream.remap_brick, self.get_beamer_res, self.get_board_res)
-
         # set ui_root and map handler, create empty variable for tracker
         self.ui_root = ui_root
         self.map_handler = map_handler
         self.tracker: Tracker = tracker
-        self.tracker.get_board_to_beamer_conversion = lambda: self.board_to_beamer
 
         # setup button map
         # reads corresponding keyboard input for action with config.get(...) and converts it to int with ord(...)
@@ -168,6 +165,8 @@ class LegoOutputStream:
             config.set("beamer-resolution", "height", beamer.height)
             config.set("beamer-resolution", "pos-x", beamer.x - 1)
             config.set("beamer-resolution", "pos-y", beamer.y - 1)
+
+            ExtentTracker.get_instance().beamer = LegoExtent(0, 0, beamer.width, beamer.height)
 
     # Write the frame into the file
     def write_to_file(self, frame):
@@ -304,7 +303,7 @@ class LegoOutputStream:
                 or LegoOutputStream.MOUSE_BRICKS_REFRESHED:
 
             # get map image from map handler
-            frame = self.map_handler.get_frame().copy()
+            frame = self.map_handler.get_map_image().copy()
 
             # render virtual external bricks on top of map
             self.render_external_virtual_bricks(frame)
@@ -355,8 +354,8 @@ class LegoOutputStream:
     # renders a given brick onto a given render target
     # fetches the correct icon with get_brick_icon
     def render_brick(self, brick, render_target, virtual=False):
-        b = self.board_to_beamer(brick)
-        pos = (b.centroid_x, b.centroid_y)
+        b = LegoExtent.remap(brick, self.extent_tracker.board, self.extent_tracker.beamer)
+        pos = (int(b.centroid_x), int(b.centroid_y))
         icon = self.get_brick_icon(brick, virtual)
 
         ImageHandler.img_on_background(render_target, icon, pos)
@@ -386,43 +385,16 @@ class LegoOutputStream:
         if self.video_handler:
             self.video_handler.release()
 
-    # used to convert brick coordinates form board to beamer and vice-versa
-    # returns a cloned version of the input brick with coordinates in the target_res context
-    @staticmethod
-    def remap_brick(
-            source_res: Callable[[], Tuple[int, int]],
-            target_res: Callable[[], Tuple[int, int]],
-            brick: LegoBrick
-    ):
-        # clone brick
-        ret = brick.clone()
-
-        # get resolution info
-        source_width, source_height = source_res()
-        target_width, target_height = target_res()
-
-        # calculate new coordinates
-        ret.centroid_x = int((ret.centroid_x / source_width) * target_width)
-        ret.centroid_y = int((ret.centroid_y / source_height) * target_height)
-
-        return ret
-
-    # returns resolution info for lego board
-    def get_board_res(self):
-        return self.board.width, self.board.height
-
-    # returns resolution info for beamer image
-    def get_beamer_res(self):
-        return self.config.get("beamer-resolution", "width"),\
-               self.config.get("beamer-resolution", "height")
-
     # creates or deletes virtual bricks on mouse click
     # parameters flags and param are necessary so that function can be registered as openCV mouse callback function
     def beamer_mouse_callback(self, event, x, y, flags, param):
-        # create brick on mouse position
-        mouse_brick = self.beamer_to_board(LegoBrick(x, y, LegoShape.RECTANGLE_BRICK, LegoColor.BLUE_BRICK))
-
         if event == cv2.EVENT_LBUTTONDOWN or event == cv2.EVENT_RBUTTONDOWN:
+            # create brick on mouse position
+            mouse_brick = LegoExtent.remap(
+                LegoBrick(x, y, LegoShape.RECTANGLE_BRICK, LegoColor.RED_BRICK),
+                self.extent_tracker.beamer, self.extent_tracker.board
+            )
+
             # check for nearby virtual bricks
             virtual_brick = self.tracker.check_min_distance(mouse_brick, self.tracker.virtual_bricks)
 

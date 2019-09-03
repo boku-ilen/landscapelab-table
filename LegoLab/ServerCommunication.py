@@ -3,7 +3,8 @@ import requests
 import json
 
 from .LegoBricks import LegoBrick, LegoStatus
-from .LegoPositionConverter import LegoPositionConverter
+from .LegoExtent import LegoExtent
+from ExtentTracker import ExtentTracker
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -25,12 +26,10 @@ class ServerCommunication:
     def __init__(self, config, board):
 
         self.config = config
+        self.extent_tracker = ExtentTracker.get_instance()
 
         # Initialize ip
         self.ip = self.config.get("server", "ip")
-
-        # Initialize lego position converter
-        self.lego_position_converter = LegoPositionConverter(self.config, board)
 
     # Check status code of the response
     # Return True if 200, else return False
@@ -50,7 +49,7 @@ class ServerCommunication:
     def create_lego_instance(self, lego_brick: LegoBrick):
 
         # Compute geographical coordinates for lego bricks
-        self.lego_position_converter.compute_geo_coordinates(lego_brick)
+        LegoExtent.calc_world_pos(lego_brick, self.extent_tracker.board, self.extent_tracker.map_extent)
 
         # Map the lego brick asset_id from color & shape
         lego_brick.map_asset_id(self.config)

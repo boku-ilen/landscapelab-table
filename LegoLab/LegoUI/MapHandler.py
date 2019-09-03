@@ -6,6 +6,8 @@ import logging
 
 from ConfigManager import ConfigManager
 from LegoUI.ImageHandler import ImageHandler
+from LegoExtent import LegoExtent
+from ExtentTracker import ExtentTracker
 
 # Configure Logger
 logger = logging.getLogger(__name__)
@@ -13,16 +15,18 @@ logger = logging.getLogger(__name__)
 
 class MapHandler:
 
-    def __init__(self, config: ConfigManager, extent, resolution: Tuple[int, int]):
+    def __init__(self, config: ConfigManager, extent: LegoExtent, resolution: Tuple[int, int]):
 
         self.config = config
+        self.extent_tracker = ExtentTracker.get_instance()
 
         # set resolution and extent
         self.resolution_x, self.resolution_y = resolution
-        self.current_extent = self.fit_extent_to_screen_ratio(extent)
+        extent.fit_to_ratio(self.resolution_y / self.resolution_x)
+        self.current_extent: LegoExtent = extent
 
         # initialize two black images
-        self.qgis_image = [
+        self.map_image = [
             np.ones((self.resolution_y, self.resolution_x, 3), np.uint8) * 255,
             np.ones((self.resolution_y, self.resolution_x, 3), np.uint8) * 255
         ]
@@ -40,37 +44,8 @@ class MapHandler:
         self.render_keyword = config.get('qgis_interaction', 'RENDER_KEYWORD')
         self.exit_keyword = config.get('qgis_interaction', 'EXIT_KEYWORD')
 
-    def fit_extent_to_screen_ratio(self, extent):
-        # calculate target ratio
-        target_ratio = self.resolution_x / self.resolution_y
-
-        # fit extent to target ratio and set it
-        extent_width, extent_height = extent
-        extent_w = abs(extent_width[0] - extent_width[1])
-        extent_h = abs(extent_height[0] - extent_height[1])
-        extent_h_diff = extent_w / target_ratio - extent_h
-
-        # adjust height so that extent has the same ratio as beamer resolution
-        if extent_height[0] < extent_height[1]:
-            extent_height[0] -= extent_h_diff / 2
-            extent_height[1] += extent_h_diff / 2
-        else:
-            extent_height[0] += extent_h_diff / 2
-            extent_height[1] -= extent_h_diff / 2
-
-        new_extent = [extent_width[0], extent_height[0], extent_width[1], extent_height[1]]
-
-        # log result
-        logger.info("extent: {}".format(str(new_extent)))
-        logger.debug("extent width: {}, height: {}".format(
-            new_extent[2] - new_extent[0],
-            new_extent[3] - new_extent[1]
-        ))
-
-        return new_extent
-
     # reloads the viewport image
-    def refresh(self, extent):
+    def refresh(self, extent: LegoExtent):
         logger.info("refreshing map")
 
         unused_slot = (self.current_image + 1) % 2
@@ -86,20 +61,20 @@ class MapHandler:
         image[:, :, 3] = 255
 
         # assign image and set slot correctly
-        self.qgis_image[unused_slot] = image
+        self.map_image[unused_slot] = image
         self.current_image = unused_slot
 
         # update extent and set extent changes flag unless extent stayed the same
-        if not np.array_equal(self.current_extent, extent):
+        if not extent == self.current_extent:
             self.current_extent = extent
-            self.config.set("map_settings", "extent_changed", True)
-            self.config.set("map_settings", "extent_width", [extent[0], extent[2]])
-            self.config.set("map_settings", "extent_height", [extent[1], extent[3]])
+
+            self.extent_tracker.map_extent = extent
+            self.extent_tracker.extent_changed = True
             logger.info("extent changed")
 
         self.config.set("map_settings", 'map_refreshed', True)
 
-    def request_render(self, extent=None):
+    def request_render(self, extent: LegoExtent = None):
 
         if extent is None:
             extent = self.current_extent
@@ -107,7 +82,7 @@ class MapHandler:
         self.send(
             '{keyword}{required_resolution} {crs} {extent0} {extent1} {extent2} {extent3}'.format(
                 keyword=self.render_keyword, required_resolution=self.resolution_x, crs=self.crs,
-                extent0=extent[0], extent1=extent[1], extent2=extent[2], extent3=extent[3]
+                extent0=extent.x_min, extent1=extent.y_min, extent2=extent.x_max, extent3=extent.y_max
             )
             .encode()
         )
@@ -117,8 +92,8 @@ class MapHandler:
         logger.debug('sending to qgis: {}'.format(msg))
         self.sock.sendto(msg, self.qgis_addr)
 
-    def get_frame(self):
-        return self.qgis_image[self.current_image]
+    def get_map_image(self):
+        return self.map_image[self.current_image]
 
     def end(self):
         # self.sock.sendto(self.exit_keyword.encode(), self.qgis_addr)

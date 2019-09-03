@@ -13,8 +13,8 @@ from .LegoUI.MapActions import MapActions
 from .LegoUI.UIElements.UIElement import UIElement
 from .LegoBricks import LegoBrick, LegoColor, LegoShape, LegoStatus
 from .LegoUI.ImageHandler import ImageHandler
-from ExtentTracker import ExtentTracker
-from LegoExtent import LegoExtent
+from .ExtentTracker import ExtentTracker
+from .LegoExtent import LegoExtent
 
 # enable logger
 logger = logging.getLogger(__name__)

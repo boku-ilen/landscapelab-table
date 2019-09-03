@@ -2,7 +2,7 @@ from typing import List, Tuple
 import numpy as np
 import logging
 
-from LegoBricks import LegoBrick
+from .LegoBricks import LegoBrick
 
 logger = logging.getLogger(__name__)
 

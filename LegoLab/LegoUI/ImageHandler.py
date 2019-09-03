@@ -1,9 +1,10 @@
-from ConfigManager import ConfigManager, ConfigError
 from typing import Dict, Tuple, Optional
 import numpy as np
 import logging
 import cv2
 import os
+
+from ..ConfigManager import ConfigManager, ConfigError
 
 # enable logger
 logger = logging.getLogger(__name__)

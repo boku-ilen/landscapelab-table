@@ -5,8 +5,8 @@ import math
 from shapely import geometry
 import logging.config
 
-from ExtentTracker import ExtentTracker
-from LegoExtent import LegoExtent
+from ..ExtentTracker import ExtentTracker
+from ..LegoExtent import LegoExtent
 from ..Board import Board
 
 

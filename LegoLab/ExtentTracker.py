@@ -1,6 +1,6 @@
 from typing import Optional
 
-from LegoExtent import LegoExtent
+from .LegoExtent import LegoExtent
 
 
 # singleton class that keeps track of the different Extents that need to be globally available

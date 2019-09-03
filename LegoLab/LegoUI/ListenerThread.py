@@ -3,9 +3,9 @@ import logging
 import threading
 from typing import Dict
 
-from LegoUI.MapHandler import MapHandler
-from ConfigManager import ConfigManager
-from LegoExtent import LegoExtent
+from .MapHandler import MapHandler
+from ..ConfigManager import ConfigManager
+from ..LegoExtent import LegoExtent
 
 # Configure logger
 logger = logging.getLogger(__name__)

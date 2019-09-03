@@ -2,10 +2,10 @@ from functools import partial
 from typing import Dict, Tuple
 import numpy as np
 
-from LegoUI.MapHandler import MapHandler
-from LegoUI.MapActions import MapActions
-from ConfigManager import ConfigManager, ConfigError
-from LegoExtent import LegoExtent
+from .MapHandler import MapHandler
+from .MapActions import MapActions
+from ..ConfigManager import ConfigManager, ConfigError
+from ..LegoExtent import LegoExtent
 
 
 class MainMap(MapHandler):

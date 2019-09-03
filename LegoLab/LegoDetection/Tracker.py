@@ -3,8 +3,8 @@ from typing import Callable, List
 
 from ..LegoBricks import LegoBrick, LegoStatus
 from ..LegoUI.UIElements.UIElement import UIElement
-from ExtentTracker import ExtentTracker
-from LegoExtent import LegoExtent
+from ..ExtentTracker import ExtentTracker
+from ..LegoExtent import LegoExtent
 
 # configure logging
 logger = logging.getLogger(__name__)

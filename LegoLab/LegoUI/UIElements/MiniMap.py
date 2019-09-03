@@ -1,10 +1,10 @@
-from ..UIElements.UIStructureBlock import UIStructureBlock
-from ...LegoBricks import LegoBrick, LegoStatus
+from .UIStructureBlock import UIStructureBlock
+from ..MapHandler import MapHandler
 from ..ImageHandler import ImageHandler
-from ...ConfigManager import ConfigManager
-from LegoUI.MapHandler import MapHandler
+from ...LegoBricks import LegoBrick, LegoStatus
 from ...LegoExtent import LegoExtent
 from ...ExtentTracker import ExtentTracker
+from ...ConfigManager import ConfigManager
 
 import numpy as np
 import logging

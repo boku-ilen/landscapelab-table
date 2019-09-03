@@ -4,7 +4,7 @@ import json
 
 from .LegoBricks import LegoBrick, LegoStatus
 from .LegoExtent import LegoExtent
-from ExtentTracker import ExtentTracker
+from .ExtentTracker import ExtentTracker
 
 # Configure logging
 logger = logging.getLogger(__name__)

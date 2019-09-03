@@ -4,10 +4,10 @@ import socket
 from typing import Tuple
 import logging
 
-from ConfigManager import ConfigManager
-from LegoUI.ImageHandler import ImageHandler
-from LegoExtent import LegoExtent
-from ExtentTracker import ExtentTracker
+from .ImageHandler import ImageHandler
+from ..ConfigManager import ConfigManager
+from ..LegoExtent import LegoExtent
+from ..ExtentTracker import ExtentTracker
 
 # Configure Logger
 logger = logging.getLogger(__name__)

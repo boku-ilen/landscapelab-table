@@ -5,7 +5,7 @@ from .UIElement import UIElement, UIActionType
 from .Button import Button
 from .UIStructureBlock import UIStructureBlock
 from ...ConfigManager import ConfigManager
-from LegoUI.MapActions import MapActions
+from ..MapActions import MapActions
 from ..MainMap import MainMap
 from .MiniMap import MiniMap
 

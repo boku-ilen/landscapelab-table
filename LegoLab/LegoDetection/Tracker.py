@@ -40,7 +40,12 @@ class Tracker:
         # changes in the map extent
         self.extent_changed = False
 
-    def update(self, lego_bricks_candidates: List[LegoBrick]) -> List[LegoBrick]:
+    def update(self, lego_bricks_candidates: List[LegoBrick], stored_lego_bricks):
+
+        # if there are some lego bricks stored at the server
+        # mark them as virtual
+        if stored_lego_bricks is not None:
+            self.virtual_bricks += stored_lego_bricks
 
         # count frames certain bricks have been continuously visible / gone
         self.do_brick_ticks(lego_bricks_candidates)

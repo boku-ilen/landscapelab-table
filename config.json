@@ -140,6 +140,13 @@
     "RED_BRICK": 12
   },
 
+  "stored_instances": {
+    "assetpos_ids" : [1, 2, 3],
+    "1" : "SQUARE_BRICK, RED_BRICK",
+    "2" : "RECTANGLE_BRICK, RED_BRICK",
+    "3" : "SQUARE_BRICK, BLUE_BRICK"
+  },
+
   "qgis_interaction": {
     "QGIS_IP": "127.0.0.1",
     "QGIS_READ_PORT": 5005,

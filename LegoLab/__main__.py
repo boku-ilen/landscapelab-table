@@ -75,6 +75,10 @@ class LegoLab:
         # initialize the lego detector
         self.shape_detector = ShapeDetector(self.config, self.output_stream)
 
+        # Flag which says whether the lego bricks
+        # stored at the server are already marked as virtual
+        self.added_stored_lego_bricks_flag = False
+
     # Run lego bricks detection and tracking code
     def run(self):
 
@@ -191,9 +195,17 @@ class LegoLab:
                 # mark potential lego brick contours
                 LegoOutputStream.mark_candidates(region_of_interest_debug, contour)
 
-        # Compute tracked lego bricks dictionary
-        # using the centroid tracker and set of properties
-        tracked_lego_bricks = self.tracker.update(potential_lego_bricks_list)
+        # Get already stored lego brick instances from server
+        assetpos_ids = self.config.get("stored_instances", "assetpos_ids")
+        stored_lego_bricks = []
+        if not self.added_stored_lego_bricks_flag:
+            for assetpos_id in assetpos_ids:
+                stored_lego_bricks += self.server.get_stored_lego_instances(assetpos_id)
+            self.added_stored_lego_bricks_flag = True
+
+        # Compute tracked lego bricks dictionary using the centroid tracker and set of properties
+        # Mark stored lego bricks virtual
+        tracked_lego_bricks = self.tracker.update(potential_lego_bricks_list, stored_lego_bricks)
 
         # Loop over the tracked objects and label them in the stream
         for tracked_lego_brick in tracked_lego_bricks:

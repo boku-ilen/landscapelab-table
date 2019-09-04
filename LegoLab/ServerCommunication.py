@@ -17,6 +17,8 @@ CREATE_ASSET_POS = "/assetpos/create/"
 SET_ASSET_POS = "/assetpos/set/"
 REMOVE_ASSET_POS = "/assetpos/remove/"
 GET_SCENARIO_INFO = "/location/scenario/list.json"
+GET_INSTANCES = "/assetpos/get_all/"
+JSON = ".json"
 
 DEFAULT_ROTATION = 0
 
@@ -119,3 +121,41 @@ class ServerCommunication:
 
         logger.error('Could not find scenario with name {}'.format(scenario_name))
         raise LookupError('No scenario with name {} exists'.format(scenario_name))
+
+    def get_stored_lego_instances(self, assetpos_id):
+
+        stored_instances_list = []
+
+        stored_instances_msg = "{http}{ip}{prefix}{command}{assetpos_id}{json}".format(
+            http=HTTP, ip=self.ip, prefix=PREFIX, command=GET_INSTANCES, assetpos_id=str(assetpos_id), json=JSON)
+
+        stored_instances_response = requests.get(stored_instances_msg)
+
+        # Check if status code is 200
+        if self.check_status_code_200(stored_instances_response.status_code):
+            # If status code is 200, save response text
+            lego_instance_response_text = json.loads(stored_instances_response.text)
+            stored_assets = lego_instance_response_text["assets"]
+
+            # Save all instances with their properties as a list
+            for asset_id in stored_assets:
+                position = stored_assets[asset_id]["position"]
+
+                # Map a shape and color using known assetpos_id
+                shape_color = self.config.get("stored_instances", str(assetpos_id))
+                shape = shape_color.split(', ')[0]
+                color = shape_color.split(', ')[1]
+
+                # Create a lego brick instance
+                stored_instance = LegoBrick(position[0], position[1], shape, color)
+
+                # Add missing properties
+                stored_instance.asset_id = asset_id
+                stored_instance.status = LegoStatus.EXTERNAL_BRICK
+
+                # Calculate map position of a brick
+                LegoExtent.calc_world_pos(stored_instance, self.extent_tracker.board, self.extent_tracker.map_extent)
+
+                stored_instances_list.append(stored_instance)
+
+        return stored_instances_list

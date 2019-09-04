@@ -59,10 +59,17 @@ class LegoBrick:
         self.map_pos_x: Optional[float] = None
         self.map_pos_y: Optional[float] = None
 
+    # used in program stage LEGO_DETECTION
     def map_asset_id(self, config):
 
         # map the lego brick asset_id from color & shape
         self.asset_id = config.get(str(self.shape.name), str(self.color.name))
+
+    # used in program stage EVALUATION
+    def map_evaluation_asset_id(self, config):
+
+        # map the lego brick asset_id from color & shape
+        self.asset_id = config.get("EVALUATION_BRICKS", str(self.color.name))
 
     def clone(self):
         clone = LegoBrick(self.centroid_x, self.centroid_y, self.shape, self.color)

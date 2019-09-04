@@ -1,7 +1,7 @@
 import logging.config
 import numpy as np
 
-from .ProgramStage import ProgramStage
+from .ProgramStage import ProgramStage, CurrentProgramStage
 from .LegoDetection.BoardDetector import BoardDetector
 from .LegoDetection.ShapeDetector import ShapeDetector
 from .LegoInputStream import LegoInputStream
@@ -38,7 +38,7 @@ class LegoLab:
         self.config = ConfigManager()
         LegoOutputStream.set_beamer_config_info(self.config)
 
-        self.program_stage = ProgramStage.WHITE_BALANCE
+        self.program_stage = CurrentProgramStage()
 
         # Initialize parameter manager and parse arguments
         self.parser = ParameterManager(self.config)
@@ -49,7 +49,7 @@ class LegoLab:
         self.board = self.board_detector.board
 
         # Initialize server communication class
-        self.server = ServerCommunication(self.config, self.board)
+        self.server = ServerCommunication(self.config, self.program_stage)
         self.scenario = self.server.get_scenario_info(self.config.get("general", "scenario"))
 
         # initialize map handler and ui
@@ -61,7 +61,8 @@ class LegoLab:
         self.tracker = Tracker(self.config, self.board, self.server, ui_root)
 
         # initialize the input and output stream
-        self.output_stream = LegoOutputStream(self.main_map, ui_root, self.tracker, self.config, self.board)
+        self.output_stream = LegoOutputStream(
+            self.main_map, ui_root, self.tracker, self.config, self.board, self.program_stage)
         self.input_stream = LegoInputStream(self.config, self.board, usestream=self.used_stream)
 
         # Initialize and start the QGIS listener Thread
@@ -106,13 +107,18 @@ class LegoLab:
                 self.output_stream.write_to_channel(LegoOutputChannel.CHANNEL_BOARD_DETECTION, color_image_debug)
 
                 # call different functions depending on program state
-                if self.program_stage == ProgramStage.WHITE_BALANCE:
+                if self.program_stage.current_stage == ProgramStage.WHITE_BALANCE:
                     self.white_balance(color_image)
 
-                elif self.program_stage == ProgramStage.FIND_CORNERS:
+                elif self.program_stage.current_stage == ProgramStage.FIND_CORNERS:
                     self.detect_corners(color_image)
 
-                elif self.program_stage == ProgramStage.LEGO_DETECTION:
+                # in this stage lego bricks have "yes"/"no" meaning
+                elif self.program_stage.current_stage == ProgramStage.EVALUATION:
+                    self.do_lego_detection(region_of_interest, color_image)
+
+                # in this stage lego bricks have assets meaning
+                elif self.program_stage.current_stage == ProgramStage.LEGO_DETECTION:
                     self.do_lego_detection(region_of_interest, color_image)
 
         finally:
@@ -129,7 +135,7 @@ class LegoLab:
         # when finished start next stage with command below
         if self.board_detector.compute_background(color_image):
             # switch to next stage if finished
-            self.program_stage = self.program_stage.next()
+            self.program_stage.next()
 
     # Detect the board using qr-codes polygon data saved in the array
     # -> self.board_detector.all_codes_polygons_points
@@ -153,7 +159,7 @@ class LegoLab:
 
             logger.debug("Used threshold for qr-codes -> {}".format(self.board.threshold_qrcode))
             self.output_stream.set_active_channel(LegoOutputChannel.CHANNEL_ROI)
-            self.program_stage = self.program_stage.next()
+            self.program_stage.next()
 
         # use different thresholds for board detection
         self.board_detector.adjust_threshold_qrcode()

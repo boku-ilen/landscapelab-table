@@ -5,7 +5,7 @@ from functools import partial
 import numpy as np
 import logging
 
-from .ProgramStage import ProgramStage
+from .ProgramStage import ProgramStage, CurrentProgramStage
 from .LegoDetection.Tracker import Tracker
 from .ConfigManager import ConfigManager
 from .LegoUI.MainMap import MainMap
@@ -15,6 +15,7 @@ from .LegoBricks import LegoBrick, LegoColor, LegoShape, LegoStatus
 from .LegoUI.ImageHandler import ImageHandler
 from .ExtentTracker import ExtentTracker
 from .LegoExtent import LegoExtent
+from .Board import Board
 
 # enable logger
 logger = logging.getLogger(__name__)
@@ -71,11 +72,14 @@ class LegoOutputStream:
                  ui_root: UIElement,
                  tracker: Tracker,
                  config: ConfigManager,
-                 board, video_output_name=None):
+                 board: Board,
+                 program_stage: CurrentProgramStage,
+                 video_output_name=None):
 
         self.config = config
         self.extent_tracker = ExtentTracker.get_instance()
         self.board = board
+        self.program_stage = program_stage
 
         self.active_channel = LegoOutputChannel.CHANNEL_BOARD_DETECTION
         self.active_window = LegoOutputStream.WINDOW_NAME_DEBUG  # TODO: implement window handling
@@ -122,6 +126,11 @@ class LegoOutputStream:
         self.BUTTON_MAP = {
             ord(config.get('button_map', 'DEBUG_CHANNEL_UP')): self.channel_up,
             ord(config.get('button_map', 'DEBUG_CHANNEL_DOWN')): self.channel_down,
+            # FIXME: error shortly after the program start when NEXT_PROGRAM_STAGE used:
+            # BoardDetector.py", line 400, in subtract_background
+            # diff = cv2.absdiff(color_image, self.background.astype("uint8"))
+            # AttributeError: 'NoneType' object has no attribute 'astype'
+            #ord(config.get('button_map', 'NEXT_PROGRAM_STAGE')): self.program_stage.next(),
             ord(config.get('button_map', 'MAP_PAN_UP')): partial(map_handler.invoke, MapActions.PAN_UP),
             ord(config.get('button_map', 'MAP_PAN_DOWN')): partial(map_handler.invoke, MapActions.PAN_DOWN),
             ord(config.get('button_map', 'MAP_PAN_LEFT')): partial(map_handler.invoke, MapActions.PAN_LEFT),
@@ -231,7 +240,7 @@ class LegoOutputStream:
 
     # called every frame, updates the beamer image
     # recognizes and handles button presses
-    def update(self, program_stage: ProgramStage) -> bool:
+    def update(self, program_stage: CurrentProgramStage) -> bool:
         # update beamer image if necessary
         self.redraw_beamer_image(program_stage)
 
@@ -242,6 +251,11 @@ class LegoOutputStream:
         if key in self.BUTTON_MAP:
             self.BUTTON_MAP[key]()
 
+        # TODO: use button_map for all keys
+        # n -> change from EVALUATION to LEGO_DETECTION program stage
+        if program_stage.current_stage == ProgramStage.EVALUATION and key == 110:
+            program_stage.next()
+
         # Break with Esc  # FIXME: CG: keyboard might not be available - use signals?
         if key == 27:
             return True
@@ -249,15 +263,16 @@ class LegoOutputStream:
 
     # redraws the beamer image if necessary
     # applies different logic for each program_stage
-    def redraw_beamer_image(self, program_stage: ProgramStage):
+    def redraw_beamer_image(self, program_stage: CurrentProgramStage):
 
-        if program_stage == ProgramStage.WHITE_BALANCE:
+        if program_stage.current_stage == ProgramStage.WHITE_BALANCE:
             self.draw_white_frame()
 
-        elif program_stage == ProgramStage.FIND_CORNERS:
+        elif program_stage.current_stage == ProgramStage.FIND_CORNERS:
             self.draw_corner_qr_codes()
 
-        elif program_stage == ProgramStage.LEGO_DETECTION:
+        elif program_stage.current_stage == ProgramStage.EVALUATION \
+                or program_stage.current_stage == ProgramStage.LEGO_DETECTION:
             self.redraw_lego_detection()
 
     # displays a white screen

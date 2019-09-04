@@ -135,6 +135,11 @@
     "YELLOW_BRICK" : 8
   },
 
+  "EVALUATION_BRICKS": {
+    "BLUE_BRICK" : 11,
+    "RED_BRICK": 12
+  },
+
   "qgis_interaction": {
     "QGIS_IP": "127.0.0.1",
     "QGIS_READ_PORT": 5005,
@@ -168,7 +173,8 @@
     "MAP_ZOOM_IN": "q",
     "MAP_ZOOM_OUT": "e",
     "DEBUG_CHANNEL_UP": "r",
-    "DEBUG_CHANNEL_DOWN": "f"
+    "DEBUG_CHANNEL_DOWN": "f",
+    "NEXT_PROGRAM_STAGE": "n"
   },
 
   "map_settings": {

@@ -5,6 +5,7 @@ import json
 from .LegoBricks import LegoBrick, LegoStatus
 from .LegoExtent import LegoExtent
 from .ExtentTracker import ExtentTracker
+from .ProgramStage import ProgramStage
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -23,9 +24,10 @@ DEFAULT_ROTATION = 0
 class ServerCommunication:
     """Creates and removes lego instances"""
 
-    def __init__(self, config, board):
+    def __init__(self, config, program_stage):
 
         self.config = config
+        self.program_stage = program_stage
         self.extent_tracker = ExtentTracker.get_instance()
 
         # Initialize ip
@@ -52,7 +54,10 @@ class ServerCommunication:
         LegoExtent.calc_world_pos(lego_brick, self.extent_tracker.board, self.extent_tracker.map_extent)
 
         # Map the lego brick asset_id from color & shape
-        lego_brick.map_asset_id(self.config)
+        if self.program_stage.current_stage == ProgramStage.EVALUATION:
+            lego_brick.map_evaluation_asset_id(self.config)
+        else:
+            lego_brick.map_asset_id(self.config)
 
         # Send request creating lego instance and save the response
         create_instance_msg = "{http}{ip}{prefix}{command}{brick_id}/{brick_x}/{brick_y}/{default_rotation}".format(

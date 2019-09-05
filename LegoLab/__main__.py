@@ -198,7 +198,8 @@ class LegoLab:
         # Get already stored lego brick instances from server
         assetpos_ids = self.config.get("stored_instances", "assetpos_ids")
         stored_lego_bricks = []
-        if not self.added_stored_lego_bricks_flag:
+        if self.program_stage.current_stage == ProgramStage.LEGO_DETECTION \
+                and not self.added_stored_lego_bricks_flag:
             for assetpos_id in assetpos_ids:
                 stored_lego_bricks += self.server.get_stored_lego_instances(assetpos_id)
             self.added_stored_lego_bricks_flag = True

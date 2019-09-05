@@ -158,6 +158,10 @@ class LegoOutputStream:
         self.brick_pv = image_handler.load_image("pv_brick")
         self.icon_windmill = image_handler.load_image("windmill_icon")
         self.icon_pv = image_handler.load_image("pv_icon")
+        self.icon_yes = image_handler.load_image("yes_icon")
+        self.icon_no = image_handler.load_image("no_icon")
+        self.player_teleport = image_handler.load_image("player_teleport")
+        self.player_position = image_handler.load_image("player_position")
 
     # fetches the correct monitor for the beamer output and writes it's data to the ConfigManager
     @staticmethod
@@ -390,9 +394,18 @@ class LegoOutputStream:
             return self.icon_pv
 
         else:
-            if brick.color == LegoColor.BLUE_BRICK:
+            if brick.asset_id == 1 or brick.asset_id == 2:
+                return self.brick_pv
+            elif brick.asset_id == 3:
                 return self.brick_windmill
-            return self.brick_pv
+            elif brick.asset_id == 4:
+                return self.player_teleport
+            elif brick.asset_id == 11:
+                return self.icon_yes
+            elif brick.asset_id == 12:
+                return self.icon_no
+            elif brick.asset_id == 13:
+                return self.player_position
 
     # closing the outputstream if it is defined
     def close(self):

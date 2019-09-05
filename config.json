@@ -58,6 +58,29 @@
       "center": [25, 25]
     },
 
+    "yes_icon": {
+      "path": ["brick_overlays", "symbol_yes.png"],
+      "size": [50, 50],
+      "center": [25, 25]
+    },
+
+    "no_icon": {
+      "path": ["brick_overlays", "symbol_no.png"],
+      "size": [50, 50],
+      "center": [25, 25]
+    },
+
+    "player_teleport": {
+      "path": ["brick_overlays", "symbol_player_teleport.png"],
+      "size": [50, 50],
+      "center": [25, 25]
+    },
+
+    "player_position": {
+      "path": ["brick_overlays", "symbol_player_position.png"],
+      "size": [50, 50],
+      "center": [25, 25]
+    },
 
     "button_left": {
       "path": ["button_icons", "left.png"]

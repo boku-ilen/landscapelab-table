@@ -146,20 +146,20 @@
 
   "SQUARE_BRICK": {
     "RED_BRICK": 1,
-    "BLUE_BRICK" : 3,
-    "GREEN_BRICK" : 5,
-    "YELLOW_BRICK" : 7
+    "BLUE_BRICK": 3,
+    "GREEN_BRICK": 5,
+    "YELLOW_BRICK": 7
   },
 
   "RECTANGLE_BRICK": {
     "RED_BRICK": 2,
-    "BLUE_BRICK" : 4,
-    "GREEN_BRICK" : 6,
-    "YELLOW_BRICK" : 8
+    "BLUE_BRICK": 4,
+    "GREEN_BRICK": 6,
+    "YELLOW_BRICK": 8
   },
 
   "EVALUATION_BRICKS": {
-    "BLUE_BRICK" : 11,
+    "BLUE_BRICK": 11,
     "RED_BRICK": 12
   },
 

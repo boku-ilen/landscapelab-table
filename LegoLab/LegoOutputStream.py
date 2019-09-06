@@ -388,11 +388,27 @@ class LegoOutputStream:
         elif brick.status == LegoStatus.INTERNAL_BRICK:
             return self.brick_internal
 
+        # TODO: rewrite it so it's shorter
+        # TODO: set different virtual icons only for id 1,2,3
         elif virtual:
-            if brick.color == LegoColor.BLUE_BRICK:
+            if brick.asset_id == 1 or brick.asset_id == 2:
+                return self.icon_pv
+            elif brick.asset_id == 3:
                 return self.icon_windmill
-            return self.icon_pv
-
+            elif brick.asset_id == 4:
+                return self.player_teleport
+            elif brick.asset_id == 13:
+                return self.player_position
+            # allow only square bricks for yes / no
+            elif brick.shape == LegoShape.SQUARE_BRICK:
+                if brick.asset_id == 11:
+                    return self.icon_yes
+                elif brick.asset_id == 12:
+                    return self.icon_no
+            else:
+                # rectangle bricks are marked as outdated
+                # but create request is pushed anyway
+                return self.brick_outdated
         else:
             if brick.asset_id == 1 or brick.asset_id == 2:
                 return self.brick_pv

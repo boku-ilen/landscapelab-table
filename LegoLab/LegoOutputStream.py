@@ -400,12 +400,18 @@ class LegoOutputStream:
                 return self.brick_windmill
             elif brick.asset_id == 4:
                 return self.player_teleport
-            elif brick.asset_id == 11:
-                return self.icon_yes
-            elif brick.asset_id == 12:
-                return self.icon_no
             elif brick.asset_id == 13:
                 return self.player_position
+            # allow only square bricks for yes / no
+            elif brick.shape == LegoShape.SQUARE_BRICK:
+                if brick.asset_id == 11:
+                    return self.icon_yes
+                elif brick.asset_id == 12:
+                    return self.icon_no
+            else:
+                # rectangle bricks are marked as outdated
+                # but create request is pushed anyway
+                return self.brick_outdated
 
     # closing the outputstream if it is defined
     def close(self):

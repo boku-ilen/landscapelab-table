@@ -388,12 +388,15 @@ class LegoOutputStream:
         elif brick.status == LegoStatus.INTERNAL_BRICK:
             return self.brick_internal
 
-        elif virtual:
-            if brick.color == LegoColor.BLUE_BRICK:
-                return self.icon_windmill
-            return self.icon_pv
-
         else:
+            # set different icons for if brick is virtual
+            if virtual and (brick.asset_id == 1 or brick.asset_id == 2):
+                return self.icon_pv
+            elif virtual and brick.asset_id == 3:
+                return self.icon_windmill
+
+            # set icons if brick is not virtual
+            # or icons are the same independently of virtual-property
             if brick.asset_id == 1 or brick.asset_id == 2:
                 return self.brick_pv
             elif brick.asset_id == 3:

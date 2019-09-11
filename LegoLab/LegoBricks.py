@@ -75,6 +75,7 @@ class LegoBrick:
         clone = LegoBrick(self.centroid_x, self.centroid_y, self.shape, self.color)
         clone.status = self.status
         clone.assetpos_id = self.assetpos_id
+        clone.asset_id = self.asset_id
         clone.map_pos_x = self.map_pos_x
         clone.map_pos_y = self.map_pos_y
         return clone

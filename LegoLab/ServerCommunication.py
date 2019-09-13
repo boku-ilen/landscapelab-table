@@ -124,12 +124,12 @@ class ServerCommunication:
         logger.error('Could not find scenario with name {}'.format(scenario_name))
         raise LookupError('No scenario with name {} exists'.format(scenario_name))
 
-    def get_stored_lego_instances(self, assetpos_id):
+    def get_stored_lego_instances(self, asset_id):
 
         stored_instances_list = []
 
-        stored_instances_msg = "{http}{ip}{prefix}{command}{assetpos_id}{json}".format(
-            http=HTTP, ip=self.ip, prefix=PREFIX, command=GET_INSTANCES, assetpos_id=str(assetpos_id), json=JSON)
+        stored_instances_msg = "{http}{ip}{prefix}{command}{asset_id}{json}".format(
+            http=HTTP, ip=self.ip, prefix=PREFIX, command=GET_INSTANCES, asset_id=str(asset_id), json=JSON)
 
         stored_instances_response = requests.get(stored_instances_msg)
 
@@ -140,23 +140,30 @@ class ServerCommunication:
             stored_assets = lego_instance_response_text["assets"]
 
             # Save all instances with their properties as a list
-            for asset_id in stored_assets:
-                position = stored_assets[asset_id]["position"]
+            for assetpos_id in stored_assets:
 
-                # Map a shape and color using known assetpos_id
-                shape_color = self.config.get("stored_instances", str(assetpos_id))
+                # Create a lego brick instance
+                stored_instance = LegoBrick(None, None, None, None)
+
+                # Get the map position of the player
+                position = stored_assets[assetpos_id]["position"]
+                stored_instance.map_pos_x = position[0]
+                stored_instance.map_pos_y = position[1]
+
+                # Map a shape and color using known asset_id
+                shape_color = self.config.get("stored_instances", str(asset_id))
                 shape = shape_color.split(', ')[0]
                 color = shape_color.split(', ')[1]
 
-                # Create a lego brick instance
-                stored_instance = LegoBrick(position[0], position[1], shape, color)
-
                 # Add missing properties
+                stored_instance.shape = shape
+                stored_instance.color = color
                 stored_instance.asset_id = asset_id
+                stored_instance.assetpos_id = assetpos_id
                 stored_instance.status = LegoStatus.EXTERNAL_BRICK
 
                 # Calculate map position of a brick
-                LegoExtent.calc_world_pos(stored_instance, self.extent_tracker.board, self.extent_tracker.map_extent)
+                LegoExtent.calc_local_pos(stored_instance, self.extent_tracker.board, self.extent_tracker.map_extent)
 
                 stored_instances_list.append(stored_instance)
 

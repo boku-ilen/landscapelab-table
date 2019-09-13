@@ -163,7 +163,6 @@ class LegoLab:
 
             # Use distance to set possible lego brick size
             logger.debug("Calculate possible lego brick size")
-            # TODO: test it with different distances
             self.shape_detector.calculate_possible_lego_dimensions(self.board.distance)
 
             logger.debug("Used threshold for qr-codes -> {}".format(self.board.threshold_qrcode))
@@ -201,12 +200,12 @@ class LegoLab:
                 LegoOutputStream.mark_candidates(region_of_interest_debug, contour)
 
         # Get already stored lego brick instances from server
-        assetpos_ids = self.config.get("stored_instances", "assetpos_ids")
+        asset_ids = self.config.get("stored_instances", "asset_ids")
         stored_lego_bricks = []
         if self.program_stage.current_stage == ProgramStage.LEGO_DETECTION \
                 and not self.added_stored_lego_bricks_flag:
-            for assetpos_id in assetpos_ids:
-                stored_lego_bricks += self.server.get_stored_lego_instances(assetpos_id)
+            for asset_id in asset_ids:
+                stored_lego_bricks += self.server.get_stored_lego_instances(asset_id)
             self.added_stored_lego_bricks_flag = True
 
         # Compute tracked lego bricks dictionary using the centroid tracker and set of properties

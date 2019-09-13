@@ -164,7 +164,7 @@
   },
 
   "stored_instances": {
-    "assetpos_ids" : [1, 2, 3],
+    "asset_ids" : [1, 2, 3],
     "1" : "SQUARE_BRICK, RED_BRICK",
     "2" : "RECTANGLE_BRICK, RED_BRICK",
     "3" : "SQUARE_BRICK, BLUE_BRICK"

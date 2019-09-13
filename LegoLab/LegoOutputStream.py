@@ -16,6 +16,7 @@ from .LegoUI.ImageHandler import ImageHandler
 from .ExtentTracker import ExtentTracker
 from .LegoExtent import LegoExtent
 from .Board import Board
+from .ServerListenerThread import ServerListenerThread
 
 # enable logger
 logger = logging.getLogger(__name__)
@@ -74,12 +75,14 @@ class LegoOutputStream:
                  config: ConfigManager,
                  board: Board,
                  program_stage: CurrentProgramStage,
+                 server_thread: ServerListenerThread,
                  video_output_name=None):
 
         self.config = config
         self.extent_tracker = ExtentTracker.get_instance()
         self.board = board
         self.program_stage = program_stage
+        self.server_thread = server_thread
 
         self.active_channel = LegoOutputChannel.CHANNEL_BOARD_DETECTION
         self.active_window = LegoOutputStream.WINDOW_NAME_DEBUG  # TODO: implement window handling
@@ -418,6 +421,8 @@ class LegoOutputStream:
 
     # closing the outputstream if it is defined
     def close(self):
+        logger.info("exit")
+        self.server_thread.ticker.set()
         cv2.destroyAllWindows()
         if self.video_handler:
             self.video_handler.release()

@@ -110,23 +110,26 @@ class LegoExtent:
     def remap(brick: LegoBrick, old_extent: 'LegoExtent', new_extent: 'LegoExtent'):
         remapped_brick = brick.clone()
 
-        old_width, old_height = old_extent.get_size()
-        new_width, new_height = new_extent.get_size()
+        if old_extent is None or new_extent is None:
+            logger.info("Could not remap the lego brick")
+        else:
+            old_width, old_height = old_extent.get_size()
+            new_width, new_height = new_extent.get_size()
 
-        remapped_brick.centroid_x -= old_extent.x_min
-        remapped_brick.centroid_y -= old_extent.y_min
+            remapped_brick.centroid_x -= old_extent.x_min
+            remapped_brick.centroid_y -= old_extent.y_min
 
-        remapped_brick.centroid_x /= old_width
-        remapped_brick.centroid_y /= old_height
+            remapped_brick.centroid_x /= old_width
+            remapped_brick.centroid_y /= old_height
 
-        remapped_brick.centroid_x *= new_width
-        remapped_brick.centroid_y *= new_height
+            remapped_brick.centroid_x *= new_width
+            remapped_brick.centroid_y *= new_height
 
-        if new_extent.y_inverted != old_extent.y_inverted:
-            remapped_brick.centroid_y = new_height - remapped_brick.centroid_y
+            if new_extent.y_inverted != old_extent.y_inverted:
+                remapped_brick.centroid_y = new_height - remapped_brick.centroid_y
 
-        remapped_brick.centroid_x += new_extent.x_min
-        remapped_brick.centroid_y += new_extent.y_min
+            remapped_brick.centroid_x += new_extent.x_min
+            remapped_brick.centroid_y += new_extent.y_min
 
         return remapped_brick
 
@@ -147,8 +150,8 @@ class LegoExtent:
         calc_brick.centroid_y = brick.map_pos_y
         calc_brick = LegoExtent.remap(calc_brick, global_extent, local_extent)
 
-        brick.centroid_x = calc_brick.centroid_x
-        brick.centroid_y = calc_brick.centroid_y
+        brick.centroid_x = int(calc_brick.centroid_x)
+        brick.centroid_y = int(calc_brick.centroid_y)
 
         return brick
 

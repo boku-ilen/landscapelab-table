@@ -13,6 +13,7 @@ from .LegoDetection.Tracker import Tracker
 from .ConfigManager import ConfigManager
 from .ParameterManager import ParameterManager
 from .LegoUI.ListenerThread import ListenerThread
+from .ServerListenerThread import ServerListenerThread
 
 
 # configure logging
@@ -60,17 +61,21 @@ class LegoLab:
         # Initialize the centroid tracker
         self.tracker = Tracker(self.config, self.board, self.server, ui_root)
 
-        # initialize the input and output stream
-        self.output_stream = LegoOutputStream(
-            self.main_map, ui_root, self.tracker, self.config, self.board, self.program_stage)
-        self.input_stream = LegoInputStream(self.config, self.board, usestream=self.used_stream)
-
         # Initialize and start the QGIS listener Thread
         # also request the first rendered map section
         self.listener_thread = ListenerThread(self.config, map_dict)
         self.listener_thread.start()
         self.main_map.request_render()
         mini_map.request_render()
+
+        # Initialize and start the server listener thread
+        self.server_listener_thread = ServerListenerThread(self.config, self.server, self.tracker)
+        self.server_listener_thread.start()
+
+        # initialize the input and output stream
+        self.output_stream = LegoOutputStream(self.main_map, ui_root, self.tracker, self.config, self.board,
+                                              self.program_stage, self.server_listener_thread)
+        self.input_stream = LegoInputStream(self.config, self.board, usestream=self.used_stream)
 
         # initialize the lego detector
         self.shape_detector = ShapeDetector(self.config, self.output_stream)

@@ -40,12 +40,19 @@ class Tracker:
         # changes in the map extent
         self.extent_changed = False
 
+        # Initialize the player position
+        self.player_position = None
+
     def update(self, lego_bricks_candidates: List[LegoBrick], stored_lego_bricks):
 
         # if there are some lego bricks stored at the server
         # mark them as virtual
         if stored_lego_bricks is not None:
             self.virtual_bricks += stored_lego_bricks
+        # add the player position
+        # TODO: remove the previous virtual brick
+        if self.player_position is not None:
+            self.virtual_bricks.append(self.player_position)
 
         # count frames certain bricks have been continuously visible / gone
         self.do_brick_ticks(lego_bricks_candidates)
@@ -196,6 +203,7 @@ class Tracker:
 
                 # add a new lego brick to the confirmed lego bricks list
                 self.confirmed_bricks.append(candidate)
+
                 Tracker.BRICKS_REFRESHED = True
 
         # loop through all virtual candidates (= all mouse placed bricks on first frame) and set correct status

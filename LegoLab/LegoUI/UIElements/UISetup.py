@@ -1,16 +1,20 @@
-from typing import Tuple
+from typing import Tuple, Callable, List
+from functools import partial
 import numpy as np
 
 from .UIElement import UIElement, UIActionType
 from .Button import Button
 from .UIStructureBlock import UIStructureBlock
-from ...ConfigManager import ConfigManager
-from ..MapActions import MapActions
-from ..MainMap import MainMap
 from .MiniMap import MiniMap
+from .ProgressBar import ProgressBar
+from ..MainMap import MainMap
+from ..MapActions import MapActions
+from ...ConfigManager import ConfigManager
+from ...ServerCommunication import ServerCommunication
 
 
-def setup_ui(main_map: MainMap, config: ConfigManager) -> Tuple[UIElement, MiniMap]:
+def setup_ui(main_map: MainMap, config: ConfigManager, server: ServerCommunication) \
+        -> Tuple[UIElement, MiniMap, Callable]:
     action_map = main_map.action_map
 
     # get config settings
@@ -18,11 +22,14 @@ def setup_ui(main_map: MainMap, config: ConfigManager) -> Tuple[UIElement, MiniM
     button_size = np.asarray((50 * scale_factor, 50 * scale_factor))
 
     # define constants
-    nav_toggle_pos = np.asarray((20 * scale_factor, 20 * scale_factor))
-    nav_block_pos = np.asarray((-10 * scale_factor, -10 * scale_factor))
-    nav_block_size = np.asarray((300 * scale_factor, 600 * scale_factor))
-    x_offset = np.multiply(button_size, np.asarray((1, 0)))
-    y_offset = np.multiply(button_size, np.asarray((0, 1)))
+    screen_width = config.get("beamer-resolution", "width")
+    screen_height = config.get("beamer-resolution", "height")
+    bot_right_corner = np.asarray([screen_width, screen_height])
+    nav_toggle_pos = np.asarray([20 * scale_factor, 20 * scale_factor])
+    nav_block_pos = np.asarray([-10 * scale_factor, -10 * scale_factor])
+    nav_block_size = np.asarray([300 * scale_factor, 600 * scale_factor])
+    x_offset = np.multiply(button_size, np.asarray([1, 0]))
+    y_offset = np.multiply(button_size, np.asarray([0, 1]))
     cross_offset = x_offset * 0.5 + y_offset * 1.5  # default button offset for the pan controls
     pan_offset = cross_offset + x_offset * 4  # default button offset for the zoom controls
 
@@ -45,6 +52,28 @@ def setup_ui(main_map: MainMap, config: ConfigManager) -> Tuple[UIElement, MiniM
         np.asarray([280 * scale_factor, 280 * scale_factor]),
         main_map
     )
+    progress_bar_wind = ProgressBar(
+        config,
+        bot_right_corner - x_offset - y_offset * 5,
+        x_offset / 2 + y_offset * 4.5,
+        False,
+        True
+    )
+    progress_bar_pv = ProgressBar(
+        config,
+        bot_right_corner - x_offset * 2 - y_offset * 5,
+        x_offset / 2 + y_offset * 4.5,
+        False,
+        True
+    )
+
+    asset_type_id = config.get("server", "wind_id")
+    progress_bar_wind.target = server.get_energy_target(asset_type_id)
+    progress_bar_wind.progress_calculation = partial(server.get_energy_contrib, asset_type_id)
+
+    asset_type_id = config.get("server", "pv_id")
+    progress_bar_pv.target = server.get_energy_target(asset_type_id)
+    progress_bar_pv.progress_calculation = partial(server.get_energy_contrib, asset_type_id)
 
     # setup hierarchy
     root.add_child(toggle_nav_block_button)
@@ -56,6 +85,8 @@ def setup_ui(main_map: MainMap, config: ConfigManager) -> Tuple[UIElement, MiniM
     navigation_block.add_child(zoom_in_button)
     navigation_block.add_child(zoom_out_button)
     navigation_block.add_child(mini_map)
+    root.add_child(progress_bar_wind)
+    root.add_child(progress_bar_pv)
 
     # set nav block invisible
     navigation_block.set_visible(False)
@@ -79,5 +110,10 @@ def setup_ui(main_map: MainMap, config: ConfigManager) -> Tuple[UIElement, MiniM
         toggle_nav_block_button.set_callback(UIActionType.PRESS, lambda brick: navigation_block.set_visible(True))
         toggle_nav_block_button.set_callback(UIActionType.RELEASE, lambda brick: navigation_block.set_visible(False))
 
-    return root, mini_map
+    return root, mini_map, partial(update_progress_bars, [progress_bar_wind, progress_bar_pv])
 
+
+# calls the update function on all progress bars that were passed in
+def update_progress_bars(progress_bars: List[ProgressBar]):
+    for bar in progress_bars:
+        bar.calculate_progress()

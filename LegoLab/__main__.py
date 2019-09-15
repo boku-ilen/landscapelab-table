@@ -55,8 +55,12 @@ class LegoLab:
 
         # initialize map handler and ui
         self.main_map = MainMap(self.config, 'main_map', self.scenario, self.server)
-        ui_root, mini_map = setup_ui(self.main_map, self.config)
+        ui_root, mini_map, progress_bar_update_function = setup_ui(self.main_map, self.config, self.server)
         map_dict = {self.main_map.name: self.main_map, mini_map.name: mini_map}
+
+        # link the progress_bar_update_function to the brick_update_callback so that it will be called whenever an asset
+        # is added or removed from the server
+        self.server.brick_update_callback = progress_bar_update_function
 
         # Initialize the centroid tracker
         self.tracker = Tracker(self.config, self.board, self.server, ui_root)
@@ -69,7 +73,13 @@ class LegoLab:
         mini_map.request_render()
 
         # Initialize and start the server listener thread
-        self.server_listener_thread = ServerListenerThread(self.config, self.server, self.tracker, self.get_program_stage)
+        self.server_listener_thread = ServerListenerThread(
+            self.config,
+            self.server,
+            self.tracker,
+            self.get_program_stage,
+            progress_bar_update_function
+        )
         self.server_listener_thread.start()
 
         # initialize the input and output stream

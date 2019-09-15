@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 WAIT_SECONDS = 5
 
 
+# NOTE maybe rename, the class does not really listen for anything, it executes tasks in regular intervals
 class ServerListenerThread(threading.Thread):
 
     def __init__(
@@ -20,7 +21,9 @@ class ServerListenerThread(threading.Thread):
             config: ConfigManager,
             server: ServerCommunication,
             tracker: Tracker,
-            get_program_stage: Callable[[], ProgramStage]):
+            get_program_stage: Callable[[], ProgramStage],
+            progress_bar_update_function: Callable
+    ):
         threading.Thread.__init__(self)
 
         self.config = config
@@ -28,6 +31,7 @@ class ServerListenerThread(threading.Thread):
         self.ticker = threading.Event()
         self.tracker = tracker
         self.get_program_stage: Callable[[], ProgramStage] = get_program_stage
+        self.progress_bar_update_function = progress_bar_update_function
 
     def run(self):
 
@@ -44,8 +48,8 @@ class ServerListenerThread(threading.Thread):
                 # sync bricks with server
                 self.tracker.sync_with_server_side_bricks()
 
-                # get current energy lv
-                pass
+                # get update progress bars to reflect new energy output
+                self.progress_bar_update_function()
 
             logger.debug("finished routine server request")
 

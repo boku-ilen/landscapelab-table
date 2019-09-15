@@ -34,6 +34,7 @@ class ServerCommunication:
         self.program_stage = program_stage
         self.extent_tracker = ExtentTracker.get_instance()
         self.scenario_id = None
+        self.brick_update_callback = lambda: None
 
         # Initialize ip
         self.ip = self.config.get("server", "ip")
@@ -87,6 +88,9 @@ class ServerCommunication:
                 # Get assetpos_id in response
                 lego_brick.assetpos_id = lego_instance_response_text.get("assetpos_id")
 
+                # call brick update callback function to update progress bars etc.
+                self.brick_update_callback()
+
             else:
                 # If the asset creation was not possible, set lego brick outdated
                 lego_brick.status = LegoStatus.OUTDATED_BRICK
@@ -102,6 +106,9 @@ class ServerCommunication:
         lego_remove_instance_response = requests.get(HTTP + self.ip
                                                      + PREFIX + REMOVE_ASSET_POS + str(lego_instance.assetpos_id))
         logger.debug("remove instance {}, response {}".format(lego_instance, lego_remove_instance_response))
+
+        # call brick update callback function to update progress bars etc.
+        self.brick_update_callback()
 
     def get_scenario_info(self, scenario_name):
         scenario_request_msg = "{http}{ip}{prefix}{command}".format(

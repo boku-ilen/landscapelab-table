@@ -50,7 +50,12 @@ class Tracker:
     def get_player(self):
 
         # get the player from the server
-        player_instance = self.server_communicator.get_player()
+        # TODO: remove server_communicator.get_player() if not needed anymore
+        # player_instance = self.server_communicator.get_player()
+        stored_player_instance_list = self.server_communicator.get_stored_lego_instances(PLAYER_POSITION_ASSET_ID)
+        if stored_player_instance_list is not None:
+            player_instance = stored_player_instance_list[0]
+            logger.info("get player {}".format(player_instance))
 
         # update the player
         if player_instance != self.player:
@@ -59,8 +64,10 @@ class Tracker:
 
             # update the virtual lego bricks list
             if self.player is not None:
+                logger.info("append player {}".format(self.player))
                 self.set_virtual_brick_at_global_pos_of(self.player)
             if self.previous_player is not None:
+                logger.info("remove previous player {}".format(self.previous_player))
                 self.remove_external_virtual_brick(self.previous_player)
 
     # syncs all currently known bricks with the currently known bricks list on the server

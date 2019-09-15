@@ -141,37 +141,45 @@ class ServerCommunication:
             lego_instance_response_text = json.loads(stored_instances_response.text)
             stored_assets = lego_instance_response_text["assets"]
 
-            # Save all instances with their properties as a list
-            for assetpos_id in stored_assets:
+            if stored_assets is not None:
 
-                # Create a lego brick instance
-                stored_instance = LegoBrick(None, None, None, None)
+                # Save all instances with their properties as a list
+                for assetpos_id in stored_assets:
 
-                # Get the map position of the player
-                position = stored_assets[assetpos_id]["position"]
-                stored_instance.map_pos_x = position[0]
-                stored_instance.map_pos_y = position[1]
+                    # Create a lego brick instance
+                    stored_instance = LegoBrick(None, None, None, None)
 
-                # Map a shape and color using known asset_id
-                shape_color = self.config.get("stored_instances", str(asset_id))
-                shape = shape_color.split(', ')[0]
-                color = shape_color.split(', ')[1]
+                    # Get the map position of the player
+                    position = stored_assets[assetpos_id]["position"]
+                    stored_instance.map_pos_x = position[0]
+                    stored_instance.map_pos_y = position[1]
 
-                # Add missing properties
-                stored_instance.shape = shape
-                stored_instance.color = color
-                stored_instance.asset_id = asset_id
-                stored_instance.assetpos_id = assetpos_id
-                stored_instance.status = LegoStatus.EXTERNAL_BRICK
+                    shape = None
+                    color = None
+                    try:
+                        # Map a shape and color using known asset_id
+                        shape_color = self.config.get("stored_instances", str(asset_id))
+                        shape = shape_color.split(', ')[0]
+                        color = shape_color.split(', ')[1]
+                    except:
+                        logger.info("Mapping of color and shape for asset_id {} is not possible".format(str(asset_id)))
 
-                # Calculate map position of a brick
-                LegoExtent.calc_local_pos(stored_instance, self.extent_tracker.board, self.extent_tracker.map_extent)
+                    # Add missing properties
+                    stored_instance.shape = shape
+                    stored_instance.color = color
+                    stored_instance.asset_id = asset_id
+                    stored_instance.assetpos_id = assetpos_id
+                    stored_instance.status = LegoStatus.EXTERNAL_BRICK
 
-                stored_instances_list.append(stored_instance)
+                    # Calculate map position of a brick
+                    LegoExtent.calc_local_pos(stored_instance, self.extent_tracker.board,
+                                              self.extent_tracker.map_extent)
+
+                    stored_instances_list.append(stored_instance)
 
         return stored_instances_list
 
-    # TODO: write stored instance and player position as a one method
+    # TODO: remove if not used anymore
     def get_player(self):
 
         player_instance = None

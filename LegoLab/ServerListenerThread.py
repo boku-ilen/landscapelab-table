@@ -30,19 +30,16 @@ class ServerListenerThread(threading.Thread):
         self.get_program_stage: Callable[[], ProgramStage] = get_program_stage
 
     def run(self):
-        logger.info("starting to getting player position from server")
 
         while not self.ticker.wait(WAIT_SECONDS):
 
             logger.debug("starting routine server request")
 
-            # set player marker
-            player_instance = self.server.get_player_position()
-            if player_instance is not None:
-                self.tracker.player_position = player_instance
-
             # check if in correct program stage
             if self.get_program_stage() is ProgramStage.LEGO_DETECTION:
+
+                # get regularly the player position
+                self.tracker.get_player()
 
                 # sync bricks with server
                 self.tracker.sync_with_server_side_bricks()

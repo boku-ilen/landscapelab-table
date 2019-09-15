@@ -141,76 +141,43 @@ class ServerCommunication:
             lego_instance_response_text = json.loads(stored_instances_response.text)
             stored_assets = lego_instance_response_text["assets"]
 
-            # Save all instances with their properties as a list
-            for assetpos_id in stored_assets:
+            if stored_assets is not None:
 
-                # Create a lego brick instance
-                stored_instance = LegoBrick(None, None, None, None)
-
-                # Get the map position of the player
-                position = stored_assets[assetpos_id]["position"]
-                stored_instance.map_pos_x = position[0]
-                stored_instance.map_pos_y = position[1]
-
-                # Map a shape and color using known asset_id
-                shape_color = self.config.get("stored_instances", str(asset_id))
-                shape = shape_color.split(', ')[0]
-                color = shape_color.split(', ')[1]
-
-                # Add missing properties
-                stored_instance.shape = shape
-                stored_instance.color = color
-                stored_instance.asset_id = asset_id
-                stored_instance.assetpos_id = assetpos_id
-                stored_instance.status = LegoStatus.EXTERNAL_BRICK
-
-                # Calculate map position of a brick
-                LegoExtent.calc_local_pos(stored_instance, self.extent_tracker.board, self.extent_tracker.map_extent)
-
-                stored_instances_list.append(stored_instance)
-
-        return stored_instances_list
-
-    # TODO: write stored instance and player position as a one method
-    def get_player_position(self):
-
-        player_instance = None
-
-        player_position_msg = "{http}{ip}{prefix}{command}{asset_id}{json}".format(
-            http=HTTP, ip=self.ip, prefix=PREFIX, command=GET_INSTANCES,
-            asset_id=PLAYER_POSITION_ASSET_ID, json=JSON)
-
-        player_position_response = requests.get(player_position_msg)
-
-        # Check if status code is 200
-        if self.check_status_code_200(player_position_response.status_code):
-            # If status code is 200, save response text
-            player_position_response_text = json.loads(player_position_response.text)
-
-            assets = player_position_response_text["assets"]
-
-            if assets is not None:
-
-                # Save and return the player position
-                for assetpos_id in assets:
+                # Save all instances with their properties as a list
+                for assetpos_id in stored_assets:
 
                     # Create a lego brick instance
-                    player_instance = LegoBrick(None, None, None, None)
+                    stored_instance = LegoBrick(None, None, None, None)
 
                     # Get the map position of the player
-                    player_position = assets[assetpos_id]["position"]
-                    player_instance.map_pos_x = player_position[0]
-                    player_instance.map_pos_y = player_position[1]
+                    position = stored_assets[assetpos_id]["position"]
+                    stored_instance.map_pos_x = position[0]
+                    stored_instance.map_pos_y = position[1]
 
-                    # Calculate the local position of the player
-                    LegoExtent.calc_local_pos(player_instance, self.extent_tracker.board, self.extent_tracker.map_extent)
+                    shape = None
+                    color = None
+                    try:
+                        # Map a shape and color using known asset_id
+                        shape_color = self.config.get("stored_instances", str(asset_id))
+                        shape = shape_color.split(', ')[0]
+                        color = shape_color.split(', ')[1]
+                    except:
+                        logger.info("Mapping of color and shape for asset_id {} is not possible".format(str(asset_id)))
 
                     # Add missing properties
-                    player_instance.asset_id = PLAYER_POSITION_ASSET_ID
-                    player_instance.assetpos_id = assetpos_id
-                    player_instance.status = LegoStatus.EXTERNAL_BRICK
+                    stored_instance.shape = shape
+                    stored_instance.color = color
+                    stored_instance.asset_id = asset_id
+                    stored_instance.assetpos_id = assetpos_id
+                    stored_instance.status = LegoStatus.EXTERNAL_BRICK
 
-        return player_instance
+                    # Calculate map position of a brick
+                    LegoExtent.calc_local_pos(stored_instance, self.extent_tracker.board,
+                                              self.extent_tracker.map_extent)
+
+                    stored_instances_list.append(stored_instance)
+
+        return stored_instances_list
 
     # initiates corner point update of the given main map extent on the server
     def update_extent_info(self, extent: LegoExtent):

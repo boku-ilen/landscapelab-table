@@ -166,10 +166,11 @@
   },
 
   "stored_instances": {
-    "asset_ids" : [1, 2, 3],
+    "asset_ids" : [1, 2, 3, 13],
     "1" : "SQUARE_BRICK, RED_BRICK",
     "2" : "RECTANGLE_BRICK, RED_BRICK",
-    "3" : "SQUARE_BRICK, BLUE_BRICK"
+    "3" : "SQUARE_BRICK, BLUE_BRICK",
+    "13" : "None, None"
   },
 
   "qgis_interaction": {

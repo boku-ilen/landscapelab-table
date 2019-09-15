@@ -22,8 +22,6 @@ JSON = ".json"
 
 PLAYER_POSITION_ASSET_ID = str(13)
 
-DEFAULT_ROTATION = 0
-
 
 class ServerCommunication:
     """Creates and removes lego instances"""
@@ -64,9 +62,9 @@ class ServerCommunication:
             lego_brick.map_asset_id(self.config)
 
         # Send request creating lego instance and save the response
-        create_instance_msg = "{http}{ip}{prefix}{command}{brick_id}/{brick_x}/{brick_y}/{default_rotation}".format(
+        create_instance_msg = "{http}{ip}{prefix}{command}{brick_id}/{brick_x}/{brick_y}".format(
             http=HTTP, ip=self.ip, prefix=PREFIX, command=CREATE_ASSET_POS, brick_id=str(lego_brick.asset_id),
-            brick_x=str(lego_brick.map_pos_x), brick_y=str(lego_brick.map_pos_y), default_rotation=DEFAULT_ROTATION
+            brick_x=str(lego_brick.map_pos_x), brick_y=str(lego_brick.map_pos_y)
         )
 
         logger.debug(create_instance_msg)

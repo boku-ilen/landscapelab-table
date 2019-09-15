@@ -51,9 +51,11 @@ class Tracker:
 
         # get the player from the server
         stored_player_instance_list = self.server_communicator.get_stored_lego_instances(PLAYER_POSITION_ASSET_ID)
-        if stored_player_instance_list is not None:
+        if len(stored_player_instance_list) != 0:
             player_instance = stored_player_instance_list[0]
-            logger.info("get player {}".format(player_instance))
+        else:
+            player_instance = None
+        logger.info("get player {}".format(player_instance))
 
         # update the player
         if player_instance != self.player:
@@ -66,7 +68,11 @@ class Tracker:
                 self.set_virtual_brick_at_global_pos_of(self.player)
             if self.previous_player is not None:
                 logger.info("remove previous player {}".format(self.previous_player))
-                self.remove_external_virtual_brick(self.previous_player)
+                try:
+                    self.remove_external_virtual_brick(self.previous_player)
+                except:
+                    # TODO: observe whether and when this exception takes place (probably when lie on ui)
+                    logger.info("previous player position was already removed!!!")
 
     # syncs all currently known bricks with the currently known bricks list on the server
     def sync_with_server_side_bricks(self):

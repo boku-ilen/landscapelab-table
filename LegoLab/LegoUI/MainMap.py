@@ -6,13 +6,15 @@ from .MapHandler import MapHandler
 from .MapActions import MapActions
 from ..ConfigManager import ConfigManager, ConfigError
 from ..LegoExtent import LegoExtent
+from ..ServerCommunication import ServerCommunication
 
 
 class MainMap(MapHandler):
 
-    def __init__(self, config: ConfigManager, name, scenario: Dict):
+    def __init__(self, config: ConfigManager, name, scenario: Dict, server: ServerCommunication):
 
         self.config = config
+        self.server = server
 
         # get desired screen resolution
         resolution_x = int(config.get("beamer-resolution", "width"))
@@ -106,6 +108,9 @@ class MainMap(MapHandler):
 
         # request render
         self.request_render(next_extent)
+
+    def refresh_callback(self):
+        self.server.update_extent_info(self.current_extent)
 
     def invoke(self, action: MapActions):
         if action in self.action_map:

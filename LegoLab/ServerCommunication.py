@@ -211,3 +211,33 @@ class ServerCommunication:
                     player_instance.status = LegoStatus.EXTERNAL_BRICK
 
         return player_instance
+
+    # initiates corner point update of the given main map extent on the server
+    def update_extent_info(self, extent: LegoExtent):
+
+        # get the corner IDs
+        top_left_corner_id = self.config.get("server", "extent_top_left_corner_id")
+        bot_right_corner_id = self.config.get("server", "extent_bottom_right_corner_id")
+
+        # create the request messages
+        create_top_left_msg = "{http}{ip}{prefix}{command}{scenario_id}/{asset_id}/{x}/{y}".format(
+            http=HTTP, ip=self.ip, prefix=PREFIX, command=CREATE_ASSET_POS, scenario_id=self.scenario_id,
+            asset_id=top_left_corner_id, x=str(extent.x_min), y=str(extent.y_min)
+        )
+
+        create_bot_right_msg = "{http}{ip}{prefix}{command}{scenario_id}/{asset_id}/{x}/{y}".format(
+            http=HTTP, ip=self.ip, prefix=PREFIX, command=CREATE_ASSET_POS, scenario_id=self.scenario_id,
+            asset_id=bot_right_corner_id, x=str(extent.x_max), y=str(extent.y_max)
+        )
+
+        logger.debug(create_top_left_msg)
+        logger.debug(create_bot_right_msg)
+
+        # send the messages
+        tl_ret = requests.get(create_top_left_msg)
+        br_ret = requests.get(create_bot_right_msg)
+
+        # log warning if extent corners could not be updated
+        if ((not self.check_status_code_200(tl_ret.status_code))
+                or (not self.check_status_code_200(br_ret.status_code))):
+            logger.warning("Could not update main map extent on server")

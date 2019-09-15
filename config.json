@@ -112,7 +112,9 @@
   },
 
     "server": {
-      "ip": "141.244.151.130"
+      "ip": "141.244.151.130",
+      "extent_top_left_corner_id": 14,
+      "extent_bottom_right_corner_id": 15
     },
 
   "resolution": {

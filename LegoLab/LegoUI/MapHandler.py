@@ -71,8 +71,14 @@ class MapHandler:
             self.extent_tracker.map_extent = extent
             self.extent_tracker.extent_changed = True
             logger.info("extent changed")
+            self.refresh_callback()
 
         self.config.set("map_settings", 'map_refreshed', True)
+
+    # gets called whenever the map was refreshed and the extent has changed
+    # may carry out different tasks in different subclasses
+    def refresh_callback(self):
+        pass
 
     def request_render(self, extent: LegoExtent = None):
 

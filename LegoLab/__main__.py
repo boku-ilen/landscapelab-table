@@ -54,7 +54,7 @@ class LegoLab:
         self.scenario = self.server.get_scenario_info(self.config.get("general", "scenario"))
 
         # initialize map handler and ui
-        self.main_map = MainMap(self.config, 'main_map', self.scenario)
+        self.main_map = MainMap(self.config, 'main_map', self.scenario, self.server)
         ui_root, mini_map = setup_ui(self.main_map, self.config)
         map_dict = {self.main_map.name: self.main_map, mini_map.name: mini_map}
 

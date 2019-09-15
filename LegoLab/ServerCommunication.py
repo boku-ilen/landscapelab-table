@@ -18,6 +18,8 @@ SET_ASSET_POS = "/assetpos/set/"
 REMOVE_ASSET_POS = "/assetpos/remove/"
 GET_SCENARIO_INFO = "/location/scenario/list.json"
 GET_INSTANCES = "/assetpos/get_all/"
+GET_ENERGY_TARGET = "/energy/target/"
+GET_ENERGY_CONTRIBUTION = "/energy/contribution/"
 JSON = ".json"
 
 PLAYER_POSITION_ASSET_ID = str(13)
@@ -208,3 +210,45 @@ class ServerCommunication:
         if ((not self.check_status_code_200(tl_ret.status_code))
                 or (not self.check_status_code_200(br_ret.status_code))):
             logger.warning("Could not update main map extent on server")
+
+    # checks how much energy a given asset type contributes
+    def get_energy_contrib(self, asset_type_id):
+
+        # create msg
+        get_asset_contrib_msg = '{http}{ip}{prefix}{command}{scenario_id}/{asset_type_id}.json'.format(
+            http=HTTP, ip=self.ip, prefix=PREFIX, command=GET_ENERGY_CONTRIBUTION, scenario_id=self.scenario_id,
+            asset_type_id=asset_type_id
+        )
+
+        logger.debug("getting energy contrib. for asset type {} with: {}".format(asset_type_id, get_asset_contrib_msg))
+
+        # send msg
+        contrib_return = requests.get(get_asset_contrib_msg)
+
+        # check if request successful
+        if not self.check_status_code_200(contrib_return.status_code):
+            raise ConnectionError("Bad Request")
+
+        # return energy contribution
+        return json.loads(contrib_return.text)['total_energy_contribution']
+
+    # check how much energy a given asset type should contribute
+    def get_energy_target(self, asset_type_id):
+
+        # create msg
+        get_asset_target_msg = '{http}{ip}{prefix}{command}{scenario_id}/{asset_type_id}.json'.format(
+            http=HTTP, ip=self.ip, prefix=PREFIX, command=GET_ENERGY_TARGET, scenario_id=self.scenario_id,
+            asset_type_id=asset_type_id
+        )
+
+        logger.debug("getting energy target for asset type {} with: {}".format(asset_type_id, get_asset_target_msg))
+
+        # send msg
+        target_return = requests.get(get_asset_target_msg)
+
+        # check if request successful
+        if not self.check_status_code_200(target_return.status_code):
+            raise ConnectionError("Bad Request")
+
+        # return energy target
+        return json.loads(target_return.text)['energy_target']

@@ -14,6 +14,7 @@ class ProgramStage(Enum):
         return ProgramStage(value)
 
 
+# TODO (future releases) convert to singleton, also add possible callbacks to call when stage transitioning
 class CurrentProgramStage:
 
     def __init__(self):

@@ -43,12 +43,51 @@ class Tracker:
         # Initialize the player position
         self.player_position = None
 
-    def update(self, lego_bricks_candidates: List[LegoBrick], stored_lego_bricks):
+    # syncs all currently known bricks with the currently known bricks list on the server
+    def sync_with_server_side_bricks(self):
 
-        # if there are some lego bricks stored at the server
-        # mark them as virtual
-        if stored_lego_bricks is not None:
-            self.virtual_bricks += stored_lego_bricks
+        # get server side bricks
+        asset_ids = self.config.get("stored_instances", "asset_ids")
+        server_bricks = []
+        for asset_id in asset_ids:
+            server_bricks += self.server_communicator.get_stored_lego_instances(asset_id)
+
+        # handle bricks
+        if server_bricks is not None:
+
+            # get list of all currently known brick IDs
+            v_brick_ids = [b.asset_id for b in self.virtual_bricks]
+            c_brick_ids = [b.asset_id for b in self.confirmed_bricks]
+            s_brick_ids = [b.asset_id for b in server_bricks]
+
+            # add server brick to virtual bricks if it's ID is unknown
+            for brick in server_bricks:
+                if brick.asset_id not in v_brick_ids \
+                        and brick.asset_id not in c_brick_ids:
+                    self.virtual_bricks.append(brick)
+
+            # remove all virtual bricks that have been removed externally
+            for v_brick in self.virtual_bricks:
+                if v_brick.status == LegoStatus.EXTERNAL_BRICK and v_brick.asset_id not in s_brick_ids:
+                    self.virtual_bricks.remove(v_brick)
+                    logger.info("removed externally removed virtual brick")
+
+            # TODO BELOW IS AN OPTIONAL FEATURE THAT REINTRODUCES CONFIRMED BRICKS WHICH HAVE BEEN FALSELY REMOVED FROM
+            #  THE SERVER. FROM MY TESTING IT SEEMS LIKE IT DOES NOT EXACTLY DO WHAT IT IS SUPPOSED TO DO.
+            #  (probably because the fetched brick list does not include special bricks like the player teleport brick)
+            #  IT NEEDS FURTHER TESTING AND I DEEM IT TOO RISKY AND INSIGNIFICANT TO BE INCLUDED IN THE WORKSHOPS
+            # re-register all confirmed bricks that have disappeared from the server list
+            """
+            for c_brick in self.confirmed_bricks:
+                if c_brick.status == LegoStatus.EXTERNAL_BRICK and c_brick.asset_id not in s_brick_ids:
+                    self.server_communicator.create_lego_instance(c_brick)
+                    logger.info("re-registered missing brick in server: {}".format(c_brick))
+            """
+
+    # called once a frame while in ProgramStage EVALUATION or LEGO_DETECTION
+    # keeps track of bricks and returns a list of all currently confirmed bricks
+    def update(self, lego_bricks_candidates: List[LegoBrick]):
+
         # add the player position
         # TODO: remove the previous virtual brick
         if self.player_position is not None:
@@ -189,8 +228,7 @@ class Tracker:
                 # if the brick is on top of a virtual brick, remove it and mark the brick as outdated
                 virtual_brick = self.check_min_distance(candidate, self.virtual_bricks)
                 if virtual_brick:
-                    self.server_communicator.remove_lego_instance(virtual_brick)
-                    self.virtual_bricks.remove(virtual_brick)
+                    self.remove_external_virtual_brick(virtual_brick)
                     candidate.status = LegoStatus.OUTDATED_BRICK
 
                 else:
@@ -272,6 +310,10 @@ class Tracker:
 
         self.virtual_bricks.append(virtual_brick)
         Tracker.BRICKS_REFRESHED = True
+
+    def remove_external_virtual_brick(self, brick: LegoBrick):
+        self.server_communicator.remove_lego_instance(brick)
+        self.virtual_bricks.remove(brick)
 
     def brick_on_ui(self, brick):
         brick_on_beamer = LegoExtent.remap(brick, self.extent_tracker.board, self.extent_tracker.beamer)

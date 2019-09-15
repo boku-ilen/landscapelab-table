@@ -446,7 +446,7 @@ class LegoOutputStream:
 
                 if virtual_brick:
                     # if mouse brick is on top of other virtual brick, remove that brick
-                    self.tracker.virtual_bricks.remove(virtual_brick)
+                    self.tracker.remove_external_virtual_brick(virtual_brick)
                 else:
                     # otherwise add the mouse brick
                     self.tracker.virtual_bricks.append(mouse_brick)

@@ -69,7 +69,7 @@ class LegoLab:
         mini_map.request_render()
 
         # Initialize and start the server listener thread
-        self.server_listener_thread = ServerListenerThread(self.config, self.server, self.tracker)
+        self.server_listener_thread = ServerListenerThread(self.config, self.server, self.tracker, self.get_program_stage)
         self.server_listener_thread.start()
 
         # initialize the input and output stream
@@ -199,18 +199,18 @@ class LegoLab:
                 # mark potential lego brick contours
                 LegoOutputStream.mark_candidates(region_of_interest_debug, contour)
 
+        # TODO (future releases) implement this as stage transition callback in ProgramStage
         # Get already stored lego brick instances from server
-        asset_ids = self.config.get("stored_instances", "asset_ids")
-        stored_lego_bricks = []
         if self.program_stage.current_stage == ProgramStage.LEGO_DETECTION \
                 and not self.added_stored_lego_bricks_flag:
-            for asset_id in asset_ids:
-                stored_lego_bricks += self.server.get_stored_lego_instances(asset_id)
+
+            self.tracker.sync_with_server_side_bricks()
+
             self.added_stored_lego_bricks_flag = True
 
         # Compute tracked lego bricks dictionary using the centroid tracker and set of properties
         # Mark stored lego bricks virtual
-        tracked_lego_bricks = self.tracker.update(potential_lego_bricks_list, stored_lego_bricks)
+        tracked_lego_bricks = self.tracker.update(potential_lego_bricks_list)
 
         # Loop over the tracked objects and label them in the stream
         for tracked_lego_brick in tracked_lego_bricks:
@@ -221,6 +221,9 @@ class LegoLab:
 
         # Render shape detection images
         self.output_stream.write_to_channel(LegoOutputChannel.CHANNEL_ROI, region_of_interest_debug)
+
+    def get_program_stage(self) -> ProgramStage:
+        return self.program_stage.current_stage
 
 
 # execute the main class  ' TODO: meaningful rename

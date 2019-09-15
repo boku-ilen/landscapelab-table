@@ -184,6 +184,8 @@
   },
 
   "ui-settings": {
+    "ui-refreshed": true,
+
     "scale-factor": 1.25,
     "nav-block-toggle": true,
 
@@ -194,7 +196,9 @@
 
     "nav-block-background-color": [255, 255, 255],
     "nav-block-border-color": [200, 200, 200],
-    "nav-block-border-weight": 2
+    "nav-block-border-weight": 2,
+
+    "progress-bar-color": [[202, 86, 99], [215, 126, 84], [210, 193, 75], [146, 185, 79], [88, 117, 219], [255, 255, 255]]
   },
 
   "button_map": {

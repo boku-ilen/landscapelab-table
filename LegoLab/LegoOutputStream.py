@@ -321,6 +321,7 @@ class LegoOutputStream:
     def redraw_lego_detection(self):
         # check flags if any part of the frame has changed
         if self.config.get("map_settings", 'map_refreshed') \
+                or self.config.get("ui-settings", "ui-refreshed") \
                 or Tracker.BRICKS_REFRESHED \
                 or LegoOutputStream.MOUSE_BRICKS_REFRESHED:
 
@@ -342,6 +343,7 @@ class LegoOutputStream:
 
             # reset flags
             self.config.set("map_settings", "map_refreshed", False)
+            self.config.set("ui-settings", "ui-refreshed", False)
             Tracker.BRICKS_REFRESHED = False
             LegoOutputStream.MOUSE_BRICKS_REFRESHED = False
 

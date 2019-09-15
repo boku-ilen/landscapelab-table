@@ -50,8 +50,6 @@ class Tracker:
     def get_player(self):
 
         # get the player from the server
-        # TODO: remove server_communicator.get_player() if not needed anymore
-        # player_instance = self.server_communicator.get_player()
         stored_player_instance_list = self.server_communicator.get_stored_lego_instances(PLAYER_POSITION_ASSET_ID)
         if stored_player_instance_list is not None:
             player_instance = stored_player_instance_list[0]

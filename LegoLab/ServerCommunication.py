@@ -31,6 +31,7 @@ class ServerCommunication:
         self.config = config
         self.program_stage = program_stage
         self.extent_tracker = ExtentTracker.get_instance()
+        self.scenario_id = None
 
         # Initialize ip
         self.ip = self.config.get("server", "ip")
@@ -62,9 +63,9 @@ class ServerCommunication:
             lego_brick.map_asset_id(self.config)
 
         # Send request creating lego instance and save the response
-        create_instance_msg = "{http}{ip}{prefix}{command}{brick_id}/{brick_x}/{brick_y}".format(
-            http=HTTP, ip=self.ip, prefix=PREFIX, command=CREATE_ASSET_POS, brick_id=str(lego_brick.asset_id),
-            brick_x=str(lego_brick.map_pos_x), brick_y=str(lego_brick.map_pos_y)
+        create_instance_msg = "{http}{ip}{prefix}{command}{scenario_id}/{brick_id}/{brick_x}/{brick_y}".format(
+            http=HTTP, ip=self.ip, prefix=PREFIX, command=CREATE_ASSET_POS, scenario_id=self.scenario_id,
+            brick_id=str(lego_brick.asset_id), brick_x=str(lego_brick.map_pos_x), brick_y=str(lego_brick.map_pos_y)
         )
 
         logger.debug(create_instance_msg)
@@ -117,6 +118,9 @@ class ServerCommunication:
             scenario = scenarios[scenario_key]
 
             if scenario['name'] == scenario_name:
+                # save scenario id for further communication
+                self.scenario_id = scenario_key
+
                 return scenario
 
         logger.error('Could not find scenario with name {}'.format(scenario_name))

@@ -34,6 +34,9 @@ class UIElement:
 
     # displays this element and all it's children
     def draw(self, img):
+        self.draw_hierarchy(img)
+
+    def draw_hierarchy(self, img):
         if self.visible:
             for child in self.children:
                 child.draw(img)

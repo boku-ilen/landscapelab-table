@@ -93,5 +93,5 @@ class LegoBrick:
         return hash((self.centroid_y, self.centroid_x, self.color, self.shape))
 
     def __str__(self):
-        return "LegoBrick ({}, {}) [{}|{}|{}] {}".format(self.centroid_x, self.centroid_y,
-                                                         self.color, self.shape, self.status, self.assetpos_id)
+        return "LegoBrick ({}, {}) [{}|{}|{}] {} {}".format(self.centroid_x, self.centroid_y, self.color,
+                                                         self.shape, self.status, self.assetpos_id, self.asset_id)

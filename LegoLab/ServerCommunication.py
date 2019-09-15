@@ -172,7 +172,7 @@ class ServerCommunication:
         return stored_instances_list
 
     # TODO: write stored instance and player position as a one method
-    def get_player_position(self):
+    def get_player(self):
 
         player_instance = None
 
@@ -203,7 +203,8 @@ class ServerCommunication:
                     player_instance.map_pos_y = player_position[1]
 
                     # Calculate the local position of the player
-                    LegoExtent.calc_local_pos(player_instance, self.extent_tracker.board, self.extent_tracker.map_extent)
+                    LegoExtent.calc_local_pos(player_instance, self.extent_tracker.board,
+                                              self.extent_tracker.map_extent)
 
                     # Add missing properties
                     player_instance.asset_id = PLAYER_POSITION_ASSET_ID

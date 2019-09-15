@@ -35,26 +35,53 @@ class UIStructureBlock(UIElement):
     def draw(self, img):
 
         if self.visible:
-            if self.show_background_color:
-                # get bounds
-                x_min, y_min, x_max, y_max = self.get_bounds()
+
+            self.draw_background(img, self.color)
+            self.draw_border(img, self.border_color)
+
+            self.draw_hierarchy(img)
+
+    def draw_background(self, img, color, force=False):
+
+        if self.show_background_color or force:
+            # get bounds
+            x_min, y_min, x_max, y_max = self.get_bounds()
+
+            if self.is_ellipse:
+
+                # calc attributes
                 x_avg = int((x_min + x_max) / 2)
                 y_avg = int((y_min + y_max) / 2)
                 x_span = int((x_max - x_min) / 2)
                 y_span = int((y_max - y_min) / 2)
 
-                # draw the block
-                if self.is_ellipse:
-                    cv.ellipse(img, (x_avg, y_avg), (x_span, y_span), 0, 0, 360, self.color, -1)
-                    if self.show_border:
-                        cv.ellipse(img, (x_avg, y_avg), (x_span, y_span), 0, 0, 360,
-                                   self.border_color, self.border_thickness)
-                else:
-                    cv.rectangle(img, (x_min, y_min), (x_max, y_max), self.color, cv.FILLED)
-                    if self.show_border:
-                        cv.rectangle(img, (x_min, y_min), (x_max, y_max),self.border_color, self.border_thickness)
+                # draw ellipse
+                cv.ellipse(img, (x_avg, y_avg), (x_span, y_span), 0, 0, 360, color, -1)
 
-            self.draw_hierarchy(img)
+            else:
+                # draw rect
+                cv.rectangle(img, (x_min, y_min), (x_max, y_max), color, cv.FILLED)
+
+    def draw_border(self, img, color, force=False):
+
+        if self.show_border or force:
+
+            # get bounds
+            x_min, y_min, x_max, y_max = self.get_bounds()
+
+            if self.is_ellipse:
+                # calc attributes
+                x_avg = int((x_min + x_max) / 2)
+                y_avg = int((y_min + y_max) / 2)
+                x_span = int((x_max - x_min) / 2)
+                y_span = int((y_max - y_min) / 2)
+
+                # draw ellipse
+                cv.ellipse(img, (x_avg, y_avg), (x_span, y_span), 0, 0, 360, color, self.border_thickness)
+
+            else:
+                # draw rect
+                cv.rectangle(img, (x_min, y_min), (x_max, y_max), color, self.border_thickness)
 
     # checks if a given brick lies on top of the block or any of it's children
     def brick_on_element(self, brick: LegoBrick) -> bool:

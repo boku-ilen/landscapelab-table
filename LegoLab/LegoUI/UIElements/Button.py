@@ -107,8 +107,7 @@ class Button(UIStructureBlock):
 
         if self.visible:
 
-            # call super for hierarchical drawing
-            super().draw(img)
+            self.draw_hierarchy(img)
             # NOTE call this before the rest so the button is rendered in front of its children
 
             # get correct color / icon
@@ -118,25 +117,14 @@ class Button(UIStructureBlock):
                 color = self.color_pressed
                 icon = self.icon_pressed
 
-            # get bounds
-            x_min, y_min, x_max, y_max = self.get_bounds()
-            x_avg = int((x_min + x_max) / 2)
-            y_avg = int((y_min + y_max) / 2)
-            x_span = int((x_max - x_min) / 2)
-            y_span = int((y_max - y_min) / 2)
-
             # draw the button
-            if self.show_background_color:                                                                  # background
-                if self.is_ellipse:
-                    cv.ellipse(img, (x_avg, y_avg), (x_span, y_span), 0, 0, 360, color, -1)
-                else:
-                    cv.rectangle(img, (x_min, y_min), (x_max, y_max), color, cv.FILLED)
+            self.draw_background(img, color)                                # background
 
-            if icon is not None:                                                                            # icon
+            if icon is not None:                                            # icon
+                # get bounds
+                x_min, y_min, x_max, y_max = self.get_bounds()
+
+                # draw the icon
                 ImageHandler.img_on_background(img, icon, (x_min, y_min))
 
-            if self.show_border:                                                                            # border
-                if self.is_ellipse:
-                    cv.ellipse(img, (x_avg, y_avg), (x_span, y_span), 0, 0, 360, self.border_color, self.border_thickness)
-                else:
-                    cv.rectangle(img, (x_min, y_min), (x_max, y_max), self.border_color, self.border_thickness)
+            self.draw_border(img, self.border_color)                        # border

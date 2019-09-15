@@ -430,22 +430,26 @@ class LegoOutputStream:
     # creates or deletes virtual bricks on mouse click
     # parameters flags and param are necessary so that function can be registered as openCV mouse callback function
     def beamer_mouse_callback(self, event, x, y, flags, param):
-        if event == cv2.EVENT_LBUTTONDOWN or event == cv2.EVENT_RBUTTONDOWN:
-            # create brick on mouse position
-            mouse_brick = LegoExtent.remap(
-                LegoBrick(x, y, LegoShape.RECTANGLE_BRICK, LegoColor.RED_BRICK),
-                self.extent_tracker.beamer, self.extent_tracker.board
-            )
 
-            # check for nearby virtual bricks
-            virtual_brick = self.tracker.check_min_distance(mouse_brick, self.tracker.virtual_bricks)
+        if self.program_stage.current_stage == ProgramStage.EVALUATION \
+                or self.program_stage.current_stage == ProgramStage.LEGO_DETECTION:
 
-            if virtual_brick:
-                # if mouse brick is on top of other virtual brick, remove that brick
-                self.tracker.virtual_bricks.remove(virtual_brick)
-            else:
-                # otherwise add the mouse brick
-                self.tracker.virtual_bricks.append(mouse_brick)
+            if event == cv2.EVENT_LBUTTONDOWN or event == cv2.EVENT_RBUTTONDOWN:
+                # create brick on mouse position
+                mouse_brick = LegoExtent.remap(
+                    LegoBrick(x, y, LegoShape.RECTANGLE_BRICK, LegoColor.RED_BRICK),
+                    self.extent_tracker.beamer, self.extent_tracker.board
+                )
 
-            # set mouse brick refreshed flag
-            LegoOutputStream.MOUSE_BRICKS_REFRESHED = True
+                # check for nearby virtual bricks
+                virtual_brick = self.tracker.check_min_distance(mouse_brick, self.tracker.virtual_bricks)
+
+                if virtual_brick:
+                    # if mouse brick is on top of other virtual brick, remove that brick
+                    self.tracker.virtual_bricks.remove(virtual_brick)
+                else:
+                    # otherwise add the mouse brick
+                    self.tracker.virtual_bricks.append(mouse_brick)
+
+                # set mouse brick refreshed flag
+                LegoOutputStream.MOUSE_BRICKS_REFRESHED = True

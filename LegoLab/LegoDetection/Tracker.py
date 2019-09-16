@@ -53,9 +53,9 @@ class Tracker:
         stored_player_instance_list = self.server_communicator.get_stored_lego_instances(PLAYER_POSITION_ASSET_ID)
         if len(stored_player_instance_list) != 0:
             player_instance = stored_player_instance_list[0]
+            logger.info("get player {}".format(player_instance))
         else:
             player_instance = None
-        logger.info("get player {}".format(player_instance))
 
         # update the player
         if player_instance != self.player:

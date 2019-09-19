@@ -439,9 +439,14 @@ class LegoOutputStream:
                 or self.program_stage.current_stage == ProgramStage.LEGO_DETECTION:
 
             if event == cv2.EVENT_LBUTTONDOWN or event == cv2.EVENT_RBUTTONDOWN:
+
+                color = LegoColor.BLUE_BRICK
+                if event == cv2.EVENT_RBUTTONDOWN:
+                    color = LegoColor.RED_BRICK
+
                 # create brick on mouse position
                 mouse_brick = LegoExtent.remap(
-                    LegoBrick(x, y, LegoShape.RECTANGLE_BRICK, LegoColor.RED_BRICK),
+                    LegoBrick(x, y, LegoShape.SQUARE_BRICK, color),
                     self.extent_tracker.beamer, self.extent_tracker.board
                 )
 

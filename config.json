@@ -2,9 +2,9 @@
   "general": {
     "scenario": "Nockberge",
     "starting_location": "auto select",
-    "mini_map_extent": [1529850, 5935180, 1573770, 5902980],
+    "mini_map_extent": [1546610, 5918270, 10000],
     "NOTE": "starting_location overwrites the start location in the server response if an invalid value is given (e.g. 'auto select') it will be ignored",
-    "start_zoom": 5000
+    "start_zoom": 10000
   },
 
   "resources": {

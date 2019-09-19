@@ -37,7 +37,7 @@ class ServerListenerThread(threading.Thread):
 
         while not self.ticker.wait(WAIT_SECONDS):
 
-            logger.info("starting routine server request")
+            logger.debug("starting routine server request")
 
             # check if in correct program stage
             if self.get_program_stage() is ProgramStage.LEGO_DETECTION:

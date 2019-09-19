@@ -68,7 +68,7 @@ class Tracker:
                 if brick.asset_id == PLAYER_POSITION_ASSET_ID and brick != self.player:
                     self.player = brick
                     self.set_virtual_brick_at_global_pos_of(self.player)
-                    logger.info("set the player {}".format(self.player))
+                    logger.debug("set the player {}".format(self.player))
 
                 # add server brick to virtual bricks if it's ID is unknown
                 elif brick.asset_id not in v_brick_ids \
@@ -224,7 +224,7 @@ class Tracker:
             # remove all previous players
             elif v_brick.asset_id == PLAYER_POSITION_ASSET_ID and v_brick != self.player:
                 self.remove_external_virtual_brick(v_brick)
-                logger.info("removed previous players {}".format(v_brick))
+                logger.debug("removed previous players {}".format(v_brick))
 
     # selects those candidates that appeared long enough to be considered confirmed and add them to the confirmed list
     # also does ui update for those bricks and classifies them

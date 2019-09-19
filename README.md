@@ -31,17 +31,23 @@ to LegoLab. To resolve this issue simply restart LegoLab.
 
 # Run
 
-DEPRECATED
 run the server
-start LegoDetection/LegoDetection.py
+run QGIS-Plugin Remote Rendering
+start as a module: python.exe -m LegoLab
 
-# Paramaters
+# Parameters
 Optional:
 --threshold 
-  set another then default threshold for black-white image to recognize qr-codes
---usestream USESTREAM
+  overwrites default threshold for black-white image to recognize qr-codes
+--usestream
   path and name of the file with saved .bag stream
+--ip
+  overwrites default server ip defined in config
+--scenario
+  overwrites default starting scenario defined in config
+--starting_location
+  overwrites default starting location defined in config
 
 # Examples
-python.exe (...)/LegoDetection/LegoDetection.py
-(...)/python.exe (...)/LegoDetection/LegoDetection.py --usestream=stream.bag --threshold=155
+python.exe -m (...)/LegoLab
+(...)/python.exe -m (...)/LegoLab --usestream=stream.bag --threshold=155

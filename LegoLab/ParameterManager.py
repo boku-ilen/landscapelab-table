@@ -14,9 +14,9 @@ class ParameterManager:
         # Parse optional parameters
         parser = argparse.ArgumentParser()
         parser.add_argument("--threshold", type=int,
-                            help="set the threshold for black-white image to recognize qr-codes")
+                            help="overwrites the threshold for black-white image to recognize qr-codes")
         parser.add_argument("--usestream", help="path and name of the file with saved .bag stream")
-        parser.add_argument("--ip", help="local ip, if other than localhost")
+        parser.add_argument("--ip", help="overwrites default server ip defined in config")
         parser.add_argument("--scenario", type=str, help="overwrites default starting scenario defined in config")
         parser.add_argument("--starting_location", type=str,
                             help="overwrites default starting location defined in config")

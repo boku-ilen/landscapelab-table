@@ -111,7 +111,7 @@ class LegoExtent:
         remapped_brick = brick.clone()
 
         if old_extent is None or new_extent is None:
-            logger.info("Could not remap the lego brick")
+            logger.warning("Could not remap the lego brick")
         else:
             old_width, old_height = old_extent.get_size()
             new_width, new_height = new_extent.get_size()

@@ -36,7 +36,9 @@ class MiniMap(UIStructureBlock, MapHandler):
 
         extent_arr = config.get("general", "mini_map_extent")
 
-        return LegoExtent.from_tuple(tuple(extent_arr), True)
+        full_extent = LegoExtent.from_tuple(tuple(extent_arr), True)
+
+        return LegoExtent.around_center(full_extent.get_center(), full_extent.get_width() * 0.5, full_extent.y_inverted)
 
     def draw(self, img):
 

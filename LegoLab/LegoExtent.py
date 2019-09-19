@@ -28,12 +28,12 @@ class LegoExtent:
 
     # creates and returns a new LegoExtent based on it's left upper corner and it's size
     @staticmethod
-    def from_rectangle(x_min, y_min, width, height) -> 'LegoExtent':
-        return LegoExtent(x_min, y_min, x_min + width, y_min + height, False)
+    def from_rectangle(x_min, y_min, width, height, y_up_is_positive=False) -> 'LegoExtent':
+        return LegoExtent(x_min, y_min, x_min + width, y_min + height, y_up_is_positive)
 
     # creates a new LegoExtent based on it's center point, width and aspect ratio
     @staticmethod
-    def around_center(center: Tuple[float, float], width: float, y_per_x: float) -> 'LegoExtent':
+    def around_center(center: Tuple[float, float], width: float, y_per_x: float, y_up_is_positive=False) -> 'LegoExtent':
         center_x, center_y = center
         height = width * y_per_x
 
@@ -41,7 +41,8 @@ class LegoExtent:
             center_x - width / 2,
             center_y - height / 2,
             width,
-            height
+            height,
+            y_up_is_positive
         )
 
     # methods

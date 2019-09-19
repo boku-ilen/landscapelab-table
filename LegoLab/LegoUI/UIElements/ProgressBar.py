@@ -21,13 +21,14 @@ class ProgressBar(UIStructureBlock):
         self.bar_color = [(color[2], color[1], color[0]) for color in default_bar_color]
         self.horizontal: bool = horizontal
         self.flipped: bool = flipped
+        self.wrap_around = False
 
         self.target = 1
         self.progress: float = 0
         self.progress_calculation: Optional[Callable[[], float]] = None
 
     def update_progress(self, new_progress):
-        self.progress = new_progress
+        self.progress = min(new_progress, 1)
         self.config.set("ui-settings", "ui-refreshed", True)
         # TODO find better solution for flag
 
@@ -47,18 +48,23 @@ class ProgressBar(UIStructureBlock):
 
             self.draw_background(img, bar_background, True)
 
+            # if bar should wrap around modify progress
+            progress = self.progress
+            if self.wrap_around:
+                progress = progress % 1
+
             # scale bar down to fit progress
             if self.horizontal:
                 if self.flipped:
-                    x_min = x_max - width * (self.progress % 1)
+                    x_min = x_max - width * progress
                 else:
-                    x_max = x_min + width * (self.progress % 1)
+                    x_max = x_min + width * progress
 
             else:
                 if self.flipped:
-                    y_min = y_max - height * (self.progress % 1)
+                    y_min = y_max - height * progress
                 else:
-                    y_max = y_min + height * (self.progress % 1)
+                    y_max = y_min + height * progress
 
             cv2.rectangle(img, (int(x_min), int(y_min)), (int(x_max), int(y_max)), bar_color, cv2.FILLED)
 
@@ -67,11 +73,14 @@ class ProgressBar(UIStructureBlock):
     # returns the color pf the bar as well as the chosen background
     # (if the bar exceeds 100% it wraps around with a new color)
     def get_bar_colors(self):
-        bar_color_id = max(int(self.progress), 0)
-        bar_color = self.bar_color[bar_color_id % len(self.bar_color)]
-        bar_background = self.bar_color[(bar_color_id - 1) % len(self.bar_color)]
+        if self.wrap_around:
+            bar_color_id = max(int(self.progress), 0)
+            bar_color = self.bar_color[bar_color_id % len(self.bar_color)]
+            bar_background = self.bar_color[(bar_color_id - 1) % len(self.bar_color)]
 
-        return bar_color, bar_background
+            return bar_color, bar_background
+        else:
+            return self.bar_color[0], self.color
 
     def calculate_progress(self):
         if self.progress_calculation:

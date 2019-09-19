@@ -4,7 +4,7 @@
     "starting_location": "auto select",
     "mini_map_extent": [1546610, 5918270, 10000],
     "NOTE": "starting_location overwrites the start location in the server response if an invalid value is given (e.g. 'auto select') it will be ignored",
-    "start_zoom": 10000
+    "start_zoom": 20000
   },
 
   "resources": {

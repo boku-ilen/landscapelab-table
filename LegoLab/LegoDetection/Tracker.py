@@ -42,9 +42,8 @@ class Tracker:
         # changes in the map extent
         self.extent_changed = False
 
-        # Initialize the player position
+        # Initialize the current player
         self.player = None
-        self.previous_player = None
 
     # syncs all currently known bricks with the currently known bricks list on the server
     def sync_with_server_side_bricks(self):
@@ -66,7 +65,7 @@ class Tracker:
             for brick in server_bricks:
 
                 # set the current player
-                if brick.asset_id == PLAYER_POSITION_ASSET_ID:
+                if brick.asset_id == PLAYER_POSITION_ASSET_ID and brick != self.player:
                     self.player = brick
                     self.set_virtual_brick_at_global_pos_of(self.player)
                     logger.info("set the player {}".format(self.player))

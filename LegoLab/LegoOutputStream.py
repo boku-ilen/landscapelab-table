@@ -355,18 +355,9 @@ class LegoOutputStream:
         # render bricks on top of transparent overlay_target
         overlay_target = render_target.copy()
 
-        player = None
         # filter external bricks out of the virtual brick list and iterate over them
         for brick in filter(lambda b: b.status == LegoStatus.EXTERNAL_BRICK, self.tracker.virtual_bricks):
             self.render_brick(brick, overlay_target, True)
-
-            # remember the player brick
-            if brick.asset_id == PLAYER_POSITION_ASSET_ID:
-                player = brick
-
-        # redraw the player so that it is always on the top
-        if player is not None:
-            self.render_brick(player, overlay_target, True)
 
         # add overlay_target to render_target with alpha_value
         cv2.addWeighted(overlay_target, VIRTUAL_BRICK_ALPHA, render_target, 1 - VIRTUAL_BRICK_ALPHA, 0, render_target)

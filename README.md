@@ -27,27 +27,33 @@ usually not necessary to stop and restart the Remote Rendering process. However 
 Rendering process while LegoLab is running will result in an Connection Error and QGIS will not be able to send messages
 to LegoLab. To resolve this issue simply restart LegoLab.
 
- 
-
 # Run
 
 run the server
+
 run QGIS-Plugin Remote Rendering
+
 start as a module: python.exe -m LegoLab
 
 # Parameters
 Optional:
+
 --threshold 
   overwrites default threshold for black-white image to recognize qr-codes
+  
 --usestream
   path and name of the file with saved .bag stream
+  
 --ip
   overwrites default server ip defined in config
+  
 --scenario
   overwrites default starting scenario defined in config
+  
 --starting_location
   overwrites default starting location defined in config
 
 # Examples
 python.exe -m (...)/LegoLab
+
 (...)/python.exe -m (...)/LegoLab --usestream=stream.bag --threshold=155

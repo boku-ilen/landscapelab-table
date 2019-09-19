@@ -42,10 +42,7 @@ class ServerListenerThread(threading.Thread):
             # check if in correct program stage
             if self.get_program_stage() is ProgramStage.LEGO_DETECTION:
 
-                # get regularly the player position
-                # self.tracker.get_player()
-
-                # sync bricks with server
+                # sync bricks and the player with server
                 self.tracker.sync_with_server_side_bricks()
 
                 # get update progress bars to reflect new energy output

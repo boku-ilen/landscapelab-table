@@ -37,13 +37,13 @@ class ServerListenerThread(threading.Thread):
 
         while not self.ticker.wait(WAIT_SECONDS):
 
-            logger.debug("starting routine server request")
+            logger.info("starting routine server request")
 
             # check if in correct program stage
             if self.get_program_stage() is ProgramStage.LEGO_DETECTION:
 
                 # get regularly the player position
-                self.tracker.get_player()
+                # self.tracker.get_player()
 
                 # sync bricks with server
                 self.tracker.sync_with_server_side_bricks()

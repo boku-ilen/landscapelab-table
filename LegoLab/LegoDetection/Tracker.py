@@ -91,18 +91,31 @@ class Tracker:
             c_brick_ids = [b.asset_id for b in self.confirmed_bricks]
             s_brick_ids = [b.asset_id for b in server_bricks]
 
-            # add server brick to virtual bricks if it's ID is unknown
             for brick in server_bricks:
-                if brick.asset_id not in v_brick_ids \
+
+                # set the current player
+                if brick.asset_id == PLAYER_POSITION_ASSET_ID:
+                    self.player = brick
+                    self.set_virtual_brick_at_global_pos_of(self.player)
+                    logger.info("set the player {}".format(self.player))
+
+                # add server brick to virtual bricks if it's ID is unknown
+                elif brick.asset_id not in v_brick_ids \
                         and brick.asset_id not in c_brick_ids:
                     self.virtual_bricks.append(brick)
 
-            # remove all virtual bricks that have been removed externally
             for v_brick in self.virtual_bricks:
+
+                # remove all virtual bricks that have been removed externally
                 if v_brick.status == LegoStatus.EXTERNAL_BRICK and v_brick.asset_id not in s_brick_ids \
                         and v_brick.asset_id != PLAYER_POSITION_ASSET_ID:
                     self.virtual_bricks.remove(v_brick)
                     logger.info("removed externally removed virtual brick")
+
+                # remove all other (previous) players
+                if v_brick.asset_id == PLAYER_POSITION_ASSET_ID and v_brick != self.player:
+                    self.remove_external_virtual_brick(v_brick)
+                    logger.info("remove previous players {}".format(v_brick))
 
             # TODO BELOW IS AN OPTIONAL FEATURE THAT REINTRODUCES CONFIRMED BRICKS WHICH HAVE BEEN FALSELY REMOVED FROM
             #  THE SERVER. FROM MY TESTING IT SEEMS LIKE IT DOES NOT EXACTLY DO WHAT IT IS SUPPOSED TO DO.

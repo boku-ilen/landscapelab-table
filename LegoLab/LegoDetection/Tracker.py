@@ -83,11 +83,6 @@ class Tracker:
                     self.virtual_bricks.remove(v_brick)
                     logger.info("removed externally removed virtual brick")
 
-                # remove all other (previous) players
-                elif v_brick.asset_id == PLAYER_POSITION_ASSET_ID and v_brick != self.player:
-                    self.remove_external_virtual_brick(v_brick)
-                    logger.info("removed previous players {}".format(v_brick))
-
             # TODO BELOW IS AN OPTIONAL FEATURE THAT REINTRODUCES CONFIRMED BRICKS WHICH HAVE BEEN FALSELY REMOVED FROM
             #  THE SERVER. FROM MY TESTING IT SEEMS LIKE IT DOES NOT EXACTLY DO WHAT IT IS SUPPOSED TO DO.
             #  (probably because the fetched brick list does not include special bricks like the player teleport brick)
@@ -112,6 +107,9 @@ class Tracker:
 
         # do ui update for all confirmed bricks
         self.do_confirmed_ui_update()
+
+        # remove bricks that are not virtual anymore, e.g. the player
+        self.remove_old_virtual_bricks()
 
         self.select_and_classify_candidates()
 
@@ -214,10 +212,19 @@ class Tracker:
                 if brick.status == LegoStatus.INTERNAL_BRICK:
                     Tracker.set_brick_outdated(brick)
 
-        for brick in self.virtual_bricks:
+    def remove_old_virtual_bricks(self):
+
+        # update virtual bricks
+        for v_brick in self.virtual_bricks:
+
             # remove any virtual internal bricks that do not lie on ui elements anymore
-            if brick.status == LegoStatus.INTERNAL_BRICK and not self.brick_on_ui(brick):
-                self.virtual_bricks.remove(brick)
+            if v_brick.status == LegoStatus.INTERNAL_BRICK and not self.brick_on_ui(v_brick):
+                self.virtual_bricks.remove(v_brick)
+
+            # remove all previous players
+            elif v_brick.asset_id == PLAYER_POSITION_ASSET_ID and v_brick != self.player:
+                self.remove_external_virtual_brick(v_brick)
+                logger.info("removed previous players {}".format(v_brick))
 
     # selects those candidates that appeared long enough to be considered confirmed and add them to the confirmed list
     # also does ui update for those bricks and classifies them

@@ -20,18 +20,23 @@ class MiniMap(UIStructureBlock, MapHandler):
         self.extent_tracker = ExtentTracker.get_instance()
 
         UIStructureBlock.__init__(self, config, position, size)
-        MapHandler.__init__(self, config, name, self.get_start_extent(), (int(size[0]), int(size[1])))
+        MapHandler.__init__(self, config, name, self.get_start_extent(config), (int(size[0]), int(size[1])))
 
         self.viewport_extent = LegoExtent.from_tuple(self.get_bounds())
 
         self.pressed = False
         self.pressed_once = False
 
-    def get_start_extent(self):
-        center = self.controlled_map.current_extent.get_center()
-        zoom = self.controlled_map.current_extent.get_width() * 2
+    def get_start_extent(self, config):
+        # start extent calculation using main map extent as reference
+        # center = self.controlled_map.current_extent.get_center()
+        # zoom = self.controlled_map.current_extent.get_width() * 2
 
-        return LegoExtent.around_center(center, zoom, 1)
+        # return LegoExtent.around_center(center, zoom, 1)
+
+        extent_arr = config.get("general", "mini_map_extent")
+
+        return LegoExtent.from_tuple(tuple(extent_arr), True)
 
     def draw(self, img):
 

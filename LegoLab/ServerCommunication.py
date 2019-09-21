@@ -119,7 +119,7 @@ class ServerCommunication:
         request_return = requests.get(scenario_request_msg)
 
         if not self.check_status_code_200(request_return.status_code):
-            raise ConnectionError("Bad request")
+            raise ConnectionError("Bad request: {}".format(scenario_request_msg))
 
         scenarios = json.loads(request_return.text)
 
@@ -234,7 +234,7 @@ class ServerCommunication:
 
         # check if request successful
         if not self.check_status_code_200(contrib_return.status_code):
-            raise ConnectionError("Bad Request")
+            raise ConnectionError("Bad Request: {}".format(get_asset_contrib_msg))
 
         # return energy contribution
         return json.loads(contrib_return.text)['total_energy_contribution']
@@ -255,7 +255,7 @@ class ServerCommunication:
 
         # check if request successful
         if not self.check_status_code_200(target_return.status_code):
-            raise ConnectionError("Bad Request")
+            raise ConnectionError("Bad Request: {}".format(get_asset_target_msg))
 
         # return energy target
         return json.loads(target_return.text)['energy_target']

@@ -14,7 +14,7 @@ from ...ServerCommunication import ServerCommunication
 
 
 def setup_ui(main_map: MainMap, config: ConfigManager, server: ServerCommunication) \
-        -> Tuple[UIElement, MiniMap, Callable]:
+        -> Tuple[UIElement, MiniMap, Callable, UIElement]:
     action_map = main_map.action_map
 
     # get config settings
@@ -52,6 +52,7 @@ def setup_ui(main_map: MainMap, config: ConfigManager, server: ServerCommunicati
         np.asarray([280 * scale_factor, 280 * scale_factor]),
         main_map
     )
+    lego_detection_ui = UIElement()
     progress_bar_wind = ProgressBar(
         config,
         bot_right_corner - x_offset - y_offset * 5,
@@ -87,11 +88,14 @@ def setup_ui(main_map: MainMap, config: ConfigManager, server: ServerCommunicati
     navigation_block.add_child(zoom_in_button)
     navigation_block.add_child(zoom_out_button)
     navigation_block.add_child(mini_map)
-    root.add_child(progress_bar_wind)
-    root.add_child(progress_bar_pv)
+    root.add_child(lego_detection_ui)
+    lego_detection_ui.add_child(progress_bar_wind)
+    lego_detection_ui.add_child(progress_bar_pv)
 
-    # set nav block invisible
+    # set nav block and lego detection ui invisible
     navigation_block.set_visible(False)
+    lego_detection_ui.set_visible(False)
+
 
     # set button functionality
     pan_up_button.set_callback(UIActionType.PRESS, action_map[MapActions.PAN_UP])
@@ -112,7 +116,7 @@ def setup_ui(main_map: MainMap, config: ConfigManager, server: ServerCommunicati
         toggle_nav_block_button.set_callback(UIActionType.PRESS, lambda brick: navigation_block.set_visible(True))
         toggle_nav_block_button.set_callback(UIActionType.RELEASE, lambda brick: navigation_block.set_visible(False))
 
-    return root, mini_map, partial(update_progress_bars, [progress_bar_wind, progress_bar_pv])
+    return root, mini_map, partial(update_progress_bars, [progress_bar_wind, progress_bar_pv]), lego_detection_ui
 
 
 # calls the update function on all progress bars that were passed in

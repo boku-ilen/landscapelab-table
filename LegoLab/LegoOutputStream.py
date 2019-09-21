@@ -73,6 +73,7 @@ class LegoOutputStream:
     def __init__(self,
                  map_handler: MainMap,
                  ui_root: UIElement,
+                 detection_ui: UIElement,
                  tracker: Tracker,
                  config: ConfigManager,
                  board: Board,
@@ -81,6 +82,7 @@ class LegoOutputStream:
                  video_output_name=None):
 
         self.config = config
+        self.detection_ui = detection_ui
         self.extent_tracker = ExtentTracker.get_instance()
         self.board = board
         self.program_stage = program_stage
@@ -263,6 +265,7 @@ class LegoOutputStream:
         # TODO: use button_map for all keys
         # n -> change from EVALUATION to LEGO_DETECTION program stage
         if program_stage.current_stage == ProgramStage.EVALUATION and key == 110:
+            self.detection_ui.set_visible(True)
             program_stage.next()
 
         # Break with Esc  # FIXME: CG: keyboard might not be available - use signals?

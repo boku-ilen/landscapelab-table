@@ -55,7 +55,7 @@ class LegoLab:
 
         # initialize map handler and ui
         self.main_map = MainMap(self.config, 'main_map', self.scenario, self.server)
-        ui_root, mini_map, progress_bar_update_function = setup_ui(self.main_map, self.config, self.server)
+        ui_root, mini_map, progress_bar_update_function, detection_ui = setup_ui(self.main_map, self.config, self.server)
         map_dict = {self.main_map.name: self.main_map, mini_map.name: mini_map}
 
         # link the progress_bar_update_function to the brick_update_callback so that it will be called whenever an asset
@@ -83,8 +83,8 @@ class LegoLab:
         self.server_listener_thread.start()
 
         # initialize the input and output stream
-        self.output_stream = LegoOutputStream(self.main_map, ui_root, self.tracker, self.config, self.board,
-                                              self.program_stage, self.server_listener_thread)
+        self.output_stream = LegoOutputStream(self.main_map, ui_root, detection_ui, self.tracker, self.config,
+                                              self.board, self.program_stage, self.server_listener_thread)
         self.input_stream = LegoInputStream(self.config, self.board, usestream=self.used_stream)
 
         # initialize the lego detector

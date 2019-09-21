@@ -57,14 +57,16 @@ def setup_ui(main_map: MainMap, config: ConfigManager, server: ServerCommunicati
         bot_right_corner - x_offset - y_offset * 5,
         x_offset / 2 + y_offset * 4.5,
         False,
-        True
+        True,
+        [(255, 0, 0)]       # bgr
     )
     progress_bar_pv = ProgressBar(
         config,
         bot_right_corner - x_offset * 2 - y_offset * 5,
         x_offset / 2 + y_offset * 4.5,
         False,
-        True
+        True,
+        [(0, 0, 255)]       # bgr
     )
 
     asset_type_id = config.get("server", "wind_id")

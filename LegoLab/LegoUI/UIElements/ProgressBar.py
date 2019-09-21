@@ -12,13 +12,17 @@ logger = logging.getLogger(__name__)
 
 class ProgressBar(UIStructureBlock):
 
-    def __init__(self, config: ConfigManager, position: np.ndarray, size: np.ndarray, horizontal: bool, flipped: bool):
+    def __init__(self, config: ConfigManager, position: np.ndarray, size: np.ndarray, horizontal: bool, flipped: bool, bar_color=None):
         super().__init__(config, position, size)
         self.config = config
 
         default_bar_color = config.get("ui-settings", "progress-bar-color")
 
         self.bar_color = [(color[2], color[1], color[0]) for color in default_bar_color]
+
+        if bar_color:
+            self.bar_color = bar_color
+
         self.horizontal: bool = horizontal
         self.flipped: bool = flipped
         self.wrap_around = False

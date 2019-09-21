@@ -9,6 +9,9 @@ from ...ConfigManager import ConfigManager
 # Configure logger
 logger = logging.getLogger(__name__)
 
+GREEN = (0, 255, 0)
+OFFSET = 20
+
 
 class ProgressBar(UIStructureBlock):
 
@@ -30,6 +33,8 @@ class ProgressBar(UIStructureBlock):
         self.target = 1
         self.progress: float = 0
         self.progress_calculation: Optional[Callable[[], float]] = None
+
+        self.bar_position = position
 
     def update_progress(self, new_progress):
         self.progress = min(new_progress, 1)
@@ -74,6 +79,10 @@ class ProgressBar(UIStructureBlock):
 
             self.draw_border(img, self.border_color)
 
+            # show a green circle if the progress is achieved
+            if progress >= 1:
+                self.draw_success(img, int(self.bar_position[0]), int(self.bar_position[1]), int(width/2))
+
     # returns the color pf the bar as well as the chosen background
     # (if the bar exceeds 100% it wraps around with a new color)
     def get_bar_colors(self):
@@ -91,3 +100,9 @@ class ProgressBar(UIStructureBlock):
             self.update_progress(self.progress_calculation() / self.target)
         else:
             raise TypeError("No progress calculation was defined.")
+
+    # show a green circle if the progress is achieved
+    @staticmethod
+    def draw_success(img, x_pos, y_pos, half_of_width):
+
+        cv2.circle(img, (x_pos + half_of_width, y_pos - OFFSET), half_of_width, GREEN, cv2.FILLED)

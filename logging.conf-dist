@@ -21,7 +21,7 @@ propagate=0
 class=FileHandler
 level=DEBUG
 formatter=logFormatter
-args=(__import__("datetime").datetime.now().strftime('logs/%%Y-%%m-%%d_%%H-%%M-%%S.log'), 'w')
+args=(__import__("datetime").datetime.now().strftime('logs/%%Y-%%m-%%d_%%H-%%M-%%S.log'), 'a')
 
 [handler_consoleHandler]
 class=StreamHandler

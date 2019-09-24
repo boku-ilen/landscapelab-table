@@ -10,7 +10,7 @@ import cv2 as cv
 import logging
 
 # Configure Logger
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('MainLogger')
 
 
 # a rectangular button that calls specified functions once a brick enters/leaves the button

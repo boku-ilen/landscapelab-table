@@ -7,7 +7,7 @@ from .UIStructureBlock import UIStructureBlock
 from ...ConfigManager import ConfigManager
 
 # Configure logger
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('MainLogger')
 
 GREEN = (0, 255, 0)
 OFFSET = 20

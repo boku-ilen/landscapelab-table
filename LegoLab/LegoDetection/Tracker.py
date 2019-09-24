@@ -7,7 +7,7 @@ from ..ExtentTracker import ExtentTracker
 from ..LegoExtent import LegoExtent
 
 # configure logging
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('MainLogger')
 
 PLAYER_POSITION_ASSET_ID = 13
 

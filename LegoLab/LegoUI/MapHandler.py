@@ -10,7 +10,7 @@ from ..LegoExtent import LegoExtent
 from ..ExtentTracker import ExtentTracker
 
 # Configure Logger
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('MainLogger')
 
 
 class MapHandler:

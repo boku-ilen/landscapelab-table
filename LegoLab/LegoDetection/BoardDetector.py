@@ -11,7 +11,7 @@ from ..Board import Board
 
 
 # configure logging
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('MainLogger')
 
 # Objects in greater distance to the board than (1 +- CLIP) * x will be excluded from processing
 CLIP = 0.1

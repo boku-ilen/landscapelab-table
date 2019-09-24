@@ -5,7 +5,7 @@ keys=root,MainLogger
 keys=consoleHandler,fileHandler
 
 [formatters]
-keys=consoleFormatter
+keys=consoleFormatter,logFormatter
 
 [logger_root]
 level=DEBUG
@@ -20,8 +20,8 @@ propagate=0
 [handler_fileHandler]
 class=FileHandler
 level=DEBUG
-formatter=consoleFormatter
-args=('logs/landscapelab-lego.log', 'w')
+formatter=logFormatter
+args=(__import__("datetime").datetime.now().strftime('logs/%%Y-%%m-%%d_%%H-%%M-%%S.log'), 'w')
 
 [handler_consoleHandler]
 class=StreamHandler
@@ -29,5 +29,8 @@ level=DEBUG
 formatter=consoleFormatter
 args=(sys.stdout,)
 
+[formatter_logFormatter]
+format=%(asctime)s | %(levelname)-8s | %(filename)s-%(lineno)04d | %(message)s
+
 [formatter_consoleFormatter]
-format=[%(asctime)s] [%(levelname)8s] [%(lineno)04d]: %(message)s
+format=%(asctime)s | %(levelname)-8s | %(filename)s-%(lineno)04d | %(message)s

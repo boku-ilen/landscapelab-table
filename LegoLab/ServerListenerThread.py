@@ -8,7 +8,7 @@ from .LegoDetection.Tracker import Tracker
 from .ProgramStage import ProgramStage
 
 # Configure logger
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('MainLogger')
 
 WAIT_SECONDS = 5
 

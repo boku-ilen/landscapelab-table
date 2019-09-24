@@ -8,7 +8,7 @@ from .ExtentTracker import ExtentTracker
 from .ProgramStage import ProgramStage
 
 # Configure logging
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('MainLogger')
 
 # Constants for server communication
 HTTP = "http://"

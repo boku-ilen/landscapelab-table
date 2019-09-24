@@ -17,7 +17,8 @@ from .ServerListenerThread import ServerListenerThread
 
 
 # configure logging
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('MainLogger')
+
 try:
     logging.config.fileConfig('logging.conf')
     logger.info("Logging initialized")

@@ -4,7 +4,7 @@ import logging
 
 from .LegoBricks import LegoBrick
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('MainLogger')
 
 
 class LegoExtent:

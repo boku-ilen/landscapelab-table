@@ -19,7 +19,7 @@ from .Board import Board
 from .ServerListenerThread import ServerListenerThread
 
 # enable logger
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('MainLogger')
 
 # drawing constants
 BRICK_DISPLAY_SIZE = 10
@@ -428,8 +428,9 @@ class LegoOutputStream:
 
     # closing the outputstream if it is defined
     def close(self):
-        logger.info("exit")
         self.server_thread.ticker.set()
+        logger.info("exit")
+        logging.shutdown()
         cv2.destroyAllWindows()
         if self.video_handler:
             self.video_handler.release()

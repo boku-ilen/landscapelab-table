@@ -8,7 +8,7 @@ from ..ConfigManager import ConfigManager
 from ..LegoExtent import LegoExtent
 
 # Configure logger
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('MainLogger')
 
 
 class ListenerThread(threading.Thread):

@@ -1,6 +1,6 @@
 {
   "general": {
-    "scenario": "Nockberge",
+    "scenario": "Joglland",
     "starting_location": "auto select",
     "NOTE": "starting_location overwrites the start location in the server response if an invalid value is given (e.g. 'auto select') it will be ignored",
     "mini_map_extent": [1755560, 6013550, 10000],
@@ -197,7 +197,7 @@
     "button-background-color": [255, 255, 255],
     "button-active-background-color": [200, 200, 200],
     "button-border-color": [200, 200, 200],
-    "button-border-weight": 3,
+    "button-border-weight": 2,
 
     "nav-block-background-color": [255, 255, 255],
     "nav-block-border-color": [200, 200, 200],

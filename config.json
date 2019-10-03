@@ -196,7 +196,7 @@
 
     "button-background-color": [255, 255, 255],
     "button-active-background-color": [200, 200, 200],
-    "button-border-color": [100, 100, 100],
+    "button-border-color": [200, 200, 200],
     "button-border-weight": 3,
 
     "nav-block-background-color": [255, 255, 255],

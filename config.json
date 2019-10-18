@@ -211,15 +211,16 @@
   },
 
   "button_map": {
-    "MAP_PAN_UP": "w",
-    "MAP_PAN_DOWN": "s",
-    "MAP_PAN_LEFT": "a",
-    "MAP_PAN_RIGHT": "d",
-    "MAP_ZOOM_IN": "q",
-    "MAP_ZOOM_OUT": "e",
-    "DEBUG_CHANNEL_UP": "r",
-    "DEBUG_CHANNEL_DOWN": "f",
-    "NEXT_PROGRAM_STAGE": "n"
+    "PAN_UP": "w",
+    "PAN_DOWN": "s",
+    "PAN_LEFT": "a",
+    "PAN_RIGHT": "d",
+    "ZOOM_IN": "q",
+    "ZOOM_OUT": "e",
+    "CHANNEL_UP": "r",
+    "CHANNEL_DOWN": "f",
+    "CHANGE_STAGE": "n",
+    "CONFIRM_BRICKS": "x"
   },
 
   "map_settings": {

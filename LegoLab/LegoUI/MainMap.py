@@ -3,7 +3,6 @@ from typing import Dict, Tuple
 import numpy as np
 
 from .MapHandler import MapHandler
-from .MapActions import MapActions
 from ..ConfigManager import ConfigManager, ConfigError
 from ..LegoExtent import LegoExtent
 from ..ServerCommunication import ServerCommunication
@@ -43,14 +42,12 @@ class MainMap(MapHandler):
         pan_distance = config.get('map_settings', 'pan_distance')
         zoom_strength = config.get('map_settings', 'zoom_strength')
 
-        self.action_map = {
-            MapActions.PAN_UP: partial(self.init_render, pan_up_modifier, pan_distance),
-            MapActions.PAN_DOWN: partial(self.init_render, pan_down_modifier, pan_distance),
-            MapActions.PAN_LEFT: partial(self.init_render, pan_left_modifier, pan_distance),
-            MapActions.PAN_RIGHT: partial(self.init_render, pan_right_modifier, pan_distance),
-            MapActions.ZOOM_IN: partial(self.init_render, zoom_in_modifier, zoom_strength),
-            MapActions.ZOOM_OUT: partial(self.init_render, zoom_out_modifier, zoom_strength)
-        }
+        self.pan_up = partial(self.init_render, pan_up_modifier, pan_distance)
+        self.pan_down = partial(self.init_render, pan_down_modifier, pan_distance)
+        self.pan_left = partial(self.init_render, pan_left_modifier, pan_distance)
+        self.pan_right = partial(self.init_render, pan_right_modifier, pan_distance)
+        self.zoom_in = partial(self.init_render, zoom_in_modifier, zoom_strength)
+        self.zoom_out = partial(self.init_render, zoom_out_modifier, zoom_strength)
 
     def get_start_extent(self, scenario):
 
@@ -111,7 +108,3 @@ class MainMap(MapHandler):
 
     def refresh_callback(self):
         self.server.update_extent_info(self.current_extent)
-
-    def invoke(self, action: MapActions):
-        if action in self.action_map:
-            self.action_map[action](None)

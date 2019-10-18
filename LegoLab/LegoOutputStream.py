@@ -1,7 +1,6 @@
 from enum import Enum
 import cv2
 import screeninfo
-from functools import partial
 import numpy as np
 import logging
 
@@ -9,10 +8,10 @@ from .ProgramStage import ProgramStage, CurrentProgramStage
 from .LegoDetection.Tracker import Tracker
 from .ConfigManager import ConfigManager
 from .LegoUI.MainMap import MainMap
-from .LegoUI.MapActions import MapActions
 from .LegoUI.UIElements.UIElement import UIElement
 from .LegoBricks import LegoBrick, LegoColor, LegoShape, LegoStatus
 from .LegoUI.ImageHandler import ImageHandler
+from .LegoUI.CallbackManager import CallbackManager
 from .ExtentTracker import ExtentTracker
 from .LegoExtent import LegoExtent
 from .Board import Board
@@ -73,7 +72,7 @@ class LegoOutputStream:
     def __init__(self,
                  map_handler: MainMap,
                  ui_root: UIElement,
-                 detection_ui: UIElement,
+                 callback_manager: CallbackManager,
                  tracker: Tracker,
                  config: ConfigManager,
                  board: Board,
@@ -82,7 +81,7 @@ class LegoOutputStream:
                  video_output_name=None):
 
         self.config = config
-        self.detection_ui = detection_ui
+        self.callback_manager = callback_manager
         self.extent_tracker = ExtentTracker.get_instance()
         self.board = board
         self.program_stage = program_stage
@@ -127,24 +126,6 @@ class LegoOutputStream:
         self.ui_root = ui_root
         self.map_handler = map_handler
         self.tracker: Tracker = tracker
-
-        # setup button map
-        # reads corresponding keyboard input for action with config.get(...) and converts it to int with ord(...)
-        self.BUTTON_MAP = {
-            ord(config.get('button_map', 'DEBUG_CHANNEL_UP')): self.channel_up,
-            ord(config.get('button_map', 'DEBUG_CHANNEL_DOWN')): self.channel_down,
-            # FIXME: error shortly after the program start when NEXT_PROGRAM_STAGE used:
-            # BoardDetector.py", line 400, in subtract_background
-            # diff = cv2.absdiff(color_image, self.background.astype("uint8"))
-            # AttributeError: 'NoneType' object has no attribute 'astype'
-            #ord(config.get('button_map', 'NEXT_PROGRAM_STAGE')): self.program_stage.next(),
-            ord(config.get('button_map', 'MAP_PAN_UP')): partial(map_handler.invoke, MapActions.PAN_UP),
-            ord(config.get('button_map', 'MAP_PAN_DOWN')): partial(map_handler.invoke, MapActions.PAN_DOWN),
-            ord(config.get('button_map', 'MAP_PAN_LEFT')): partial(map_handler.invoke, MapActions.PAN_LEFT),
-            ord(config.get('button_map', 'MAP_PAN_RIGHT')): partial(map_handler.invoke, MapActions.PAN_RIGHT),
-            ord(config.get('button_map', 'MAP_ZOOM_IN')): partial(map_handler.invoke, MapActions.ZOOM_IN),
-            ord(config.get('button_map', 'MAP_ZOOM_OUT')): partial(map_handler.invoke, MapActions.ZOOM_OUT)
-        }
 
         # create image handler to load images
         image_handler = ImageHandler(config)
@@ -259,14 +240,8 @@ class LegoOutputStream:
         key = cv2.waitKeyEx(1)
 
         # call button callback
-        if key in self.BUTTON_MAP:
-            self.BUTTON_MAP[key]()
-
-        # TODO: use button_map for all keys
-        # n -> change from EVALUATION to LEGO_DETECTION program stage
-        if program_stage.current_stage == ProgramStage.EVALUATION and key == 110:
-            self.detection_ui.set_visible(True)
-            program_stage.next()
+        if key in self.callback_manager.action_map:
+            self.callback_manager.action_map[key][1].call(None)
 
         # Break with Esc  # FIXME: CG: keyboard might not be available - use signals?
         if key == 27:
@@ -416,6 +391,7 @@ class LegoOutputStream:
             elif brick.asset_id == 13:
                 return self.player_position
             # allow only square bricks for yes / no
+            # NOTE no longer necessary since rectangle bricks will now be marked OUTDATED when in evaluation stage
             elif brick.shape == LegoShape.SQUARE_BRICK:
                 if brick.asset_id == 11:
                     return self.icon_yes

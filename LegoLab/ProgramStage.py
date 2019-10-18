@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Dict, Callable
 
 
 class ProgramStage(Enum):
@@ -14,12 +15,21 @@ class ProgramStage(Enum):
         return ProgramStage(value)
 
 
-# TODO (future releases) convert to singleton, also add possible callbacks to call when stage transitioning
+# TODO (future releases) convert to singleton
 class CurrentProgramStage:
 
-    def __init__(self):
+    def __init__(self, callbacks: Dict[ProgramStage, Callable]):
         self.current_stage: ProgramStage = ProgramStage.WHITE_BALANCE
+        self.callbacks = callbacks
 
     def next(self):
         self.current_stage = self.current_stage.next_stage()
 
+        # call callback function if there is one
+        if self.current_stage in self.callbacks:
+            self.callbacks[self.current_stage]()
+
+    # only switches to the next stage if the current stage is evaluation
+    def only_switch_if_eval(self):
+        if self.current_stage == ProgramStage.EVALUATION:
+            self.next()

@@ -7,7 +7,9 @@ from .LegoDetection.ShapeDetector import ShapeDetector
 from .LegoInputStream import LegoInputStream
 from .LegoOutputStream import LegoOutputStream, LegoOutputChannel
 from .LegoUI.MainMap import MainMap
+from .LegoUI.CallbackManager import CallbackManager
 from .LegoUI.UIElements.UISetup import setup_ui
+from .LegoUI.UIElements.UIElement import UIElement
 from .ServerCommunication import ServerCommunication
 from .LegoDetection.Tracker import Tracker
 from .ConfigManager import ConfigManager
@@ -40,7 +42,12 @@ class LegoLab:
         self.config = ConfigManager()
         LegoOutputStream.set_beamer_config_info(self.config)
 
-        self.program_stage = CurrentProgramStage()
+        # create ui root element
+        ui_root = UIElement()
+        self.callback_manager = CallbackManager(self.config)
+
+        self.program_stage = CurrentProgramStage({})
+        self.callback_manager.set_program_actions(self.program_stage)
 
         # Initialize parameter manager and parse arguments
         self.parser = ParameterManager(self.config)
@@ -54,17 +61,16 @@ class LegoLab:
         self.server = ServerCommunication(self.config, self.program_stage)
         self.scenario = self.server.get_scenario_info(self.config.get("general", "scenario"))
 
-        # initialize map handler and ui
-        self.main_map = MainMap(self.config, 'main_map', self.scenario, self.server)
-        ui_root, mini_map, progress_bar_update_function, detection_ui = setup_ui(self.main_map, self.config, self.server)
-        map_dict = {self.main_map.name: self.main_map, mini_map.name: mini_map}
-
-        # link the progress_bar_update_function to the brick_update_callback so that it will be called whenever an asset
-        # is added or removed from the server
-        self.server.brick_update_callback = progress_bar_update_function
-
         # Initialize the centroid tracker
         self.tracker = Tracker(self.config, self.board, self.server, ui_root)
+        self.callback_manager.set_tracker_callbacks(self.tracker)
+
+        # initialize map, map callbacks and ui
+        self.main_map = MainMap(self.config, 'main_map', self.scenario, self.server)
+        self.callback_manager.set_map_callbacks(self.main_map)
+        mini_map, detection_ui, progress_bar_update_function = \
+            setup_ui(ui_root, self.main_map,  self.config, self.server, self.callback_manager)
+        map_dict = {self.main_map.name: self.main_map, mini_map.name: mini_map}
 
         # Initialize and start the QGIS listener Thread
         # also request the first rendered map section
@@ -72,6 +78,10 @@ class LegoLab:
         self.listener_thread.start()
         self.main_map.request_render()
         mini_map.request_render()
+
+        # link the progress_bar_update_function to the brick_update_callback so that it will be called whenever an asset
+        # is added or removed from the server
+        self.server.brick_update_callback = progress_bar_update_function
 
         # Initialize and start the server listener thread
         self.server_listener_thread = ServerListenerThread(
@@ -84,8 +94,17 @@ class LegoLab:
         self.server_listener_thread.start()
 
         # initialize the input and output stream
-        self.output_stream = LegoOutputStream(self.main_map, ui_root, detection_ui, self.tracker, self.config,
-                                              self.board, self.program_stage, self.server_listener_thread)
+        self.output_stream = LegoOutputStream(
+            self.main_map,
+            ui_root,
+            self.callback_manager,
+            self.tracker,
+            self.config,
+            self.board,
+            self.program_stage,
+            self.server_listener_thread
+        )
+        self.callback_manager.set_output_actions(self.output_stream)
         self.input_stream = LegoInputStream(self.config, self.board, usestream=self.used_stream)
 
         # initialize the lego detector

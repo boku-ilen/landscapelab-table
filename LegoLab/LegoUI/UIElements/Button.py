@@ -1,12 +1,12 @@
 from ..UIElements.UIElement import UIActionType
 from ..UIElements.UIStructureBlock import UIStructureBlock
+from LegoUI.UICallback import UICallback
 from ...LegoBricks import LegoBrick, LegoStatus
 from ..ImageHandler import ImageHandler
 from ...ConfigManager import ConfigManager
-from typing import Callable, Dict
+from typing import Dict
 import numpy as np
 
-import cv2 as cv
 import logging
 
 # Configure Logger
@@ -47,21 +47,17 @@ class Button(UIStructureBlock):
         self.is_ellipse = True
 
         # set button callback functions
-        self.callbacks: Dict[UIActionType, Callable[[LegoBrick], None]] = {}
-        self.set_callback(UIActionType.PRESS, self.callback_do_nothing)
-        self.set_callback(UIActionType.RELEASE, self.callback_do_nothing)
+        self.callbacks: Dict[UIActionType, UICallback] = {}
+        self.set_callback(UIActionType.PRESS, UICallback())
+        self.set_callback(UIActionType.RELEASE, UICallback())
         # self.set_callback(UIActionType.HOLD, self.callback_do_nothing)
 
         self.pressed = False
         self.pressed_once = False
 
     # assigns callback functions to different button actions
-    def set_callback(self, action_type: UIActionType, callback: Callable[[LegoBrick], None]):
+    def set_callback(self, action_type: UIActionType, callback: UICallback):
         self.callbacks[action_type] = callback
-
-    # assign this to an action if you don't want it to do anything
-    def callback_do_nothing(self, brick):
-        pass
 
     # checks if a given brick lies on top of the button or any of it's children
     # also executes callback functions press and hold
@@ -99,7 +95,7 @@ class Button(UIStructureBlock):
     def call(self, action_type: UIActionType, brick):
 
         if action_type in self.callbacks:
-            self.callbacks[action_type](brick)
+            self.callbacks[action_type].call(brick)
             logger.info('{} button {}'.format(self.name, action_type.name))
 
     # draws the button onto an image

@@ -105,6 +105,10 @@
 
     "button_zoom_out": {
       "path": ["button_icons", "zoom_out.png"]
+    },
+    "button_confirm": {
+      "path": ["button_icons", "zoom_out.png"],
+      "NOTE": "TODO create fitting icon and reference it here"
     }
   },
 

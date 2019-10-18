@@ -45,6 +45,7 @@ def setup_ui(main_map: MainMap, config: ConfigManager, server: ServerCommunicati
     pan_right_button = Button(config, cross_offset + y_offset + x_offset * 2, button_size, 'pan right', 'button_right')
     zoom_in_button = Button(config, pan_offset, button_size, 'zoom in', 'button_zoom_in')
     zoom_out_button = Button(config, pan_offset + y_offset * 2, button_size, 'zoom out', 'button_zoom_out')
+    confirm_button = Button(config, cross_offset + x_offset + y_offset, button_size, 'confirm bricks', 'button_confirm')
     mini_map = MiniMap(
         config,
         'mini_map',
@@ -87,6 +88,7 @@ def setup_ui(main_map: MainMap, config: ConfigManager, server: ServerCommunicati
     navigation_block.add_child(pan_right_button)
     navigation_block.add_child(zoom_in_button)
     navigation_block.add_child(zoom_out_button)
+    navigation_block.add_child(confirm_button)
     navigation_block.add_child(mini_map)
     root.add_child(lego_detection_ui)
     lego_detection_ui.add_child(progress_bar_wind)
@@ -96,7 +98,6 @@ def setup_ui(main_map: MainMap, config: ConfigManager, server: ServerCommunicati
     navigation_block.set_visible(False)
     lego_detection_ui.set_visible(False)
 
-
     # set button functionality
     pan_up_button.set_callback(UIActionType.PRESS, action_map[MapActions.PAN_UP])
     pan_down_button.set_callback(UIActionType.PRESS, action_map[MapActions.PAN_DOWN])
@@ -104,6 +105,7 @@ def setup_ui(main_map: MainMap, config: ConfigManager, server: ServerCommunicati
     pan_right_button.set_callback(UIActionType.PRESS, action_map[MapActions.PAN_RIGHT])
     zoom_in_button.set_callback(UIActionType.PRESS, action_map[MapActions.ZOOM_IN])
     zoom_out_button.set_callback(UIActionType.PRESS, action_map[MapActions.ZOOM_OUT])
+    confirm_button.set_callback(UIActionType.PRESS, action_map[MapActions.CONFIRM_BRICKS])
 
     if config.get("ui-settings", "nav-block-toggle"):
         # this makes the button toggle

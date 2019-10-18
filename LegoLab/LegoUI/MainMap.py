@@ -49,7 +49,7 @@ class MainMap(MapHandler):
             MapActions.PAN_LEFT: partial(self.init_render, pan_left_modifier, pan_distance),
             MapActions.PAN_RIGHT: partial(self.init_render, pan_right_modifier, pan_distance),
             MapActions.ZOOM_IN: partial(self.init_render, zoom_in_modifier, zoom_strength),
-            MapActions.ZOOM_OUT: partial(self.init_render, zoom_out_modifier, zoom_strength),
+            MapActions.ZOOM_OUT: partial(self.init_render, zoom_out_modifier, zoom_strength)
         }
 
     def get_start_extent(self, scenario):

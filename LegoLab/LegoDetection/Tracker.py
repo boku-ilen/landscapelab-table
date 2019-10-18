@@ -308,11 +308,7 @@ class Tracker:
                     LegoExtent.calc_local_pos(brick, self.extent_tracker.board, self.extent_tracker.map_extent)
 
             logger.info("set bricks outdated because extent changed")
-            for brick in self.confirmed_bricks:
-                if brick.status == LegoStatus.EXTERNAL_BRICK:
-                    # change status of lego bricks to outdated
-                    self.set_virtual_brick_at_global_pos_of(brick)
-                    Tracker.set_brick_outdated(brick)
+            self.invalidate_external_bricks()
 
             # set the flag back
             self.extent_tracker.extent_changed = False
@@ -340,3 +336,11 @@ class Tracker:
     def brick_would_land_on_ui(self, brick):
         brick_on_beamer = LegoExtent.remap(brick, self.extent_tracker.board, self.extent_tracker.beamer)
         return self.ui_root.brick_would_land_on_element(brick_on_beamer)
+
+    def invalidate_external_bricks(self):
+
+        for brick in self.confirmed_bricks:
+            if brick.status == LegoStatus.EXTERNAL_BRICK:
+                # change status of lego bricks to outdated
+                self.set_virtual_brick_at_global_pos_of(brick)
+                Tracker.set_brick_outdated(brick)

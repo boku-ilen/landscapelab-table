@@ -221,7 +221,7 @@ class LegoLab:
 
         # Compute tracked lego bricks dictionary using the centroid tracker and set of properties
         # Mark stored lego bricks virtual
-        tracked_lego_bricks = self.tracker.update(potential_lego_bricks_list)
+        tracked_lego_bricks = self.tracker.update(potential_lego_bricks_list, self.program_stage.current_stage)
 
         # Loop over the tracked objects and label them in the stream
         for tracked_lego_brick in tracked_lego_bricks:

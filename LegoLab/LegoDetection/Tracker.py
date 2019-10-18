@@ -1,8 +1,9 @@
 import logging
-from typing import Callable, List
+from typing import List
 
-from ..LegoBricks import LegoBrick, LegoStatus
+from ..LegoBricks import LegoBrick, LegoStatus, LegoColor, LegoShape
 from ..LegoUI.UIElements.UIElement import UIElement
+from ..ProgramStage import ProgramStage
 from ..ExtentTracker import ExtentTracker
 from ..LegoExtent import LegoExtent
 
@@ -37,6 +38,18 @@ class Tracker:
         self.external_max_disappeared = config.get("tracker-thresholds", "external-max-disappeared")
         self.internal_min_appeared = config.get("tracker-thresholds", "internal-min-appeared")
         self.internal_max_disappeared = config.get("tracker-thresholds", "internal-max-disappeared")
+        self.allowed_bricks = {
+            ProgramStage.EVALUATION: [
+                (LegoColor.RED_BRICK, LegoShape.SQUARE_BRICK),
+                (LegoColor.BLUE_BRICK, LegoShape.SQUARE_BRICK)
+            ],
+            ProgramStage.LEGO_DETECTION: [
+                (LegoColor.RED_BRICK, LegoShape.SQUARE_BRICK),
+                (LegoColor.BLUE_BRICK, LegoShape.SQUARE_BRICK),
+                (LegoColor.RED_BRICK, LegoShape.RECTANGLE_BRICK),
+                (LegoColor.BLUE_BRICK, LegoShape.RECTANGLE_BRICK)
+            ]
+        }
 
         # Initialize a flag for
         # changes in the map extent
@@ -97,7 +110,7 @@ class Tracker:
 
     # called once a frame while in ProgramStage EVALUATION or LEGO_DETECTION
     # keeps track of bricks and returns a list of all currently confirmed bricks
-    def update(self, lego_bricks_candidates: List[LegoBrick]):
+    def update(self, lego_bricks_candidates: List[LegoBrick], program_stage):
 
         # count frames certain bricks have been continuously visible / gone
         self.do_brick_ticks(lego_bricks_candidates)
@@ -111,7 +124,7 @@ class Tracker:
         # remove bricks that are not virtual anymore, e.g. the player
         self.remove_old_virtual_bricks()
 
-        self.select_and_classify_candidates()
+        self.select_and_classify_candidates(program_stage)
 
         # handle mouse placed bricks and
         # do ui tick so that the button release event can be recognized and triggered
@@ -228,7 +241,7 @@ class Tracker:
 
     # selects those candidates that appeared long enough to be considered confirmed and add them to the confirmed list
     # also does ui update for those bricks and classifies them
-    def select_and_classify_candidates(self):
+    def select_and_classify_candidates(self, program_stage):
         # add the qualified candidates to the confirmed list and do ui update for them
         for candidate, amount in self.tracked_candidates.items():
 
@@ -253,9 +266,12 @@ class Tracker:
                     if self.brick_on_ui(candidate):
                         candidate.status = LegoStatus.INTERNAL_BRICK
                     else:
-                        candidate.status = LegoStatus.EXTERNAL_BRICK
-                        # if the brick is associated with an asset also send a create request to the server
-                        self.server_communicator.create_lego_instance(candidate)
+                        if self.check_brick_valid(candidate, program_stage):
+                            candidate.status = LegoStatus.EXTERNAL_BRICK
+                            # if the brick is associated with an asset also send a create request to the server
+                            self.server_communicator.create_lego_instance(candidate)
+                        else:
+                            candidate.status = LegoStatus.OUTDATED_BRICK
 
                 # add a new lego brick to the confirmed lego bricks list
                 self.confirmed_bricks.append(candidate)
@@ -337,6 +353,7 @@ class Tracker:
         brick_on_beamer = LegoExtent.remap(brick, self.extent_tracker.board, self.extent_tracker.beamer)
         return self.ui_root.brick_would_land_on_element(brick_on_beamer)
 
+    # sets all external bricks to outdated
     def invalidate_external_bricks(self):
 
         for brick in self.confirmed_bricks:
@@ -344,3 +361,12 @@ class Tracker:
                 # change status of lego bricks to outdated
                 self.set_virtual_brick_at_global_pos_of(brick)
                 Tracker.set_brick_outdated(brick)
+
+    # checks if the brick is allowed in the current program stage
+    def check_brick_valid(self, brick: LegoBrick, stage: ProgramStage):
+        brick_type = (brick.color, brick.shape)
+
+        if stage in self.allowed_bricks.keys():
+            if brick_type in self.allowed_bricks[stage]:
+                return True
+        return False

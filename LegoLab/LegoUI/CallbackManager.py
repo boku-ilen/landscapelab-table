@@ -2,7 +2,7 @@ from typing import Dict, Tuple, List, Type
 from enum import Enum
 import logging
 
-from LegoUI.UICallback import UICallback
+from ..LegoUI.UICallback import UICallback
 from .UIElements.UIElement import UIElement
 from .MainMap import MainMap
 from ..LegoDetection.Tracker import Tracker

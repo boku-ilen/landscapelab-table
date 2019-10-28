@@ -1,6 +1,6 @@
 from ..UIElements.UIElement import UIActionType
 from ..UIElements.UIStructureBlock import UIStructureBlock
-from LegoUI.UICallback import UICallback
+from ..UICallback import UICallback
 from ...LegoBricks import LegoBrick, LegoStatus
 from ..ImageHandler import ImageHandler
 from ...ConfigManager import ConfigManager

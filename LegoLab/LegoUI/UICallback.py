@@ -1,5 +1,6 @@
 from typing import Optional, Callable
-from LegoBricks import LegoBrick
+
+from ..LegoBricks import LegoBrick
 
 
 Callback = Callable[[Optional[LegoBrick]], None]

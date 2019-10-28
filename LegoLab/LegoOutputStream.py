@@ -245,6 +245,7 @@ class LegoOutputStream:
 
         # Break with Esc  # FIXME: CG: keyboard might not be available - use signals?
         if key == 27:
+            logger.info("quit the program with the key")
             return True
         return False
 

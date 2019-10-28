@@ -56,6 +56,8 @@ class ServerCommunication:
     # Create lego instance
     def create_lego_instance(self, lego_brick: LegoBrick):
 
+        logger.debug("creating a lego instance...")
+
         # Compute geographical coordinates for lego bricks
         LegoExtent.calc_world_pos(lego_brick, self.extent_tracker.board, self.extent_tracker.map_extent)
 
@@ -136,6 +138,8 @@ class ServerCommunication:
         raise LookupError('No scenario with name {} exists'.format(scenario_name))
 
     def get_stored_lego_instances(self, asset_id):
+
+        logger.debug("getting stored lego brick instances from the server...")
 
         stored_instances_list = []
 

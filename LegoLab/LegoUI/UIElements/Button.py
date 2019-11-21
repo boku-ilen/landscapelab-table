@@ -4,7 +4,7 @@ from ..UICallback import UICallback
 from ...LegoBricks import LegoBrick, LegoStatus
 from ..ImageHandler import ImageHandler
 from ...ConfigManager import ConfigManager
-from typing import Dict
+from typing import Dict, List
 import numpy as np
 
 import logging
@@ -16,32 +16,51 @@ logger = logging.getLogger('MainLogger')
 # a rectangular button that calls specified functions once a brick enters/leaves the button
 class Button(UIStructureBlock):
 
-    def __init__(self, config: ConfigManager, position: np.ndarray, size: np.ndarray, name: str = '', icon_name: str = None):
+    def __init__(
+            self,
+            config: ConfigManager,
+            position: np.ndarray,
+            size: np.ndarray,
+            name: str = '',
+            icon_name: str = None,
+            color: List = None,
+            active_color: List = None,
+            border_color: List = None,
+            border_weight: float = None
+    ):
 
-        super().__init__(config, position, size)
+        # overwrite none values with defaults
+        if color is None:
+            color = config.get("ui-settings", "button-background-color")
+        if active_color is None:
+            active_color = config.get("ui-settings", "button-active-background-color")
+        if border_color is None:
+            border_color = config.get("ui-settings", "button-border-color")
+        if border_weight is None:
+            border_weight = config.get("ui-settings", "button-border-weight")
 
-        # get defaults
-        default_color = config.get("ui-settings", "button-background-color")
-        default_active_color = config.get("ui-settings", "button-active-background-color")
-        default_border_color = config.get("ui-settings", "button-border-color")
-        default_border_weight = config.get("ui-settings", "button-border-weight")
-        # TODO allow overwriting defaults with params
+        # call super init
+        super().__init__(
+            config,
+            position,
+            size,
+            color=color,
+            border_color=border_color,
+            border_weight=border_weight
+        )
 
         # set visuals
-        self.color = (default_color[0], default_color[1], default_color[2])
         self.icon = None
         if icon_name is not None:
             img_handler = ImageHandler(config)
             self.icon = img_handler.load_image(icon_name, (int(size[0]), int(size[1])))
 
-        self.color_pressed = (default_active_color[0], default_active_color[1], default_active_color[2])
+        self.color_pressed = (active_color[0], active_color[1], active_color[2])
         self.icon_pressed = None
 
         self.name: str = name
         self.show_name: bool = False
 
-        self.border_thickness: float = default_border_weight
-        self.border_color = (default_border_color[0], default_border_color[1], default_border_color[2])
         self.show_border = True
 
         self.is_ellipse = True

@@ -1,6 +1,7 @@
 from ...LegoBricks import LegoBrick
 from ..UIElements.UIElement import UIElement
 from ...ConfigManager import ConfigManager
+from typing import List
 import numpy as np
 import cv2 as cv
 
@@ -8,14 +9,24 @@ import cv2 as cv
 # UI element used for hierarchical structuring of other ui elements
 class UIStructureBlock(UIElement):
 
-    def __init__(self, config: ConfigManager, position: np.ndarray, size: np.ndarray):
+    def __init__(
+            self,
+            config: ConfigManager,
+            position: np.ndarray,
+            size: np.ndarray,
+            color: List = None,
+            border_color: List = None,
+            border_weight: float = None
+    ):
         super().__init__()
 
-        # get defaults
-        default_color = config.get("ui-settings", "nav-block-background-color")
-        default_border_color = config.get("ui-settings", "nav-block-border-color")
-        default_border_weight = config.get("ui-settings", "nav-block-border-weight")
-        # TODO allow overwriting defaults with params
+        # overwrite none values with defaults
+        if color is None:
+            color = config.get("ui-settings", "nav-block-background-color")
+        if border_color is None:
+            border_color = config.get("ui-settings", "nav-block-border-color")
+        if border_weight is None:
+            border_weight = config.get("ui-settings", "nav-block-border-weight")
 
         # set block position/size
         # TODO maybe save position & size as LegoExtent?
@@ -24,11 +35,11 @@ class UIStructureBlock(UIElement):
         self.is_ellipse = False
 
         # set block color
-        self.color = (default_color[0], default_color[1], default_color[2])
+        self.color = (color[0], color[1], color[2])
         self.show_background_color = True
 
-        self.border_thickness: float = default_border_weight
-        self.border_color = (default_border_color[0], default_border_color[1], default_border_color[2])
+        self.border_thickness: float = border_weight
+        self.border_color = (border_color[0], border_color[1], border_color[2])
         self.show_border = True
 
     # draws the block onto an image

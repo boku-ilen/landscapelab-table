@@ -1,4 +1,4 @@
-from typing import Optional, Callable
+from typing import Optional, Callable, List, Tuple
 import logging
 import numpy as np
 import cv2
@@ -15,15 +15,35 @@ OFFSET = 20
 
 class ProgressBar(UIStructureBlock):
 
-    def __init__(self, config: ConfigManager, position: np.ndarray, size: np.ndarray, horizontal: bool, flipped: bool, bar_color=None):
-        super().__init__(config, position, size)
+    def __init__(
+            self,
+            config: ConfigManager,
+            position: np.ndarray,
+            size: np.ndarray,
+            horizontal: bool,
+            flipped: bool,
+            bar_color: List[List] = None,
+            background_color: List = None,
+            border_color: List = None,
+            border_weight: float = None
+    ):
+
+        super().__init__(
+            config,
+            position,
+            size,
+            color=background_color,
+            border_color=border_color,
+            border_weight=border_weight
+        )
+
         self.config = config
 
         default_bar_color = config.get("ui-settings", "progress-bar-color")
 
-        self.bar_color = [(color[2], color[1], color[0]) for color in default_bar_color]
-
-        if bar_color:
+        if bar_color is None:
+            self.bar_color = [(color[2], color[1], color[0]) for color in default_bar_color]
+        else:
             self.bar_color = bar_color
 
         self.horizontal: bool = horizontal
@@ -41,7 +61,7 @@ class ProgressBar(UIStructureBlock):
         self.config.set("ui-settings", "ui-refreshed", True)
         # TODO find better solution for flag
 
-    # draws this element + all child elements to the scene
+    # draws this element + all child elements to the given image
     def draw(self, img):
 
         if self.visible:
@@ -84,8 +104,8 @@ class ProgressBar(UIStructureBlock):
                 self.draw_success(img, int(self.bar_position[0]), int(self.bar_position[1]), int(width/2))
 
     # returns the color pf the bar as well as the chosen background
-    # (if the bar exceeds 100% it wraps around with a new color)
-    def get_bar_colors(self):
+    # (if the bar exceeds 100% and wrap_around is True it wraps around with a new color)
+    def get_bar_colors(self) -> Tuple[List, List]:
         if self.wrap_around:
             bar_color_id = max(int(self.progress), 0)
             bar_color = self.bar_color[bar_color_id % len(self.bar_color)]

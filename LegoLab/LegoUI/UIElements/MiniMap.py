@@ -6,6 +6,7 @@ from ...LegoExtent import LegoExtent
 from ...ExtentTracker import ExtentTracker
 from ...ConfigManager import ConfigManager
 
+from typing import List
 import numpy as np
 import logging
 
@@ -14,12 +15,24 @@ logger = logging.getLogger(__name__)
 
 class MiniMap(UIStructureBlock, MapHandler):
 
-    def __init__(self, config: ConfigManager, name, position: np.ndarray, size: np.ndarray, controlled_map: MapHandler):
+    def __init__(
+            self,
+            config: ConfigManager,
+            name,
+            position: np.ndarray,
+            size: np.ndarray,
+            controlled_map: MapHandler,
+            color: List = None,
+            border_color: List = None,
+            border_weight: float = None
+    ):
 
         self.controlled_map = controlled_map
         self.extent_tracker = ExtentTracker.get_instance()
 
-        UIStructureBlock.__init__(self, config, position, size)
+        # call super initializers
+        UIStructureBlock.__init__(self, config, position, size,
+                                  color=color, border_color=border_color, border_weight=border_weight)
         MapHandler.__init__(self, config, name, self.get_start_extent(config), (int(size[0]), int(size[1])))
 
         self.viewport_extent = LegoExtent.from_tuple(self.get_bounds())
@@ -27,6 +40,7 @@ class MiniMap(UIStructureBlock, MapHandler):
         self.pressed = False
         self.pressed_once = False
 
+    # retrieves or calculates the perfect start extent for a given scenario and returns it
     def get_start_extent(self, config):
         # start extent calculation using main map extent as reference
         # center = self.controlled_map.current_extent.get_center()
@@ -42,6 +56,7 @@ class MiniMap(UIStructureBlock, MapHandler):
 
         return LegoExtent.around_center((extent_arr[0], extent_arr[1]), extent_arr[2], True)
 
+    # displays this element and all it's children to the given image
     def draw(self, img):
 
         if self.visible:

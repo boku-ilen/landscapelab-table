@@ -34,7 +34,7 @@ class UIElement:
         for child in self.children:
             child.ui_tick()
 
-    # displays this element and all it's children
+    # displays this element and all it's children to the given image
     def draw(self, img):
         self.draw_hierarchy(img)
 

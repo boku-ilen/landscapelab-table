@@ -6,7 +6,7 @@ from ..LegoUI.UICallback import UICallback
 from .UIElements.UIElement import UIElement
 from .MainMap import MainMap
 from ..LegoDetection.Tracker import Tracker
-from ..ProgramStage import CurrentProgramStage
+from ..ProgramStage import CurrentProgramStage, ProgramStage
 from ..ConfigManager import ConfigManager, ConfigError
 
 logger = logging.getLogger('MainLogger')
@@ -51,6 +51,10 @@ class CallbackManager:
     def __init__(self, config: ConfigManager):
         self.config = config
 
+        # define program stage change actions
+        self.stage_change_actions: NamedCallbacks = CallbackManager.define_action_set(ProgramStage)
+
+        # define all actions that could also be called by key presses
         self.map_actions: NamedCallbacks = CallbackManager.define_action_set(MapActions)
         self.output_actions: NamedCallbacks = CallbackManager.define_action_set(OutputActions)
         self.tracker_actions: NamedCallbacks = CallbackManager.define_action_set(TrackerActions)

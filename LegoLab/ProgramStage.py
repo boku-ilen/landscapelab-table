@@ -1,5 +1,7 @@
+from .LegoUI.UICallback import UICallback
+
 from enum import Enum
-from typing import Dict, Callable
+from typing import Dict
 
 
 class ProgramStage(Enum):
@@ -18,7 +20,7 @@ class ProgramStage(Enum):
 # TODO (future releases) convert to singleton
 class CurrentProgramStage:
 
-    def __init__(self, callbacks: Dict[ProgramStage, Callable]):
+    def __init__(self, callbacks: Dict[Enum, UICallback]):
         self.current_stage: ProgramStage = ProgramStage.WHITE_BALANCE
         self.callbacks = callbacks
 
@@ -27,7 +29,7 @@ class CurrentProgramStage:
 
         # call callback function if there is one
         if self.current_stage in self.callbacks:
-            self.callbacks[self.current_stage]()
+            self.callbacks[self.current_stage].call(None)
 
     # only switches to the next stage if the current stage is evaluation
     def only_switch_if_eval(self):

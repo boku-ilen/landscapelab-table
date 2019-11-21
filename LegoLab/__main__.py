@@ -42,11 +42,11 @@ class LegoLab:
         self.config = ConfigManager()
         LegoOutputStream.set_beamer_config_info(self.config)
 
-        # create ui root element
+        # create ui root element and callback manager
         ui_root = UIElement()
         self.callback_manager = CallbackManager(self.config)
 
-        self.program_stage = CurrentProgramStage({})
+        self.program_stage = CurrentProgramStage(self.callback_manager.stage_change_actions)
         self.callback_manager.set_program_actions(self.program_stage)
 
         # Initialize parameter manager and parse arguments

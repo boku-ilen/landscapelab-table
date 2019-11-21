@@ -11,6 +11,7 @@ from ..CallbackManager import CallbackManager, MapActions, UiActions, TrackerAct
 from ..MainMap import MainMap
 from ...ConfigManager import ConfigManager
 from ...ServerCommunication import ServerCommunication
+from ...ProgramStage import ProgramStage
 
 
 def setup_ui(root: UIElement, main_map: MainMap, config: ConfigManager, server: ServerCommunication,
@@ -23,7 +24,7 @@ def setup_ui(root: UIElement, main_map: MainMap, config: ConfigManager, server: 
 
     # create detection mode ui
     lego_detection_ui = UIElement()
-    progress_bar_update_function = setup_detection_ui(lego_detection_ui, server, config)
+    progress_bar_update_function = setup_detection_ui(lego_detection_ui, server, config, callback_manager)
 
     # setup hierarchy
     root.add_child(nav_block)
@@ -117,7 +118,7 @@ def setup_nav_block_ui(nav_block_root, config, main_map, callback_manager) -> (M
 
 
 # creates and sets up the ui for detection stage
-def setup_detection_ui(detection_ui_root, server, config):
+def setup_detection_ui(detection_ui_root, server, config, callback_manager):
     # get vector constants that will be used to position the ui elements
     c = Constants(config)
 
@@ -151,6 +152,9 @@ def setup_detection_ui(detection_ui_root, server, config):
 
     # make detection root invisible
     detection_ui_root.set_visible(False)
+    callback_manager.stage_change_actions[ProgramStage.LEGO_DETECTION].set_callback(
+        lambda brick: detection_ui_root.set_visible(True)
+    )
 
     return partial(update_progress_bars, [progress_bar_wind, progress_bar_pv])
 

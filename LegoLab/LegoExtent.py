@@ -6,6 +6,13 @@ from .LegoBricks import LegoBrick
 
 logger = logging.getLogger('MainLogger')
 
+Point = Tuple[float, float]
+
+
+def int_point(point: Point) -> Tuple[int, int]:
+    x, y = point
+    return int(x), int(y)
+
 
 class LegoExtent:
 
@@ -33,7 +40,7 @@ class LegoExtent:
 
     # creates a new LegoExtent based on it's center point, width and aspect ratio
     @staticmethod
-    def around_center(center: Tuple[float, float], width: float, y_per_x: float, y_up_is_positive=False) -> 'LegoExtent':
+    def around_center(center: Point, width: float, y_per_x: float, y_up_is_positive=False) -> 'LegoExtent':
         center_x, center_y = center
         height = width * y_per_x
 
@@ -60,8 +67,14 @@ class LegoExtent:
         return self.y_max - self.y_min
 
     # returns center position as tuple
-    def get_center(self) -> Tuple[float, float]:
+    def get_center(self) -> Point:
         return (self.x_min + self.x_max) / 2, (self.y_min + self.y_max) / 2
+
+    def get_upper_left(self) -> Point:
+        return self.x_min, self.y_min
+
+    def get_lower_right(self) -> Point:
+        return self.x_max, self.y_max
 
     # adjusts height to fit to the given aspect ratio
     def fit_to_ratio(self, y_per_x: float):
@@ -87,6 +100,37 @@ class LegoExtent:
         self.x_max += modifier[2]
         self.y_max += modifier[3]
 
+    # returns true if a given point is inside the extent, false otherwise
+    def point_inside(self, point: Point) -> bool:
+
+        x, y = point
+        if self.x_min <= x <= self.x_max:
+            return self.y_min <= y <= self.y_max
+        return False
+
+    # returns true if another extent is completely inside the extent, false otherwise
+    def extent_inside(self, extent: 'LegoExtent') -> bool:
+        return self.point_inside(extent.get_upper_left()) and \
+               self.point_inside(extent.get_lower_right())
+
+    # source: https://stackoverflow.com/questions/306316/determine-if-two-rectangles-overlap-each-other
+    # returns true if the extent overlaps with the other one
+    def overlapping(self, extent: 'LegoExtent'):
+        return self.x_min < extent.x_max and \
+               self.x_max > extent.x_min and \
+               self.y_min < extent.y_max and \
+               self.y_max > extent.y_min
+
+    # creates a new extent from the given extent that completely lies within this extent
+    def cut_extent_on_borders(self, extent: 'LegoExtent'):
+        return LegoExtent(
+            max(self.x_min, extent.x_min),
+            max(self.y_min, extent.y_min),
+            min(self.x_max, extent.x_max),
+            min(self.y_max, extent.y_max),
+            extent.y_inverted
+        )
+
     # returns human readable string interpretation
     def __str__(self):
         return "[LegoExtent x_min: {}, y_min: {}, x_max: {}, y_max: {}, width: {}, height: {}, y_inverted: {}]"\
@@ -106,38 +150,86 @@ class LegoExtent:
     #                  |          X                 |
     #                  |                            |
     #                  +----------------------------+
-    # maps a brick from one extent to another
+    # maps a point from one extent to another
     @staticmethod
-    def remap(brick: LegoBrick, old_extent: 'LegoExtent', new_extent: 'LegoExtent'):
-        remapped_brick = brick.clone()
+    def remap_point(point: Point, old_extent: 'LegoExtent', new_extent: 'LegoExtent') -> Point:
+
+        x, y = point
 
         if old_extent is None or new_extent is None:
-            logger.warning("Could not remap the lego brick")
+            logger.warning("Could not remap the point")
+
         else:
             old_width, old_height = old_extent.get_size()
             new_width, new_height = new_extent.get_size()
 
-            remapped_brick.centroid_x -= old_extent.x_min
-            remapped_brick.centroid_y -= old_extent.y_min
+            x -= old_extent.x_min
+            y -= old_extent.y_min
 
-            remapped_brick.centroid_x /= old_width
-            remapped_brick.centroid_y /= old_height
+            x /= old_width
+            y /= old_height
 
-            remapped_brick.centroid_x *= new_width
-            remapped_brick.centroid_y *= new_height
+            x *= new_width
+            y *= new_height
 
             if new_extent.y_inverted != old_extent.y_inverted:
-                remapped_brick.centroid_y = new_height - remapped_brick.centroid_y
+                y = new_height - y
 
-            remapped_brick.centroid_x += new_extent.x_min
-            remapped_brick.centroid_y += new_extent.y_min
+            x += new_extent.x_min
+            y += new_extent.y_min
+
+        return x, y
+
+    #                  +----------------------------+
+    #                  |                            |
+    # +----+        \  |                            |
+    # |    | --------\ |                            |
+    # | B  | --------/ |                            |
+    # +----+        /  |                            |
+    #                  |          B                 |
+    #                  |                            |
+    #                  +----------------------------+
+    # maps a brick from one extent to another
+    @staticmethod
+    def remap_brick(brick: LegoBrick, old_extent: 'LegoExtent', new_extent: 'LegoExtent'):
+        remapped_brick = brick.clone()
+
+        if old_extent is None or new_extent is None:
+            logger.warning("Could not remap the lego brick")
+
+        else:
+            x, y = LegoExtent.remap_point(
+                (remapped_brick.centroid_x, remapped_brick.centroid_y),
+                old_extent,
+                new_extent
+            )
+
+            remapped_brick.centroid_x = x
+            remapped_brick.centroid_y = y
 
         return remapped_brick
+
+    #                  +----------------------------+
+    #                  |                            |
+    # +----+        \  |  X-------+                 |
+    # |X+  | --------\ |  |       |                 |
+    # |+X  | --------/ |  |       |                 |
+    # +----+        /  |  |       |                 |
+    #                  |  +-------X                 |
+    #                  |                            |
+    #                  +----------------------------+
+    # maps an extent from one extent to another
+    @staticmethod
+    def remap_extent(target_extent: 'LegoExtent', old_extent: 'LegoExtent', new_extent: 'LegoExtent'):
+        left, up = LegoExtent.remap_point((target_extent.x_min, target_extent.y_min), old_extent, new_extent)
+        right, down = LegoExtent.remap_point((target_extent.x_max, target_extent.y_max), old_extent, new_extent)
+
+        return LegoExtent(left, up, right, down, target_extent.y_inverted)
 
     # calculates map position of a brick from any given local extent
     @staticmethod
     def calc_world_pos(brick: LegoBrick, local_extent: 'LegoExtent', global_extent: 'LegoExtent'):
-        remapped_brick = LegoExtent.remap(brick, local_extent, global_extent)
+        remapped_brick = LegoExtent.remap_brick(brick, local_extent, global_extent)
         brick.map_pos_x = remapped_brick.centroid_x
         brick.map_pos_y = remapped_brick.centroid_y
 
@@ -149,7 +241,7 @@ class LegoExtent:
         calc_brick = brick.clone()
         calc_brick.centroid_x = brick.map_pos_x
         calc_brick.centroid_y = brick.map_pos_y
-        calc_brick = LegoExtent.remap(calc_brick, global_extent, local_extent)
+        calc_brick = LegoExtent.remap_brick(calc_brick, global_extent, local_extent)
 
         brick.centroid_x = int(calc_brick.centroid_x)
         brick.centroid_y = int(calc_brick.centroid_y)

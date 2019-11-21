@@ -346,11 +346,11 @@ class Tracker:
         self.virtual_bricks.remove(brick)
 
     def brick_on_ui(self, brick):
-        brick_on_beamer = LegoExtent.remap(brick, self.extent_tracker.board, self.extent_tracker.beamer)
+        brick_on_beamer = LegoExtent.remap_brick(brick, self.extent_tracker.board, self.extent_tracker.beamer)
         return self.ui_root.brick_on_element(brick_on_beamer)
 
     def brick_would_land_on_ui(self, brick):
-        brick_on_beamer = LegoExtent.remap(brick, self.extent_tracker.board, self.extent_tracker.beamer)
+        brick_on_beamer = LegoExtent.remap_brick(brick, self.extent_tracker.board, self.extent_tracker.beamer)
         return self.ui_root.brick_would_land_on_element(brick_on_beamer)
 
     # sets all external bricks to outdated

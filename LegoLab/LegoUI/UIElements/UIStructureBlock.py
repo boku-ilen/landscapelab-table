@@ -1,3 +1,4 @@
+from ...LegoExtent import LegoExtent, int_point
 from ...LegoBricks import LegoBrick
 from ..UIElements.UIElement import UIElement
 from ...ConfigManager import ConfigManager
@@ -131,3 +132,14 @@ class UIStructureBlock(UIElement):
         x_max, y_max = np.add(pos, self.size)
 
         return x_min, y_min, x_max, y_max
+
+    # draws a rectangle using a given area
+    def rectangle(self, img, area: LegoExtent, color, border_thickness):
+
+        cv.rectangle(
+            img,
+            int_point(area.get_upper_left()),
+            int_point(area.get_lower_right()),
+            color,
+            border_thickness
+        )

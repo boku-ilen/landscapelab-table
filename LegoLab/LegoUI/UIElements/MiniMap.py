@@ -23,6 +23,7 @@ class MiniMap(UIStructureBlock, MapHandler):
             size: np.ndarray,
             controlled_map: MapHandler,
             color: List = None,
+            extent_color: List = None,
             border_color: List = None,
             border_weight: float = None
     ):
@@ -35,6 +36,12 @@ class MiniMap(UIStructureBlock, MapHandler):
                                   color=color, border_color=border_color, border_weight=border_weight)
         MapHandler.__init__(self, config, name, self.get_start_extent(config), (int(size[0]), int(size[1])))
 
+        if extent_color is None:
+            self.extent_color = config.get("ui-settings", "mini-map-extent-color")
+        else:
+            self.extent_color = extent_color
+
+        # save extent info of the UI viewport
         self.viewport_extent = LegoExtent.from_tuple(self.get_bounds())
 
         self.pressed = False
@@ -67,6 +74,16 @@ class MiniMap(UIStructureBlock, MapHandler):
                 x_min, y_min, x_max, y_max = self.get_bounds()
                 ImageHandler.img_on_background(img, map_dict, (x_min, y_min))
 
+            if self.current_extent.overlapping(self.controlled_map.current_extent):
+                extent_indicator = self.current_extent.cut_extent_on_borders(self.controlled_map.current_extent)
+                extent_indicator = LegoExtent.remap_extent(
+                    extent_indicator,
+                    self.current_extent,
+                    self.viewport_extent
+
+                )
+
+                self.rectangle(img, extent_indicator, self.extent_color, 1)
             # TODO draw current extent or at least point at center
 
     # checks if a given brick lies on top of the block or any of it's children
@@ -90,7 +107,7 @@ class MiniMap(UIStructureBlock, MapHandler):
     # call once all bricks in a frame have been processed so that e.g. buttons can call their release action
     def ui_tick(self):
 
-        # if button was pressed until now but has not been pressed this frame it now is released
+        # if mini-map was pressed until now but has not been pressed this frame it now is released
         if self.pressed and not self.pressed_once:
             self.pressed = False
 
@@ -98,7 +115,7 @@ class MiniMap(UIStructureBlock, MapHandler):
         super().ui_tick()
 
     def initiate_teleport(self, brick: LegoBrick):
-        map_brick = LegoExtent.remap(brick, self.viewport_extent, self.current_extent)
+        map_brick = LegoExtent.remap_brick(brick, self.viewport_extent, self.current_extent)
         map_pos = (map_brick.centroid_x, map_brick.centroid_y)
         c_map_extent = self.controlled_map.current_extent
 

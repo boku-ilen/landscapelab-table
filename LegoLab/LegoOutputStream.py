@@ -357,7 +357,7 @@ class LegoOutputStream:
     # renders a given brick onto a given render target
     # fetches the correct icon with get_brick_icon
     def render_brick(self, brick, render_target, virtual=False):
-        b = LegoExtent.remap(brick, self.extent_tracker.board, self.extent_tracker.beamer)
+        b = LegoExtent.remap_brick(brick, self.extent_tracker.board, self.extent_tracker.beamer)
         pos = (int(b.centroid_x), int(b.centroid_y))
         icon = self.get_brick_icon(brick, virtual)
 
@@ -424,7 +424,7 @@ class LegoOutputStream:
                     color = LegoColor.RED_BRICK
 
                 # create brick on mouse position
-                mouse_brick = LegoExtent.remap(
+                mouse_brick = LegoExtent.remap_brick(
                     LegoBrick(x, y, LegoShape.SQUARE_BRICK, color),
                     self.extent_tracker.beamer, self.extent_tracker.board
                 )

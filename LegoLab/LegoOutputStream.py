@@ -239,9 +239,7 @@ class LegoOutputStream:
         # check if key pressed
         key = cv2.waitKeyEx(1)
 
-        # call button callback
-        if key in self.callback_manager.action_map:
-            self.callback_manager.action_map[key][1].call(None)
+        self.callback_manager.call_key_action(key)
 
         # Break with Esc  # FIXME: CG: keyboard might not be available - use signals?
         if key == 27:

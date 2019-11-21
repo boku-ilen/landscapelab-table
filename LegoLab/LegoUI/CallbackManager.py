@@ -14,6 +14,8 @@ logger = logging.getLogger('MainLogger')
 NamedCallbacks = Dict[Enum, UICallback]
 MappedCallbacks = Dict[int, Tuple[Enum, UICallback]]
 
+ACTION_SLOT_ID = 1  # used to access to UICallback in Tuple[Enum, UICallback] of MappedCallbacks
+
 
 class MapActions(Enum):
     PAN_UP = 0
@@ -126,3 +128,8 @@ class CallbackManager:
 
         self.output_actions[OutputActions.CHANNEL_DOWN].callback = \
             lambda brick: output.channel_down()
+
+    # tests if a given key is assigned an action and calls that action
+    def call_key_action(self, key):
+        if key in self.action_map:
+            self.action_map[key][ACTION_SLOT_ID].call(None)

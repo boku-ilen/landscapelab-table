@@ -1,4 +1,4 @@
-from ...Extent import Extent, int_point
+from ...Extent import Extent
 from ...LegoBricks import LegoBrick
 from ..UIElements.UIElement import UIElement
 from ...ConfigManager import ConfigManager
@@ -138,8 +138,8 @@ class UIStructureBlock(UIElement):
 
         cv.rectangle(
             img,
-            int_point(area.get_upper_left()),
-            int_point(area.get_lower_right()),
+            area.get_upper_left().as_point(),
+            area.get_lower_right().as_point(),
             color,
             border_thickness
         )

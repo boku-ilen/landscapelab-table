@@ -1,17 +1,11 @@
-from typing import List, Tuple
+from typing import Tuple
 import numpy as np
 import logging
 
 from .LegoBricks import LegoBrick
+from .Vector import Vector
 
 logger = logging.getLogger('MainLogger')
-
-Point = Tuple[float, float]
-
-
-def int_point(point: Point) -> Tuple[int, int]:
-    x, y = point
-    return int(x), int(y)
 
 
 class Extent:
@@ -40,7 +34,7 @@ class Extent:
 
     # creates a new Extent based on it's center point, width and aspect ratio
     @staticmethod
-    def around_center(center: Point, width: float, y_per_x: float, y_up_is_positive=False) -> 'Extent':
+    def around_center(center: Vector, width: float, y_per_x: float, y_up_is_positive=False) -> 'Extent':
         center_x, center_y = center
         height = width * y_per_x
 
@@ -67,14 +61,14 @@ class Extent:
         return self.y_max - self.y_min
 
     # returns center position as tuple
-    def get_center(self) -> Point:
-        return (self.x_min + self.x_max) / 2, (self.y_min + self.y_max) / 2
+    def get_center(self) -> Vector:
+        return Vector((self.x_min + self.x_max) / 2, (self.y_min + self.y_max) / 2)
 
-    def get_upper_left(self) -> Point:
-        return self.x_min, self.y_min
+    def get_upper_left(self) -> Vector:
+        return Vector(self.x_min, self.y_min)
 
-    def get_lower_right(self) -> Point:
-        return self.x_max, self.y_max
+    def get_lower_right(self) -> Vector:
+        return Vector(self.x_max, self.y_max)
 
     # adjusts height to fit to the given aspect ratio
     def fit_to_ratio(self, y_per_x: float):
@@ -101,17 +95,17 @@ class Extent:
         self.y_max += modifier[3]
 
     # returns true if a given point is inside the extent, false otherwise
-    def point_inside(self, point: Point) -> bool:
+    def vector_inside(self, vec: Vector) -> bool:
 
-        x, y = point
+        x, y = vec
         if self.x_min <= x <= self.x_max:
             return self.y_min <= y <= self.y_max
         return False
 
     # returns true if another extent is completely inside the extent, false otherwise
     def extent_inside(self, extent: 'Extent') -> bool:
-        return self.point_inside(extent.get_upper_left()) and \
-               self.point_inside(extent.get_lower_right())
+        return self.vector_inside(extent.get_upper_left()) and \
+               self.vector_inside(extent.get_lower_right())
 
     # source: https://stackoverflow.com/questions/306316/determine-if-two-rectangles-overlap-each-other
     # returns true if the extent overlaps with the other one
@@ -152,9 +146,9 @@ class Extent:
     #                  +----------------------------+
     # maps a point from one extent to another
     @staticmethod
-    def remap_point(point: Point, old_extent: 'Extent', new_extent: 'Extent') -> Point:
+    def remap_point(vec: Vector, old_extent: 'Extent', new_extent: 'Extent') -> Vector:
 
-        x, y = point
+        x, y = vec
 
         if old_extent is None or new_extent is None:
             logger.warning("Could not remap the point")
@@ -178,7 +172,7 @@ class Extent:
             x += new_extent.x_min
             y += new_extent.y_min
 
-        return x, y
+        return Vector(x, y)
 
     #                  +----------------------------+
     #                  |                            |
@@ -199,7 +193,7 @@ class Extent:
 
         else:
             x, y = Extent.remap_point(
-                (remapped_brick.centroid_x, remapped_brick.centroid_y),
+                Vector(remapped_brick.centroid_x, remapped_brick.centroid_y),
                 old_extent,
                 new_extent
             )
@@ -221,8 +215,8 @@ class Extent:
     # maps an extent from one extent to another
     @staticmethod
     def remap_extent(target_extent: 'Extent', old_extent: 'Extent', new_extent: 'Extent'):
-        left, up = Extent.remap_point((target_extent.x_min, target_extent.y_min), old_extent, new_extent)
-        right, down = Extent.remap_point((target_extent.x_max, target_extent.y_max), old_extent, new_extent)
+        left, up = Extent.remap_point(target_extent.get_upper_left(), old_extent, new_extent)
+        right, down = Extent.remap_point(target_extent.get_lower_right(), old_extent, new_extent)
 
         return Extent(left, up, right, down, target_extent.y_inverted)
 

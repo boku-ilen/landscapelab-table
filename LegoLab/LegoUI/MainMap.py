@@ -4,7 +4,7 @@ import numpy as np
 
 from .MapHandler import MapHandler
 from ..ConfigManager import ConfigManager, ConfigError
-from ..LegoExtent import LegoExtent
+from ..Extent import Extent
 from ..ServerCommunication import ServerCommunication
 
 
@@ -56,7 +56,7 @@ class MainMap(MapHandler):
         # extrude start location to start extent
         zoom = self.config.get("general", "start_zoom")
 
-        return LegoExtent.around_center(starting_location, zoom, 1)
+        return Extent.around_center(starting_location, zoom, 1)
 
     def get_start_location(self, scenario) -> Tuple[float, float]:
         if len(scenario["locations"]) == 0:

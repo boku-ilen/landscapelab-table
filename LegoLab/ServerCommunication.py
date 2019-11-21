@@ -3,7 +3,7 @@ import requests
 import json
 
 from .LegoBricks import LegoBrick, LegoStatus
-from .LegoExtent import LegoExtent
+from .Extent import Extent
 from .ExtentTracker import ExtentTracker
 from .ProgramStage import ProgramStage
 
@@ -59,7 +59,7 @@ class ServerCommunication:
         logger.debug("creating a lego instance...")
 
         # Compute geographical coordinates for lego bricks
-        LegoExtent.calc_world_pos(lego_brick, self.extent_tracker.board, self.extent_tracker.map_extent)
+        Extent.calc_world_pos(lego_brick, self.extent_tracker.board, self.extent_tracker.map_extent)
 
         # Map the lego brick asset_id from color & shape
         if self.program_stage.current_stage == ProgramStage.EVALUATION:
@@ -185,15 +185,15 @@ class ServerCommunication:
                     stored_instance.status = LegoStatus.EXTERNAL_BRICK
 
                     # Calculate map position of a brick
-                    LegoExtent.calc_local_pos(stored_instance, self.extent_tracker.board,
-                                              self.extent_tracker.map_extent)
+                    Extent.calc_local_pos(stored_instance, self.extent_tracker.board,
+                                          self.extent_tracker.map_extent)
 
                     stored_instances_list.append(stored_instance)
 
         return stored_instances_list
 
     # initiates corner point update of the given main map extent on the server
-    def update_extent_info(self, extent: LegoExtent):
+    def update_extent_info(self, extent: Extent):
 
         # get the corner IDs
         top_left_corner_id = self.config.get("server", "extent_top_left_corner_id")

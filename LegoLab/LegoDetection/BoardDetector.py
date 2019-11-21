@@ -6,7 +6,7 @@ from shapely import geometry
 import logging.config
 
 from ..ExtentTracker import ExtentTracker
-from ..LegoExtent import LegoExtent
+from ..Extent import Extent
 from ..Board import Board
 
 
@@ -329,7 +329,7 @@ class BoardDetector:
         self.board.width = max_x - min_x
         self.board.height = max_y - min_y
 
-        ExtentTracker.get_instance().board = LegoExtent.from_rectangle(0, 0, self.board.width, self.board.height)
+        ExtentTracker.get_instance().board = Extent.from_rectangle(0, 0, self.board.width, self.board.height)
         logger.info('board has been set')
 
     # Display QR-codes location

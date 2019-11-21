@@ -5,7 +5,7 @@ from ..LegoBricks import LegoBrick, LegoStatus, LegoColor, LegoShape
 from ..LegoUI.UIElements.UIElement import UIElement
 from ..ProgramStage import ProgramStage
 from ..ExtentTracker import ExtentTracker
-from ..LegoExtent import LegoExtent
+from ..Extent import Extent
 
 # configure logging
 logger = logging.getLogger('MainLogger')
@@ -321,7 +321,7 @@ class Tracker:
             logger.info("recalculate virtual brick position")
             for brick in self.virtual_bricks:
                 if brick.status == LegoStatus.EXTERNAL_BRICK:
-                    LegoExtent.calc_local_pos(brick, self.extent_tracker.board, self.extent_tracker.map_extent)
+                    Extent.calc_local_pos(brick, self.extent_tracker.board, self.extent_tracker.map_extent)
 
             logger.info("set bricks outdated because extent changed")
             self.invalidate_external_bricks()
@@ -336,7 +336,7 @@ class Tracker:
 
     def set_virtual_brick_at_global_pos_of(self, brick: LegoBrick):
         virtual_brick = brick.clone()
-        LegoExtent.calc_local_pos(virtual_brick, self.extent_tracker.board, self.extent_tracker.map_extent)
+        Extent.calc_local_pos(virtual_brick, self.extent_tracker.board, self.extent_tracker.map_extent)
 
         self.virtual_bricks.append(virtual_brick)
         Tracker.BRICKS_REFRESHED = True
@@ -346,11 +346,11 @@ class Tracker:
         self.virtual_bricks.remove(brick)
 
     def brick_on_ui(self, brick):
-        brick_on_beamer = LegoExtent.remap_brick(brick, self.extent_tracker.board, self.extent_tracker.beamer)
+        brick_on_beamer = Extent.remap_brick(brick, self.extent_tracker.board, self.extent_tracker.beamer)
         return self.ui_root.brick_on_element(brick_on_beamer)
 
     def brick_would_land_on_ui(self, brick):
-        brick_on_beamer = LegoExtent.remap_brick(brick, self.extent_tracker.board, self.extent_tracker.beamer)
+        brick_on_beamer = Extent.remap_brick(brick, self.extent_tracker.board, self.extent_tracker.beamer)
         return self.ui_root.brick_would_land_on_element(brick_on_beamer)
 
     # sets all external bricks to outdated

@@ -1,6 +1,6 @@
 from typing import Optional
 
-from .LegoExtent import LegoExtent
+from .Extent import Extent
 
 
 # singleton class that keeps track of the different Extents that need to be globally available
@@ -10,9 +10,9 @@ class ExtentTracker(object):
 
     # NOTE do NOT call outside of FrameTracker, use get_instance instead
     def __init__(self):
-        self.board: Optional[LegoExtent] = None
-        self.beamer: Optional[LegoExtent] = None
-        self.map_extent: Optional[LegoExtent] = None
+        self.board: Optional[Extent] = None
+        self.beamer: Optional[Extent] = None
+        self.map_extent: Optional[Extent] = None
         self.extent_changed: bool = True
 
     @classmethod

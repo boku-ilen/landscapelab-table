@@ -13,7 +13,7 @@ from .LegoBricks import LegoBrick, LegoColor, LegoShape, LegoStatus
 from .LegoUI.ImageHandler import ImageHandler
 from .LegoUI.CallbackManager import CallbackManager
 from .ExtentTracker import ExtentTracker
-from .LegoExtent import LegoExtent
+from .Extent import Extent
 from .Board import Board
 from .ServerListenerThread import ServerListenerThread
 
@@ -167,7 +167,7 @@ class LegoOutputStream:
             config.set("beamer-resolution", "pos-x", beamer.x - 1)
             config.set("beamer-resolution", "pos-y", beamer.y - 1)
 
-            ExtentTracker.get_instance().beamer = LegoExtent(0, 0, beamer.width, beamer.height)
+            ExtentTracker.get_instance().beamer = Extent(0, 0, beamer.width, beamer.height)
 
     # Write the frame into the file
     def write_to_file(self, frame):
@@ -357,7 +357,7 @@ class LegoOutputStream:
     # renders a given brick onto a given render target
     # fetches the correct icon with get_brick_icon
     def render_brick(self, brick, render_target, virtual=False):
-        b = LegoExtent.remap_brick(brick, self.extent_tracker.board, self.extent_tracker.beamer)
+        b = Extent.remap_brick(brick, self.extent_tracker.board, self.extent_tracker.beamer)
         pos = (int(b.centroid_x), int(b.centroid_y))
         icon = self.get_brick_icon(brick, virtual)
 
@@ -424,7 +424,7 @@ class LegoOutputStream:
                     color = LegoColor.RED_BRICK
 
                 # create brick on mouse position
-                mouse_brick = LegoExtent.remap_brick(
+                mouse_brick = Extent.remap_brick(
                     LegoBrick(x, y, LegoShape.SQUARE_BRICK, color),
                     self.extent_tracker.beamer, self.extent_tracker.board
                 )

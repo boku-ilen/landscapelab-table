@@ -1,4 +1,4 @@
-from ...LegoExtent import LegoExtent, int_point
+from ...Extent import Extent, int_point
 from ...LegoBricks import LegoBrick
 from ..UIElements.UIElement import UIElement
 from ...ConfigManager import ConfigManager
@@ -30,7 +30,7 @@ class UIStructureBlock(UIElement):
             border_weight = config.get("ui-settings", "nav-block-border-weight")
 
         # set block position/size
-        # TODO maybe save position & size as LegoExtent?
+        # TODO maybe save position & size as Extent?
         self.position = position.astype(int)
         self.size = size.astype(int)
         self.is_ellipse = False
@@ -134,7 +134,7 @@ class UIStructureBlock(UIElement):
         return x_min, y_min, x_max, y_max
 
     # draws a rectangle using a given area
-    def rectangle(self, img, area: LegoExtent, color, border_thickness):
+    def rectangle(self, img, area: Extent, color, border_thickness):
 
         cv.rectangle(
             img,

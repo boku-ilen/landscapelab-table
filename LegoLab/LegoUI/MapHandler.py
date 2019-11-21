@@ -6,7 +6,7 @@ import logging
 
 from .ImageHandler import ImageHandler
 from ..ConfigManager import ConfigManager
-from ..LegoExtent import LegoExtent
+from ..Extent import Extent
 from ..ExtentTracker import ExtentTracker
 
 # Configure Logger
@@ -15,7 +15,7 @@ logger = logging.getLogger('MainLogger')
 
 class MapHandler:
 
-    def __init__(self, config: ConfigManager, name: str, extent: LegoExtent, resolution: Tuple[int, int]):
+    def __init__(self, config: ConfigManager, name: str, extent: Extent, resolution: Tuple[int, int]):
         self.name = name
         self.config = config
         self.extent_tracker = ExtentTracker.get_instance()
@@ -23,7 +23,7 @@ class MapHandler:
         # set resolution and extent
         self.resolution_x, self.resolution_y = resolution
         extent.fit_to_ratio(self.resolution_y / self.resolution_x)
-        self.current_extent: LegoExtent = extent
+        self.current_extent: Extent = extent
 
         # initialize two black images
         self.map_image = [
@@ -45,7 +45,7 @@ class MapHandler:
         self.exit_keyword = config.get('qgis_interaction', 'EXIT_KEYWORD')
 
     # reloads the viewport image
-    def refresh(self, extent: LegoExtent):
+    def refresh(self, extent: Extent):
         logger.info("refreshing map")
 
         unused_slot = (self.current_image + 1) % 2
@@ -80,7 +80,7 @@ class MapHandler:
     def refresh_callback(self):
         pass
 
-    def request_render(self, extent: LegoExtent = None):
+    def request_render(self, extent: Extent = None):
 
         if extent is None:
             extent = self.current_extent

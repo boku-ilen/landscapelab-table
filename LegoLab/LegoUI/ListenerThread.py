@@ -5,7 +5,7 @@ from typing import Dict
 
 from .MapHandler import MapHandler
 from ..ConfigManager import ConfigManager
-from ..LegoExtent import LegoExtent
+from ..Extent import Extent
 
 # Configure logger
 logger = logging.getLogger('MainLogger')
@@ -41,7 +41,7 @@ class ListenerThread(threading.Thread):
                 info = info.split(' ')
                 target_name = info[0]
                 extent = info[1:5]
-                extent = LegoExtent(float(extent[0]), float(extent[1]), float(extent[2]), float(extent[3]), True)
+                extent = Extent(float(extent[0]), float(extent[1]), float(extent[2]), float(extent[3]), True)
 
                 if target_name in self.map_dict:
                     self.map_dict[target_name].refresh(extent)

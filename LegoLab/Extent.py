@@ -14,11 +14,11 @@ def int_point(point: Point) -> Tuple[int, int]:
     return int(x), int(y)
 
 
-class LegoExtent:
+class Extent:
 
     # constructors
 
-    # creates a new LegoExtent based on all four edges
+    # creates a new Extent based on all four edges
     def __init__(self, x_min, y_min, x_max, y_max, y_up_is_positive=False):
         self.x_min: float = x_min
         self.y_min: float = y_min
@@ -27,24 +27,24 @@ class LegoExtent:
 
         self.y_inverted: bool = y_up_is_positive
 
-    # creates and returns a new LegoExtent from a given tuple
+    # creates and returns a new Extent from a given tuple
     @staticmethod
     def from_tuple(borders: Tuple[float, float, float, float], y_up_is_positive=False):
         x_min, y_min, x_max, y_max = borders
-        return LegoExtent(x_min, y_min, x_max, y_max, y_up_is_positive)
+        return Extent(x_min, y_min, x_max, y_max, y_up_is_positive)
 
-    # creates and returns a new LegoExtent based on it's left upper corner and it's size
+    # creates and returns a new Extent based on it's left upper corner and it's size
     @staticmethod
-    def from_rectangle(x_min, y_min, width, height, y_up_is_positive=False) -> 'LegoExtent':
-        return LegoExtent(x_min, y_min, x_min + width, y_min + height, y_up_is_positive)
+    def from_rectangle(x_min, y_min, width, height, y_up_is_positive=False) -> 'Extent':
+        return Extent(x_min, y_min, x_min + width, y_min + height, y_up_is_positive)
 
-    # creates a new LegoExtent based on it's center point, width and aspect ratio
+    # creates a new Extent based on it's center point, width and aspect ratio
     @staticmethod
-    def around_center(center: Point, width: float, y_per_x: float, y_up_is_positive=False) -> 'LegoExtent':
+    def around_center(center: Point, width: float, y_per_x: float, y_up_is_positive=False) -> 'Extent':
         center_x, center_y = center
         height = width * y_per_x
 
-        return LegoExtent.from_rectangle(
+        return Extent.from_rectangle(
             center_x - width / 2,
             center_y - height / 2,
             width,
@@ -90,8 +90,8 @@ class LegoExtent:
         return self.get_height() / self.get_width()
 
     # returns clone of self
-    def clone(self) -> 'LegoExtent':
-        return LegoExtent(self.x_min, self.y_min, self.x_max, self.y_max, self.y_inverted)
+    def clone(self) -> 'Extent':
+        return Extent(self.x_min, self.y_min, self.x_max, self.y_max, self.y_inverted)
 
     # modifies the extent by element-wise addition
     def add_extent_modifier(self, modifier: np.ndarray):
@@ -109,21 +109,21 @@ class LegoExtent:
         return False
 
     # returns true if another extent is completely inside the extent, false otherwise
-    def extent_inside(self, extent: 'LegoExtent') -> bool:
+    def extent_inside(self, extent: 'Extent') -> bool:
         return self.point_inside(extent.get_upper_left()) and \
                self.point_inside(extent.get_lower_right())
 
     # source: https://stackoverflow.com/questions/306316/determine-if-two-rectangles-overlap-each-other
     # returns true if the extent overlaps with the other one
-    def overlapping(self, extent: 'LegoExtent'):
+    def overlapping(self, extent: 'Extent'):
         return self.x_min < extent.x_max and \
                self.x_max > extent.x_min and \
                self.y_min < extent.y_max and \
                self.y_max > extent.y_min
 
     # creates a new extent from the given extent that completely lies within this extent
-    def cut_extent_on_borders(self, extent: 'LegoExtent'):
-        return LegoExtent(
+    def cut_extent_on_borders(self, extent: 'Extent'):
+        return Extent(
             max(self.x_min, extent.x_min),
             max(self.y_min, extent.y_min),
             min(self.x_max, extent.x_max),
@@ -133,7 +133,7 @@ class LegoExtent:
 
     # returns human readable string interpretation
     def __str__(self):
-        return "[LegoExtent x_min: {}, y_min: {}, x_max: {}, y_max: {}, width: {}, height: {}, y_inverted: {}]"\
+        return "[Extent x_min: {}, y_min: {}, x_max: {}, y_max: {}, width: {}, height: {}, y_inverted: {}]"\
             .format(
             self.x_min, self.y_min, self.x_max, self.y_max,
             self.get_width(), self.get_height(), self.y_inverted
@@ -152,7 +152,7 @@ class LegoExtent:
     #                  +----------------------------+
     # maps a point from one extent to another
     @staticmethod
-    def remap_point(point: Point, old_extent: 'LegoExtent', new_extent: 'LegoExtent') -> Point:
+    def remap_point(point: Point, old_extent: 'Extent', new_extent: 'Extent') -> Point:
 
         x, y = point
 
@@ -191,14 +191,14 @@ class LegoExtent:
     #                  +----------------------------+
     # maps a brick from one extent to another
     @staticmethod
-    def remap_brick(brick: LegoBrick, old_extent: 'LegoExtent', new_extent: 'LegoExtent'):
+    def remap_brick(brick: LegoBrick, old_extent: 'Extent', new_extent: 'Extent'):
         remapped_brick = brick.clone()
 
         if old_extent is None or new_extent is None:
             logger.warning("Could not remap the lego brick")
 
         else:
-            x, y = LegoExtent.remap_point(
+            x, y = Extent.remap_point(
                 (remapped_brick.centroid_x, remapped_brick.centroid_y),
                 old_extent,
                 new_extent
@@ -220,16 +220,16 @@ class LegoExtent:
     #                  +----------------------------+
     # maps an extent from one extent to another
     @staticmethod
-    def remap_extent(target_extent: 'LegoExtent', old_extent: 'LegoExtent', new_extent: 'LegoExtent'):
-        left, up = LegoExtent.remap_point((target_extent.x_min, target_extent.y_min), old_extent, new_extent)
-        right, down = LegoExtent.remap_point((target_extent.x_max, target_extent.y_max), old_extent, new_extent)
+    def remap_extent(target_extent: 'Extent', old_extent: 'Extent', new_extent: 'Extent'):
+        left, up = Extent.remap_point((target_extent.x_min, target_extent.y_min), old_extent, new_extent)
+        right, down = Extent.remap_point((target_extent.x_max, target_extent.y_max), old_extent, new_extent)
 
-        return LegoExtent(left, up, right, down, target_extent.y_inverted)
+        return Extent(left, up, right, down, target_extent.y_inverted)
 
     # calculates map position of a brick from any given local extent
     @staticmethod
-    def calc_world_pos(brick: LegoBrick, local_extent: 'LegoExtent', global_extent: 'LegoExtent'):
-        remapped_brick = LegoExtent.remap_brick(brick, local_extent, global_extent)
+    def calc_world_pos(brick: LegoBrick, local_extent: 'Extent', global_extent: 'Extent'):
+        remapped_brick = Extent.remap_brick(brick, local_extent, global_extent)
         brick.map_pos_x = remapped_brick.centroid_x
         brick.map_pos_y = remapped_brick.centroid_y
 
@@ -237,11 +237,11 @@ class LegoExtent:
 
     # calculates local position based on it's map position
     @staticmethod
-    def calc_local_pos(brick: LegoBrick, local_extent: 'LegoExtent', global_extent: 'LegoExtent'):
+    def calc_local_pos(brick: LegoBrick, local_extent: 'Extent', global_extent: 'Extent'):
         calc_brick = brick.clone()
         calc_brick.centroid_x = brick.map_pos_x
         calc_brick.centroid_y = brick.map_pos_y
-        calc_brick = LegoExtent.remap_brick(calc_brick, global_extent, local_extent)
+        calc_brick = Extent.remap_brick(calc_brick, global_extent, local_extent)
 
         brick.centroid_x = int(calc_brick.centroid_x)
         brick.centroid_y = int(calc_brick.centroid_y)

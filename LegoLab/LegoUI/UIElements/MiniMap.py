@@ -2,7 +2,7 @@ from .UIStructureBlock import UIStructureBlock
 from ..MapHandler import MapHandler
 from ..ImageHandler import ImageHandler
 from ...LegoBricks import LegoBrick, LegoStatus
-from ...LegoExtent import LegoExtent
+from ...Extent import Extent
 from ...ExtentTracker import ExtentTracker
 from ...ConfigManager import ConfigManager
 
@@ -42,7 +42,7 @@ class MiniMap(UIStructureBlock, MapHandler):
             self.extent_color = extent_color
 
         # save extent info of the UI viewport
-        self.viewport_extent = LegoExtent.from_tuple(self.get_bounds())
+        self.viewport_extent = Extent.from_tuple(self.get_bounds())
 
         self.pressed = False
         self.pressed_once = False
@@ -53,15 +53,15 @@ class MiniMap(UIStructureBlock, MapHandler):
         # center = self.controlled_map.current_extent.get_center()
         # zoom = self.controlled_map.current_extent.get_width() * 2
 
-        # return LegoExtent.around_center(center, zoom, 1)
+        # return Extent.around_center(center, zoom, 1)
 
         extent_arr = config.get("general", "mini_map_extent")
 
         # get finished extent from config but modify it
-        # full_extent = LegoExtent.from_tuple(tuple(extent_arr), True)
-        # return LegoExtent.around_center(full_extent.get_center(), full_extent.get_width() * 0.5, full_extent.y_inverted)
+        # full_extent = Extent.from_tuple(tuple(extent_arr), True)
+        # return Extent.around_center(full_extent.get_center(), full_extent.get_width() * 0.5, full_extent.y_inverted)
 
-        return LegoExtent.around_center((extent_arr[0], extent_arr[1]), extent_arr[2], True)
+        return Extent.around_center((extent_arr[0], extent_arr[1]), extent_arr[2], True)
 
     # displays this element and all it's children to the given image
     def draw(self, img):
@@ -76,7 +76,7 @@ class MiniMap(UIStructureBlock, MapHandler):
 
             if self.current_extent.overlapping(self.controlled_map.current_extent):
                 extent_indicator = self.current_extent.cut_extent_on_borders(self.controlled_map.current_extent)
-                extent_indicator = LegoExtent.remap_extent(
+                extent_indicator = Extent.remap_extent(
                     extent_indicator,
                     self.current_extent,
                     self.viewport_extent
@@ -115,11 +115,11 @@ class MiniMap(UIStructureBlock, MapHandler):
         super().ui_tick()
 
     def initiate_teleport(self, brick: LegoBrick):
-        map_brick = LegoExtent.remap_brick(brick, self.viewport_extent, self.current_extent)
+        map_brick = Extent.remap_brick(brick, self.viewport_extent, self.current_extent)
         map_pos = (map_brick.centroid_x, map_brick.centroid_y)
         c_map_extent = self.controlled_map.current_extent
 
-        new_extent = LegoExtent.around_center(map_pos, c_map_extent.get_width(), c_map_extent.get_aspect_ratio())
+        new_extent = Extent.around_center(map_pos, c_map_extent.get_width(), c_map_extent.get_aspect_ratio())
         self.controlled_map.request_render(new_extent)
 
 

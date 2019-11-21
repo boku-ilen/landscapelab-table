@@ -152,7 +152,7 @@ def setup_detection_ui(detection_ui_root, server, config, callback_manager):
 
     # make detection root invisible
     detection_ui_root.set_visible(False)
-    callback_manager.stage_change_actions[ProgramStage.LEGO_DETECTION].set_callback(
+    callback_manager.stage_change_actions[ProgramStage.PLANNING].set_callback(
         lambda brick: detection_ui_root.set_visible(True)
     )
 

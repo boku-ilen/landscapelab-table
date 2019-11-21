@@ -258,7 +258,7 @@ class LegoOutputStream:
             self.draw_corner_qr_codes()
 
         elif program_stage.current_stage == ProgramStage.EVALUATION \
-                or program_stage.current_stage == ProgramStage.LEGO_DETECTION:
+                or program_stage.current_stage == ProgramStage.PLANNING:
             self.redraw_lego_detection()
 
     # displays a white screen
@@ -296,7 +296,7 @@ class LegoOutputStream:
         cv2.imshow(LegoOutputStream.WINDOW_NAME_BEAMER, frame)
 
     # checks if the frame has updated and redraws it if this is the case
-    # called every frame when in ProgramStage LEGO_DETECTION
+    # called every frame when in ProgramStage EVALUATION or PLANNING
     def redraw_lego_detection(self):
         # check flags if any part of the frame has changed
         if self.config.get("map_settings", 'map_refreshed') \
@@ -415,7 +415,7 @@ class LegoOutputStream:
     def beamer_mouse_callback(self, event, x, y, flags, param):
 
         if self.program_stage.current_stage == ProgramStage.EVALUATION \
-                or self.program_stage.current_stage == ProgramStage.LEGO_DETECTION:
+                or self.program_stage.current_stage == ProgramStage.PLANNING:
 
             if event == cv2.EVENT_LBUTTONDOWN or event == cv2.EVENT_RBUTTONDOWN:
 

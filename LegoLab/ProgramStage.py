@@ -8,7 +8,7 @@ class ProgramStage(Enum):
     WHITE_BALANCE = 1
     FIND_CORNERS = 2
     EVALUATION = 3
-    LEGO_DETECTION = 4
+    PLANNING = 4
 
     def next_stage(self):
         value = self.value + 1

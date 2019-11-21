@@ -43,7 +43,7 @@ class ServerListenerThread(threading.Thread):
             logger.debug("starting routine server request")
 
             # check if in correct program stage
-            if self.get_program_stage() is ProgramStage.LEGO_DETECTION:
+            if self.get_program_stage() is ProgramStage.PLANNING:
 
                 self.lock.acquire()
 

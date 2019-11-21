@@ -59,7 +59,7 @@ class LegoBrick:
         self.map_pos_x: Optional[float] = None
         self.map_pos_y: Optional[float] = None
 
-    # used in program stage LEGO_DETECTION
+    # used in program stage PLANNING
     def map_asset_id(self, config):
 
         # map the lego brick asset_id from color & shape

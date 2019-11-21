@@ -43,7 +43,7 @@ class Tracker:
                 (LegoColor.RED_BRICK, LegoShape.SQUARE_BRICK),
                 (LegoColor.BLUE_BRICK, LegoShape.SQUARE_BRICK)
             ],
-            ProgramStage.LEGO_DETECTION: [
+            ProgramStage.PLANNING: [
                 (LegoColor.RED_BRICK, LegoShape.SQUARE_BRICK),
                 (LegoColor.BLUE_BRICK, LegoShape.SQUARE_BRICK),
                 (LegoColor.RED_BRICK, LegoShape.RECTANGLE_BRICK),
@@ -108,7 +108,7 @@ class Tracker:
                     logger.info("re-registered missing brick in server: {}".format(c_brick))
             """
 
-    # called once a frame while in ProgramStage EVALUATION or LEGO_DETECTION
+    # called once a frame while in ProgramStage EVALUATION or PLANNING
     # keeps track of bricks and returns a list of all currently confirmed bricks
     def update(self, lego_bricks_candidates: List[LegoBrick], program_stage):
 

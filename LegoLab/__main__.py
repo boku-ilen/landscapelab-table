@@ -68,7 +68,7 @@ class LegoLab:
         # initialize map, map callbacks and ui
         self.main_map = MainMap(self.config, 'main_map', self.scenario, self.server)
         self.callback_manager.set_map_callbacks(self.main_map)
-        mini_map, detection_ui, progress_bar_update_function = \
+        mini_map, planning_ui, progress_bar_update_function = \
             setup_ui(ui_root, self.main_map,  self.config, self.server, self.callback_manager)
         map_dict = {self.main_map.name: self.main_map, mini_map.name: mini_map}
 
@@ -157,7 +157,7 @@ class LegoLab:
                     self.do_lego_detection(region_of_interest, color_image)
 
                 # in this stage lego bricks have assets meaning
-                elif self.program_stage.current_stage == ProgramStage.LEGO_DETECTION:
+                elif self.program_stage.current_stage == ProgramStage.PLANNING:
                     self.do_lego_detection(region_of_interest, color_image)
 
         finally:
@@ -231,7 +231,7 @@ class LegoLab:
 
         # TODO (future releases) implement this as stage transition callback in ProgramStage
         # Get already stored lego brick instances from server
-        if self.program_stage.current_stage == ProgramStage.LEGO_DETECTION \
+        if self.program_stage.current_stage == ProgramStage.PLANNING \
                 and not self.added_stored_lego_bricks_flag:
 
             self.tracker.sync_with_server_side_bricks()

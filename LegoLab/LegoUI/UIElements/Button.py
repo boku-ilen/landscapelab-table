@@ -4,6 +4,8 @@ from ..UICallback import UICallback
 from ...LegoBricks import LegoBrick, LegoStatus
 from ..ImageHandler import ImageHandler
 from ...ConfigManager import ConfigManager
+from ...Vector import Vector
+from ...Extent import Extent
 from typing import Dict, List
 import numpy as np
 
@@ -19,8 +21,8 @@ class Button(UIStructureBlock):
     def __init__(
             self,
             config: ConfigManager,
-            position: np.ndarray,
-            size: np.ndarray,
+            position: Vector,
+            size: Vector,
             name: str = '',
             icon_name: str = None,
             color: List = None,
@@ -53,7 +55,7 @@ class Button(UIStructureBlock):
         self.icon = None
         if icon_name is not None:
             img_handler = ImageHandler(config)
-            self.icon = img_handler.load_image(icon_name, (int(size[0]), int(size[1])))
+            self.icon = img_handler.load_image(icon_name, self.size.as_point())
 
         self.color_pressed = (active_color[0], active_color[1], active_color[2])
         self.icon_pressed = None
@@ -82,9 +84,8 @@ class Button(UIStructureBlock):
     # also executes callback functions press and hold
     def brick_on_element(self, brick: LegoBrick) -> bool:
         if self.visible:
-            x, y = (brick.centroid_x, brick.centroid_y)
 
-            if self.pos_on_block(x, y):
+            if self.pos_on_block(Vector.from_brick(brick)):
 
                 if brick.status == LegoStatus.CANDIDATE_BRICK or brick.status == LegoStatus.INTERNAL_BRICK:
                     if not self.pressed:
@@ -136,10 +137,8 @@ class Button(UIStructureBlock):
             self.draw_background(img, color)                                # background
 
             if icon is not None:                                            # icon
-                # get bounds
-                x_min, y_min, x_max, y_max = self.get_bounds()
 
                 # draw the icon
-                ImageHandler.img_on_background(img, icon, (x_min, y_min))
+                ImageHandler.img_on_background(img, icon, self.get_global_pos().as_point())
 
             self.draw_border(img, self.border_color)                        # border

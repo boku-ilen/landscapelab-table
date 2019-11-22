@@ -5,6 +5,7 @@ import cv2
 
 from .UIStructureBlock import UIStructureBlock
 from ...ConfigManager import ConfigManager
+from ...Vector import Vector, Point
 
 # Configure logger
 logger = logging.getLogger('MainLogger')
@@ -18,11 +19,11 @@ class ProgressBar(UIStructureBlock):
     def __init__(
             self,
             config: ConfigManager,
-            position: np.ndarray,
-            size: np.ndarray,
+            position: Vector,
+            size: Vector,
             horizontal: bool,
             flipped: bool,
-            bar_color: List[List] = None,
+            bar_color: List[Tuple[int, int, int]] = None,
             background_color: List = None,
             border_color: List = None,
             border_weight: float = None
@@ -54,8 +55,6 @@ class ProgressBar(UIStructureBlock):
         self.progress: float = 0
         self.progress_calculation: Optional[Callable[[], float]] = None
 
-        self.bar_position = position
-
     def update_progress(self, new_progress):
         self.progress = min(new_progress, 1)
         self.config.set("ui-settings", "ui-refreshed", True)
@@ -69,9 +68,8 @@ class ProgressBar(UIStructureBlock):
             self.draw_hierarchy(img)
 
             # get bounds
-            x_min, y_min, x_max, y_max = self.get_bounds()
-            width = x_max - x_min
-            height = y_max - y_min
+            x_min, y_min, x_max, y_max = self.get_global_area()
+            width, height = self.size
 
             bar_color, bar_background = self.get_bar_colors()
 
@@ -101,7 +99,7 @@ class ProgressBar(UIStructureBlock):
 
             # show a green circle if the progress is achieved
             if progress >= 1:
-                self.draw_success(img, int(self.bar_position[0]), int(self.bar_position[1]), int(width/2))
+                self.draw_success(img, self.get_global_pos().as_point(), int(width/2))
 
     # returns the color pf the bar as well as the chosen background
     # (if the bar exceeds 100% and wrap_around is True it wraps around with a new color)
@@ -123,6 +121,6 @@ class ProgressBar(UIStructureBlock):
 
     # show a green circle if the progress is achieved
     @staticmethod
-    def draw_success(img, x_pos, y_pos, half_of_width):
-
+    def draw_success(img, pos: Point, half_of_width):
+        x_pos, y_pos = pos
         cv2.circle(img, (x_pos + half_of_width, y_pos - OFFSET), half_of_width, GREEN, cv2.FILLED)

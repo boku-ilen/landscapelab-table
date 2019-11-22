@@ -1,6 +1,5 @@
 from typing import Tuple, List, Callable
 from functools import partial
-import numpy as np
 
 from .UIElement import UIElement, UIActionType
 from .Button import Button
@@ -12,6 +11,7 @@ from ..MainMap import MainMap
 from ...ConfigManager import ConfigManager
 from ...ServerCommunication import ServerCommunication
 from ...ProgramStage import ProgramStage
+from ...Extent import Vector
 
 
 def setup_ui(root: UIElement, main_map: MainMap, config: ConfigManager, server: ServerCommunication,
@@ -43,17 +43,17 @@ def setup_ui(root: UIElement, main_map: MainMap, config: ConfigManager, server: 
 class Constants:
     def __init__(self, config):
         self.scale_factor = config.get("ui-settings", "scale-factor")
-        self.button_size = np.asarray((50 * self.scale_factor, 50 * self.scale_factor))
+        self.button_size = Vector(50, 50) * self.scale_factor
 
-        self.x = np.multiply(self.button_size, np.asarray([1, 0]))  # x offset
-        self.y = np.multiply(self.button_size, np.asarray([0, 1]))  # y offset
+        self.x = self.button_size ** Vector(1, 0)  # x offset       ** is element wise multiplication
+        self.y = self.button_size ** Vector(0, 1)  # y offset
 
         self.screen_width = config.get("beamer-resolution", "width")
         self.screen_height = config.get("beamer-resolution", "height")
-        self.bot_right_corner = np.asarray([self.screen_width, self.screen_height])
-        self.nav_toggle_pos = np.asarray([20 * self.scale_factor, 20 * self.scale_factor])
-        self.nav_block_pos = np.asarray([-10 * self.scale_factor, -10 * self.scale_factor])
-        self.nav_block_size = np.asarray([300 * self.scale_factor, 600 * self.scale_factor])
+        self.bot_right_corner = Vector(self.screen_width, self.screen_height)
+        self.nav_toggle_pos = Vector(20, 20) * self.scale_factor
+        self.nav_block_pos = Vector(-10, -10) * self.scale_factor
+        self.nav_block_size = Vector(300, 600) * self.scale_factor
         self.cross_offset = self.x * 0.5 + self.y * 1.5  # default button offset for the pan controls
         self.zoom_offset = self.cross_offset + self.x * 4  # default button offset for the zoom controls
 
@@ -75,8 +75,8 @@ def setup_nav_block_ui(nav_block_root, config, main_map, callback_manager) -> (M
     mini_map = MiniMap(
         config,
         'mini_map',
-        np.asarray([10 * c.scale_factor, 300 * c.scale_factor]),
-        np.asarray([280 * c.scale_factor, 280 * c.scale_factor]),
+        Vector(10, 300) * c.scale_factor,
+        Vector(280, 280) * c.scale_factor,
         main_map
     )
 

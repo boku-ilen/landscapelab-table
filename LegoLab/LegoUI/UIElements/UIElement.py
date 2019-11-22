@@ -1,6 +1,6 @@
 from ...LegoBricks import LegoBrick
+from ...Vector import Vector
 from typing import Optional, List
-import numpy as np
 from enum import Enum
 
 
@@ -8,7 +8,7 @@ from enum import Enum
 class UIElement:
 
     def __init__(self):
-        self.position = np.array((0, 0))
+        self.position = Vector()    # use set_position to modify
         self.visible: bool = True
         self.parent: Optional[UIElement] = None
         self.children: List[UIElement] = []
@@ -44,11 +44,11 @@ class UIElement:
                 child.draw(img)
 
     # get global position of this element
-    def get_pos(self):
+    def get_global_pos(self) -> Vector:
         if self.parent is None:
             return self.position
 
-        return np.add(self.parent.get_pos(), self.position)
+        return self.parent.get_global_pos() + self.position
 
     # add a child element
     def add_child(self, child):
@@ -57,6 +57,9 @@ class UIElement:
 
     def set_visible(self, visible: bool):
         self.visible = visible
+
+    def set_position(self, pos: Vector):
+        self.position = pos
 
 
 # used for buttons etc

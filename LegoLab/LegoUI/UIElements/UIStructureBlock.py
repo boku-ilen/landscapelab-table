@@ -1,9 +1,9 @@
 from ...Extent import Extent
+from ...Vector import Vector
 from ...LegoBricks import LegoBrick
 from ..UIElements.UIElement import UIElement
 from ...ConfigManager import ConfigManager
 from typing import List
-import numpy as np
 import cv2 as cv
 
 
@@ -13,8 +13,8 @@ class UIStructureBlock(UIElement):
     def __init__(
             self,
             config: ConfigManager,
-            position: np.ndarray,
-            size: np.ndarray,
+            position: Vector,
+            size: Vector,
             color: List = None,
             border_color: List = None,
             border_weight: float = None
@@ -30,9 +30,9 @@ class UIStructureBlock(UIElement):
             border_weight = config.get("ui-settings", "nav-block-border-weight")
 
         # set block position/size
-        # TODO maybe save position & size as Extent?
-        self.position = position.astype(int)
-        self.size = size.astype(int)
+        self.position = position                                            # only modify with set_position
+        self.size = size                                                    # only modify with set_size
+        self.area = Extent.from_vectors(position, position + size, False)   # only modify with set_area
         self.is_ellipse = False
 
         # set block color
@@ -56,90 +56,82 @@ class UIStructureBlock(UIElement):
     def draw_background(self, img, color, force=False):
 
         if self.show_background_color or force:
-            # get bounds
-            x_min, y_min, x_max, y_max = self.get_bounds()
 
             if self.is_ellipse:
-
-                # calc attributes
-                x_avg = int((x_min + x_max) / 2)
-                y_avg = int((y_min + y_max) / 2)
-                x_span = int((x_max - x_min) / 2)
-                y_span = int((y_max - y_min) / 2)
-
                 # draw ellipse
-                cv.ellipse(img, (x_avg, y_avg), (x_span, y_span), 0, 0, 360, color, -1)
+                UIStructureBlock.ellipse(img, self.get_global_area(), color, cv.FILLED)
 
             else:
                 # draw rect
-                cv.rectangle(img, (x_min, y_min), (x_max, y_max), color, cv.FILLED)
+                UIStructureBlock.rectangle(img, self.get_global_area(), color, cv.FILLED)
 
     def draw_border(self, img, color, force=False):
 
         if self.show_border or force:
 
-            # get bounds
-            x_min, y_min, x_max, y_max = self.get_bounds()
-
             if self.is_ellipse:
-                # calc attributes
-                x_avg = int((x_min + x_max) / 2)
-                y_avg = int((y_min + y_max) / 2)
-                x_span = int((x_max - x_min) / 2)
-                y_span = int((y_max - y_min) / 2)
-
                 # draw ellipse
-                cv.ellipse(img, (x_avg, y_avg), (x_span, y_span), 0, 0, 360, color, self.border_thickness)
+                UIStructureBlock.ellipse(img, self.get_global_area(), color, self.border_thickness)
 
             else:
                 # draw rect
-                cv.rectangle(img, (x_min, y_min), (x_max, y_max), color, self.border_thickness)
+                UIStructureBlock.rectangle(img, self.get_global_area(), color, self.border_thickness)
 
     # checks if a given brick lies on top of the block or any of it's children
     def brick_on_element(self, brick: LegoBrick) -> bool:
         if self.visible:
-            x, y = (brick.centroid_x, brick.centroid_y)
-
-            return super().brick_on_element(brick) or self.pos_on_block(x, y)
+            return super().brick_on_element(brick) or self.pos_on_block(Vector.from_brick(brick))
         return False
 
     # checks if a given (unconfirmed) brick would land on top of the block or any of it's children
     def brick_would_land_on_element(self, brick: LegoBrick) -> bool:
         if self.visible:
-            x, y = (brick.centroid_x, brick.centroid_y)
-
-            return super().brick_would_land_on_element(brick) or self.pos_on_block(x, y)
+            return super().brick_would_land_on_element(brick) or self.pos_on_block(Vector.from_brick(brick))
         return False
 
     # checks if any screen coordinate lies on top of
-    def pos_on_block(self, x: float, y: float) -> bool:
+    def pos_on_block(self, pos: Vector) -> bool:
         if self.visible:
-            x_min, y_min, x_max, y_max = self.get_bounds()
-
-            if x_min < x < x_max:
-                if y_min < y < y_max:
-                    return True
+            return self.get_global_area().vector_inside(pos)
         return False
 
-    # get the global bound coordinates
-    def get_bounds(self):
-        pos = self.position
+    # get the global area as extent
+    def get_global_area(self) -> Extent:
+        pos = self.get_global_pos()
+        return Extent.from_vectors(pos, pos + self.size)
 
-        if self.parent is not None:
-            pos = np.add(self.parent.get_pos(), pos)
+    def set_position(self, pos: Vector):
+        self.area.move_by(pos - self.position)
+        super().set_position(pos)
 
-        x_min, y_min = pos
-        x_max, y_max = np.add(pos, self.size)
+    def set_size(self, size: Vector):
+        self.area = Extent(self.area.get_upper_left(), self.position + size)
+        self.size = size
 
-        return x_min, y_min, x_max, y_max
+    def set_area(self, area: Extent):
+        self.position = area.get_upper_left
+        self.size = area.get_size()
+        self.area = area
 
     # draws a rectangle using a given area
-    def rectangle(self, img, area: Extent, color, border_thickness):
-
+    @staticmethod
+    def rectangle(img, area: Extent, color, border_thickness):
         cv.rectangle(
             img,
             area.get_upper_left().as_point(),
             area.get_lower_right().as_point(),
+            color,
+            border_thickness
+        )
+
+    # draws a rectangle using a given area
+    @staticmethod
+    def ellipse(img, area: Extent, color, border_thickness):
+        cv.ellipse(
+            img,
+            area.get_center().as_point(),
+            (area.get_size() / 2).as_point(),
+            0, 0, 360,
             color,
             border_thickness
         )

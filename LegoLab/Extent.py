@@ -10,7 +10,9 @@ logger = logging.getLogger('MainLogger')
 
 class Extent:
 
-    # constructors
+    """
+    constructors
+    """
 
     # creates a new Extent based on all four edges
     def __init__(self, x_min, y_min, x_max, y_max, y_up_is_positive=False):
@@ -32,6 +34,11 @@ class Extent:
     def from_rectangle(x_min, y_min, width, height, y_up_is_positive=False) -> 'Extent':
         return Extent(x_min, y_min, x_min + width, y_min + height, y_up_is_positive)
 
+    # creates and returns a new Extent using Vectors for the upper left, and lower right corner
+    @staticmethod
+    def from_vectors(upper_left: Vector, lower_right: Vector, y_up_is_positive=False):
+        return Extent(upper_left.x, upper_left.y, lower_right.x, lower_right.y, y_up_is_positive)
+
     # creates a new Extent based on it's center point, width and aspect ratio
     @staticmethod
     def around_center(center: Vector, width: float, y_per_x: float, y_up_is_positive=False) -> 'Extent':
@@ -46,11 +53,14 @@ class Extent:
             y_up_is_positive
         )
 
-    # methods
+    """
+    non-modifying methods
+    these methods will not modify the extent but return a new extent with the desired result
+    """
 
     # returns tuple of with and height
-    def get_size(self) -> Tuple[float, float]:
-        return self.get_width(), self.get_height()
+    def get_size(self) -> Vector:
+        return Vector(self.get_width(), self.get_height())
 
     # returns with of the extent
     def get_width(self) -> float:
@@ -86,13 +96,6 @@ class Extent:
     # returns clone of self
     def clone(self) -> 'Extent':
         return Extent(self.x_min, self.y_min, self.x_max, self.y_max, self.y_inverted)
-
-    # modifies the extent by element-wise addition
-    def add_extent_modifier(self, modifier: np.ndarray):
-        self.x_min += modifier[0]
-        self.y_min += modifier[1]
-        self.x_max += modifier[2]
-        self.y_max += modifier[3]
 
     # returns true if a given point is inside the extent, false otherwise
     def vector_inside(self, vec: Vector) -> bool:
@@ -133,7 +136,33 @@ class Extent:
             self.get_width(), self.get_height(), self.y_inverted
         )
 
-    # static methods
+    def __iter__(self):
+        return iter([self.x_min, self.y_min, self.x_max, self.y_max])
+
+    """ 
+    modifying methods
+    these methods actually modify the current extent
+    """
+
+    # modifies the extent by element-wise addition
+    def add_extent_modifier(self, modifier: np.ndarray):
+        self.x_min += modifier[0]
+        self.y_min += modifier[1]
+        self.x_max += modifier[2]
+        self.y_max += modifier[3]
+
+    # moves the extent by a given vector
+    def move_by(self, vec: Vector):
+        x, y = vec
+
+        self.x_min += x
+        self.x_max += x
+        self.y_min += y
+        self.y_max += y
+
+    """
+    static methods
+    """
 
     #                  +----------------------------+
     #                  |                            |

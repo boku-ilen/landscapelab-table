@@ -1,0 +1,241 @@
+{
+  "general": {
+    "scenario": "Joglland",
+    "starting_location": "auto select",
+    "NOTE": "starting_location overwrites the start location in the server response if an invalid value is given (e.g. 'auto select') it will be ignored",
+    "mini_map_extent": [1755560, 6013550, 10000],
+    "start_zoom": 20000
+  },
+
+  "resources": {
+    "relative-path": ["resources"],
+    "qr_bottom_left": {
+      "path": ["QR_Codes", "bottom_left.png"]
+    },
+    "qr_bottom_right": {
+      "path": ["QR_Codes", "bottom_right.png"]
+    },
+    "qr_top_left": {
+      "path": ["QR_Codes", "top_left.png"]
+    },
+    "qr_top_right": {
+      "path": ["QR_Codes", "top_right.png"]
+    },
+    "qr_size": 300,
+
+
+    "outdated_brick": {
+      "path": ["brick_overlays", "outdated.png"],
+      "center": [32,32]
+    },
+
+    "windmill_brick": {
+      "path":["brick_overlays", "wind_brick_indicator.png"],
+      "size": [100,100],
+      "center": [50,50]
+    },
+
+    "pv_brick": {
+      "path": ["brick_overlays", "pv_brick_indicator.png"],
+      "size": [100, 100],
+      "center": [50, 50]
+    },
+
+    "internal_brick": {
+      "path": ["brick_overlays", "internal_indicator.png"],
+      "size": [20, 20],
+      "center": [10, 10]
+    },
+
+    "windmill_icon": {
+      "path":["brick_overlays", "symbol_wind.png"],
+      "size": [50,50],
+      "center": [25,25]
+    },
+
+    "pv_icon": {
+      "path": ["brick_overlays", "symbol_pv.png"],
+      "size": [50, 50],
+      "center": [25, 25]
+    },
+
+    "yes_icon": {
+      "path": ["brick_overlays", "symbol_yes.png"],
+      "size": [50, 50],
+      "center": [25, 25]
+    },
+
+    "no_icon": {
+      "path": ["brick_overlays", "symbol_no.png"],
+      "size": [50, 50],
+      "center": [25, 25]
+    },
+
+    "player_teleport": {
+      "path": ["brick_overlays", "symbol_player_teleport.png"],
+      "size": [50, 50],
+      "center": [25, 25]
+    },
+
+    "player_position": {
+      "path": ["brick_overlays", "symbol_player_position.png"],
+      "size": [50, 50],
+      "center": [25, 25]
+    },
+
+    "button_left": {
+      "path": ["button_icons", "left.png"]
+    },
+
+    "button_right": {
+      "path": ["button_icons", "right.png"]
+    },
+
+    "button_up": {
+      "path": ["button_icons", "up.png"]
+    },
+
+    "button_down": {
+      "path": ["button_icons", "down.png"]
+    },
+
+    "button_zoom_in": {
+      "path": ["button_icons", "zoom_in.png"]
+    },
+
+    "button_zoom_out": {
+      "path": ["button_icons", "zoom_out.png"]
+    },
+    "button_confirm": {
+      "path": ["button_icons", "zoom_out.png"],
+      "NOTE": "TODO create fitting icon and reference it here"
+    }
+  },
+
+  "video_output": {
+    "name": "shape_detection_output.avi"
+  },
+
+  "server": {
+    "ip": "141.244.151.130",
+
+    "extent_top_left_corner_id": 14,
+    "extent_bottom_right_corner_id": 15,
+    "wind_id": 2,
+    "pv_id": 3
+    },
+
+  "resolution": {
+    "width": 1280,
+    "height": 720
+  },
+
+  "beamer-resolution": {
+    "screen-id": 1,
+    "NOTE": ["screen id refers to the display the beamer output should be started on",
+      "if the id exceeds the currently attached screen count the screen with the highest id will be selected",
+      "if the id is negative the beamer output will be shown in a window instead of full-screen"],
+    "width": 1800,
+    "height": 1000,
+    "pos-x": NaN,
+    "pos-y": NaN
+  },
+
+  "qr_code": {
+    "threshold": 60
+  },
+
+  "tracker-thresholds": {
+    "min-distance": 6,
+
+    "external-min-appeared": 6,
+    "external-max-disappeared": 40,
+    "internal-min-appeared": 3,
+    "internal-max-disappeared": 10
+  },
+
+  "SQUARE_BRICK": {
+    "RED_BRICK": 1,
+    "BLUE_BRICK": 3,
+    "GREEN_BRICK": 5,
+    "YELLOW_BRICK": 7
+  },
+
+  "RECTANGLE_BRICK": {
+    "RED_BRICK": 2,
+    "BLUE_BRICK": 4,
+    "GREEN_BRICK": 6,
+    "YELLOW_BRICK": 8
+  },
+
+  "EVALUATION_BRICKS": {
+    "BLUE_BRICK": 11,
+    "RED_BRICK": 12
+  },
+
+  "stored_instances": {
+    "asset_ids" : [1, 2, 3, 13],
+    "1" : "SQUARE_BRICK, RED_BRICK",
+    "2" : "RECTANGLE_BRICK, RED_BRICK",
+    "3" : "SQUARE_BRICK, BLUE_BRICK",
+    "13" : "None, None"
+  },
+
+  "qgis_interaction": {
+    "QGIS_IP": "127.0.0.1",
+    "QGIS_READ_PORT": 5005,
+    "LEGO_READ_PORT": 5006,
+    "UDP_BUFFER_SIZE": 1024,
+    "QGIS_IMAGE_PATH": "C:/landscapelab-dev/qgis/{}.png",
+    "UPDATE_KEYWORD": "update:",
+    "RENDER_KEYWORD": "render:",
+    "EXIT_KEYWORD": "exit"
+  },
+
+  "ui-settings": {
+    "ui-refreshed": true,
+
+    "scale-factor": 1.25,
+    "nav-block-toggle": true,
+
+    "button-background-color": [255, 255, 255],
+    "button-active-background-color": [200, 200, 200],
+    "button-border-color": [200, 200, 200],
+    "button-border-weight": 2,
+
+    "nav-block-background-color": [255, 255, 255],
+    "nav-block-border-color": [200, 200, 200],
+    "nav-block-border-weight": 2,
+
+    "progress-bar-color": [[202, 86, 99], [215, 126, 84], [210, 193, 75], [146, 185, 79], [88, 117, 219], [255, 255, 255]],
+
+    "mini-map-extent-color": [128, 128, 128]
+  },
+
+  "button_map": {
+    "PAN_UP": "w",
+    "PAN_DOWN": "s",
+    "PAN_LEFT": "a",
+    "PAN_RIGHT": "d",
+    "ZOOM_IN": "q",
+    "ZOOM_OUT": "e",
+    "CHANNEL_UP": "r",
+    "CHANNEL_DOWN": "f",
+    "CHANGE_STAGE": "n",
+    "CONFIRM_BRICKS": "x"
+  },
+
+  "map_settings": {
+    "extent_width":[
+      NaN, NaN
+    ],
+    "extent_height":[
+      NaN, NaN
+    ],
+    "crs": "EPSG:3857",
+    "extent_changed": false,
+    "map_refreshed": true,
+    "pan_distance": [0.5, 0.75, 0.85],
+    "zoom_strength": [0.2, 0.5, 0.9]
+  }
+}

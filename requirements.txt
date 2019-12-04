@@ -1,4 +1,4 @@
-python == 3.6.8  #  (or 3.6.7 if corrupted, pyrelasense does not work with python 3.7 yet)
+# python == 3.6.8  #  (or 3.6.7 if corrupted, pyrelasense does not work with python 3.7 yet)
 opencv-python >= 3.3.1  # opencv
 screeninfo
 dataclasses

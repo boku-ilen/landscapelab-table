@@ -219,6 +219,14 @@
     "PAN_RIGHT": "d",
     "ZOOM_IN": "q",
     "ZOOM_OUT": "e",
+
+    "MINI_MAP_PAN_UP": "i",
+    "MINI_MAP_PAN_DOWN": "k",
+    "MINI_MAP_PAN_LEFT": "j",
+    "MINI_MAP_PAN_RIGHT": "l",
+    "MINI_MAP_ZOOM_IN": "u",
+    "MINI_MAP_ZOOM_OUT": "o",
+
     "CHANNEL_UP": "r",
     "CHANNEL_DOWN": "f",
     "CHANGE_STAGE": "n",

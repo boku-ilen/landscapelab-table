@@ -5,6 +5,7 @@ import logging
 from ..LegoUI.UICallback import UICallback
 from .UIElements.UIElement import UIElement
 from .MainMap import MainMap
+from .UIElements.MiniMap import MiniMap
 from ..LegoDetection.Tracker import Tracker
 from ..ProgramStage import CurrentProgramStage, ProgramStage
 from ..ConfigManager import ConfigManager, ConfigError
@@ -24,6 +25,15 @@ class MapActions(Enum):
     PAN_RIGHT = 3
     ZOOM_IN = 4
     ZOOM_OUT = 5
+
+
+class MiniMapActions(Enum):
+    MINI_MAP_PAN_UP = 0
+    MINI_MAP_PAN_DOWN = 1
+    MINI_MAP_PAN_LEFT = 2
+    MINI_MAP_PAN_RIGHT = 3
+    MINI_MAP_ZOOM_IN = 4
+    MINI_MAP_ZOOM_OUT = 5
 
 
 class OutputActions(Enum):
@@ -56,6 +66,7 @@ class CallbackManager:
 
         # define all actions that could also be called by key presses
         self.map_actions: NamedCallbacks = CallbackManager.define_action_set(MapActions)
+        self.mini_map_actions: NamedCallbacks = CallbackManager.define_action_set(MiniMapActions)
         self.output_actions: NamedCallbacks = CallbackManager.define_action_set(OutputActions)
         self.tracker_actions: NamedCallbacks = CallbackManager.define_action_set(TrackerActions)
         self.program_actions: NamedCallbacks = CallbackManager.define_action_set(ProgramActions)
@@ -63,7 +74,7 @@ class CallbackManager:
 
         # create action map from action lists
         self.action_map: MappedCallbacks = CallbackManager.find_button_mapping(
-            [self.map_actions, self.output_actions, self.tracker_actions, self.program_actions, self.ui_actions],
+            [self.map_actions, self.mini_map_actions, self.output_actions, self.tracker_actions, self.program_actions, self.ui_actions],
             config
         )
 
@@ -114,6 +125,15 @@ class CallbackManager:
         self.map_actions[MapActions.PAN_RIGHT].callback = my_map.pan_right
         self.map_actions[MapActions.ZOOM_IN].callback = my_map.zoom_in
         self.map_actions[MapActions.ZOOM_OUT].callback = my_map.zoom_out
+
+    # defines all map callback functions
+    def set_mini_map_callbacks(self, mini_map: MiniMap):
+        self.mini_map_actions[MiniMapActions.MINI_MAP_PAN_UP].callback = mini_map.pan_up
+        self.mini_map_actions[MiniMapActions.MINI_MAP_PAN_DOWN].callback = mini_map.pan_down
+        self.mini_map_actions[MiniMapActions.MINI_MAP_PAN_LEFT].callback = mini_map.pan_left
+        self.mini_map_actions[MiniMapActions.MINI_MAP_PAN_RIGHT].callback = mini_map.pan_right
+        self.mini_map_actions[MiniMapActions.MINI_MAP_ZOOM_IN].callback = mini_map.zoom_in
+        self.mini_map_actions[MiniMapActions.MINI_MAP_ZOOM_OUT].callback = mini_map.zoom_out
 
     # defines all tracker callback functions
     def set_tracker_callbacks(self, tracker: Tracker):

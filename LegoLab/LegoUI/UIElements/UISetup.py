@@ -79,6 +79,7 @@ def setup_nav_block_ui(nav_block_root, config, main_map, callback_manager) -> (M
         Vector(280, 280) * c.scale_factor,
         main_map
     )
+    callback_manager.set_mini_map_callbacks(mini_map)
 
     nav_block_root.add_child(toggle_nav_block_button)
     toggle_nav_block_button.add_child(navigation_block)

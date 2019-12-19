@@ -1,6 +1,4 @@
-from functools import partial
 from typing import Dict, Tuple
-import numpy as np
 
 from .MapHandler import MapHandler
 from ..ConfigManager import ConfigManager, ConfigError
@@ -29,25 +27,6 @@ class MainMap(MapHandler):
         # set new extent
         config.set("map_settings", "extent_width", [self.current_extent.x_min, self.current_extent.x_max])
         config.set("map_settings", "extent_height", [self.current_extent.y_min, self.current_extent.y_max])
-
-        # set extent modifiers
-        pan_up_modifier = np.array([0, 1, 0, 1])
-        pan_down_modifier = np.array([0, -1, 0, -1])
-        pan_left_modifier = np.array([-1, 0, -1, 0])
-        pan_right_modifier = np.array([1, 0, 1, 0])
-        zoom_in_modifier = np.array([1, 1, -1, -1])
-        zoom_out_modifier = np.array([-1, -1, 1, 1])
-
-        # get navigation settings
-        pan_distance = config.get('map_settings', 'pan_distance')
-        zoom_strength = config.get('map_settings', 'zoom_strength')
-
-        self.pan_up = partial(self.init_render, pan_up_modifier, pan_distance)
-        self.pan_down = partial(self.init_render, pan_down_modifier, pan_distance)
-        self.pan_left = partial(self.init_render, pan_left_modifier, pan_distance)
-        self.pan_right = partial(self.init_render, pan_right_modifier, pan_distance)
-        self.zoom_in = partial(self.init_render, zoom_in_modifier, zoom_strength)
-        self.zoom_out = partial(self.init_render, zoom_out_modifier, zoom_strength)
 
     def get_start_extent(self, scenario):
 
@@ -87,24 +66,6 @@ class MainMap(MapHandler):
             starting_location = scenario["locations"][first_key]["location"]
 
         return starting_location
-
-    # modifies the current extent and requests an updated render image
-    # param brick gets ignored so that UIElements can call the function
-    def init_render(self, extent_modifier, strength, brick):
-        # modify extent
-        width = self.current_extent.get_width()
-        height = self.current_extent.get_height()
-
-        move_extent = np.multiply(
-            extent_modifier,
-            np.array([width, height, width, height])
-        ) * strength[0]
-
-        next_extent = self.current_extent.clone()
-        next_extent.add_extent_modifier(move_extent)
-
-        # request render
-        self.request_render(next_extent)
 
     def refresh_callback(self):
         self.server.update_extent_info(self.current_extent)

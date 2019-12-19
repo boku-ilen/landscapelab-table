@@ -1,6 +1,7 @@
 import numpy as np
 import cv2 as cv
 import socket
+from functools import partial
 from typing import Tuple
 import logging
 
@@ -44,6 +45,25 @@ class MapHandler:
         self.render_keyword = config.get('qgis_interaction', 'RENDER_KEYWORD')
         self.exit_keyword = config.get('qgis_interaction', 'EXIT_KEYWORD')
 
+        # set extent modifiers
+        pan_up_modifier = np.array([0, 1, 0, 1])
+        pan_down_modifier = np.array([0, -1, 0, -1])
+        pan_left_modifier = np.array([-1, 0, -1, 0])
+        pan_right_modifier = np.array([1, 0, 1, 0])
+        zoom_in_modifier = np.array([1, 1, -1, -1])
+        zoom_out_modifier = np.array([-1, -1, 1, 1])
+
+        # get navigation settings
+        pan_distance = config.get('map_settings', 'pan_distance')
+        zoom_strength = config.get('map_settings', 'zoom_strength')
+
+        self.pan_up = partial(self.modify_extent, pan_up_modifier, pan_distance)
+        self.pan_down = partial(self.modify_extent, pan_down_modifier, pan_distance)
+        self.pan_left = partial(self.modify_extent, pan_left_modifier, pan_distance)
+        self.pan_right = partial(self.modify_extent, pan_right_modifier, pan_distance)
+        self.zoom_in = partial(self.modify_extent, zoom_in_modifier, zoom_strength)
+        self.zoom_out = partial(self.modify_extent, zoom_out_modifier, zoom_strength)
+
     # reloads the viewport image
     def refresh(self, extent: Extent):
         logger.info("refreshing map")
@@ -79,6 +99,24 @@ class MapHandler:
     # may carry out different tasks in different subclasses
     def refresh_callback(self):
         pass
+
+    # modifies the current extent and requests an updated render image
+    # param brick gets ignored so that UIElements can call the function
+    def modify_extent(self, extent_modifier, strength, brick):
+        # modify extent
+        width = self.current_extent.get_width()
+        height = self.current_extent.get_height()
+
+        move_extent = np.multiply(
+            extent_modifier,
+            np.array([width, height, width, height])
+        ) * strength[0]
+
+        next_extent = self.current_extent.clone()
+        next_extent.add_extent_modifier(move_extent)
+
+        # request render
+        self.request_render(next_extent)
 
     def request_render(self, extent: Extent = None):
 

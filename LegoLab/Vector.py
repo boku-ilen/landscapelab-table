@@ -49,6 +49,8 @@ class Vector:
     def __iter__(self):
         return iter([self.x, self.y])
 
+    def y_per_x(self) -> float:
+        return self.y / self.x
 
     def as_point(self) -> Point:
         return int(self.x), int(self.y)

@@ -34,6 +34,7 @@ class MiniMapActions(Enum):
     MINI_MAP_PAN_RIGHT = 3
     MINI_MAP_ZOOM_IN = 4
     MINI_MAP_ZOOM_OUT = 5
+    MINI_MAP_FOCUS = 6
 
 
 class OutputActions(Enum):
@@ -134,6 +135,7 @@ class CallbackManager:
         self.mini_map_actions[MiniMapActions.MINI_MAP_PAN_RIGHT].callback = mini_map.pan_right
         self.mini_map_actions[MiniMapActions.MINI_MAP_ZOOM_IN].callback = mini_map.zoom_in
         self.mini_map_actions[MiniMapActions.MINI_MAP_ZOOM_OUT].callback = mini_map.zoom_out
+        self.mini_map_actions[MiniMapActions.MINI_MAP_FOCUS].callback = mini_map.focus_main_map
 
     # defines all tracker callback functions
     def set_tracker_callbacks(self, tracker: Tracker):

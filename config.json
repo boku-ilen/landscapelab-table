@@ -3,7 +3,8 @@
     "scenario": "Joglland",
     "starting_location": "auto select",
     "NOTE": "starting_location overwrites the start location in the server response if an invalid value is given (e.g. 'auto select') it will be ignored",
-    "mini_map_extent": [1755560, 6013550, 10000],
+    "mini_map_extent": null,
+    "NOTE2": "if mini_map_extent is null it will be calculated automatically, otherwise it can be overwritten using [center_x, center_y, zoom_width_in_m]",
     "start_zoom": 20000
   },
 
@@ -226,6 +227,7 @@
     "MINI_MAP_PAN_RIGHT": "l",
     "MINI_MAP_ZOOM_IN": "u",
     "MINI_MAP_ZOOM_OUT": "o",
+    "MINI_MAP_FOCUS": "p",
 
     "CHANNEL_UP": "r",
     "CHANNEL_DOWN": "f",

@@ -46,21 +46,28 @@ class MiniMap(UIStructureBlock, MapHandler):
         self.pressed = False
         self.pressed_once = False
 
+        self.focus_main_map = lambda brick: self.request_render(self.get_focus_extent(2))
+
     # retrieves or calculates the perfect start extent for a given scenario and returns it
     def get_start_extent(self, config):
-        # start extent calculation using main map extent as reference
-        # center = self.controlled_map.current_extent.get_center()
-        # zoom = self.controlled_map.current_extent.get_width() * 2
-
-        # return Extent.around_center(center, zoom, 1)
-
         extent_arr = config.get("general", "mini_map_extent")
+        if extent_arr is not None:
+            return Extent.around_center(Vector.from_array(extent_arr), extent_arr[2], self.size.y_per_x(), True)
+        else:
+            # start extent calculation using main map extent as reference
+            return self.get_focus_extent()
 
-        # get finished extent from config but modify it
-        # full_extent = Extent.from_tuple(tuple(extent_arr), True)
-        # return Extent.around_center(full_extent.get_center(), full_extent.get_width() * 0.5, full_extent.y_inverted)
+    # returns an extent that focuses on the extent of the controlled map
+    # zoom_factor defines how far the mini map extent should zoom out
+    # zoom_override can be used to set a fixed zoom level for the mini map and override zoom calculation
+    def get_focus_extent(self, zoom_factor=2, zoom_override=None):
+        center = self.controlled_map.current_extent.get_center()
+        zoom = self.controlled_map.current_extent.get_width() * zoom_factor
 
-        return Extent.around_center(Vector.from_array(extent_arr), extent_arr[2], 1, True)
+        if zoom_override is not None:
+            zoom = zoom_override
+
+        return Extent.around_center(center, zoom, self.size.y_per_x())
 
     # displays this element and all it's children to the given image
     def draw(self, img):

@@ -8,7 +8,7 @@ class ExtentTracker(object):
 
     __instance: 'ExtentTracker' = None
 
-    # NOTE do NOT call outside of FrameTracker, use get_instance instead
+    # NOTE do NOT call outside of ExtentTracker, use get_instance instead
     def __init__(self):
         self.board: Optional[Extent] = None
         self.beamer: Optional[Extent] = None

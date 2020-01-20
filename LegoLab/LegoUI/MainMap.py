@@ -6,6 +6,8 @@ from ..Extent import Extent
 from ..ServerCommunication import ServerCommunication
 
 
+# MainMap class
+# responsible for management of central map
 class MainMap(MapHandler):
 
     def __init__(self, config: ConfigManager, name, scenario: Dict, server: ServerCommunication):
@@ -28,6 +30,7 @@ class MainMap(MapHandler):
         config.set("map_settings", "extent_width", [self.current_extent.x_min, self.current_extent.x_max])
         config.set("map_settings", "extent_height", [self.current_extent.y_min, self.current_extent.y_max])
 
+    # retrieves starting location and defines an extent around this location
     def get_start_extent(self, scenario):
 
         starting_location = self.get_start_location(scenario)
@@ -37,6 +40,7 @@ class MainMap(MapHandler):
 
         return Extent.around_center(starting_location, zoom, 1)
 
+    # reads starting-location from scenario info or config
     def get_start_location(self, scenario) -> Tuple[float, float]:
         if len(scenario["locations"]) == 0:
             raise ConfigError("No locations in scenario {}".format(scenario["name"]))
@@ -67,5 +71,7 @@ class MainMap(MapHandler):
 
         return starting_location
 
+    # gets called whenever the map has been refreshed
+    # updates extent on server
     def refresh_callback(self):
         self.server.update_extent_info(self.current_extent)

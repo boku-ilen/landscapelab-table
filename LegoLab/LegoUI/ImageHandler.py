@@ -10,6 +10,8 @@ from ..ConfigManager import ConfigManager, ConfigError
 logger = logging.getLogger(__name__)
 
 
+# ImageHandler class
+# does image operations like loading and displaying
 class ImageHandler:
 
     def __init__(self, config: ConfigManager):
@@ -20,6 +22,7 @@ class ImageHandler:
             self.config.get("resources", "relative-path")
         )
 
+    # loads images stores them in a dictionary with additional info and returns this dictionary
     def load_image(
             self,
             name: str,
@@ -106,6 +109,7 @@ class ImageHandler:
             # NOTE unsure if correct alpha blending but results seem fine
         return im_back
 
+    # makes sure that the given image has an alpha channel, adds one if necessary and returns the modified image
     @staticmethod
     def ensure_alpha_channel(image):
 

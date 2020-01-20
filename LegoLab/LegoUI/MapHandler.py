@@ -14,6 +14,9 @@ from ..ExtentTracker import ExtentTracker
 logger = logging.getLogger('MainLogger')
 
 
+# MapHandler class
+# base class for other map related classes
+# handles render requests, image updates and map navigation
 class MapHandler:
 
     def __init__(self, config: ConfigManager, name: str, extent: Extent, resolution: Tuple[int, int]):
@@ -118,6 +121,7 @@ class MapHandler:
         # request render
         self.request_render(next_extent)
 
+    # requests a new rendered map extent from qgis plugin
     def request_render(self, extent: Extent = None):
 
         if extent is None:
@@ -136,9 +140,11 @@ class MapHandler:
         logger.debug('sending to qgis: {}'.format(msg))
         self.sock.sendto(msg, self.qgis_addr)
 
+    # returns current map image
     def get_map_image(self):
         return self.map_image[self.current_image]
 
+    # closes sockets
     def end(self):
         # self.sock.sendto(self.exit_keyword.encode(), self.qgis_addr)
         self.sock.sendto(self.exit_keyword.encode(), self.lego_addr)

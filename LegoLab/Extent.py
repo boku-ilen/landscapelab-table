@@ -8,6 +8,8 @@ from .Vector import Vector
 logger = logging.getLogger('MainLogger')
 
 
+# Extent class
+# used for map extent calculations as well as UI calculations
 class Extent:
 
     """
@@ -70,13 +72,15 @@ class Extent:
     def get_height(self):
         return self.y_max - self.y_min
 
-    # returns center position as tuple
+    # returns center position as vector
     def get_center(self) -> Vector:
         return Vector((self.x_min + self.x_max) / 2, (self.y_min + self.y_max) / 2)
 
+    # returns upper left corner position as vector
     def get_upper_left(self) -> Vector:
         return Vector(self.x_min, self.y_min)
 
+    # returns lower right corner position as vector
     def get_lower_right(self) -> Vector:
         return Vector(self.x_max, self.y_max)
 

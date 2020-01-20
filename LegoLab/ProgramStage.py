@@ -17,6 +17,8 @@ class ProgramStage(Enum):
         return ProgramStage(value)
 
 
+# CurrentProgramStageClass
+# keeps track of the current program stage
 # TODO (future releases) convert to singleton
 class CurrentProgramStage:
 

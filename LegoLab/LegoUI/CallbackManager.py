@@ -56,7 +56,11 @@ class UiActions(Enum):
     SET_NAV_BLOCK_INVISIBLE = 2
 
 
-# class that manages UICallbacks so that every
+# CallbackManager class
+# project specific class that manages UICallbacks
+# makes it possible to register key callbacks in any order during setup
+# keeps track of button mappings and provides call_key_action(...) function, that finds the callback linked to a key and
+# executes it
 class CallbackManager:
 
     def __init__(self, config: ConfigManager):

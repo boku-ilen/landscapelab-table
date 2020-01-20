@@ -11,6 +11,8 @@ from ..Extent import Extent
 logger = logging.getLogger('MainLogger')
 
 
+# ListenerThread class
+# used for communication with QGIS-plugin
 class ListenerThread(threading.Thread):
 
     def __init__(self, config: ConfigManager, map_dict: Dict[str, MapHandler]):
@@ -27,6 +29,7 @@ class ListenerThread(threading.Thread):
 
         self.map_dict = map_dict
 
+    # waits for messages from qgis plugin and notifies map objects in case they should be updated
     def run(self):
         logger.info("starting to listen for messages")
         while True:

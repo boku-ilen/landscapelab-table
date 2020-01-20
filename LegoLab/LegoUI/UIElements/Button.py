@@ -5,9 +5,7 @@ from ...LegoBricks import LegoBrick, LegoStatus
 from ..ImageHandler import ImageHandler
 from ...ConfigManager import ConfigManager
 from ...Vector import Vector
-from ...Extent import Extent
 from typing import Dict, List
-import numpy as np
 
 import logging
 
@@ -15,7 +13,7 @@ import logging
 logger = logging.getLogger('MainLogger')
 
 
-# a rectangular button that calls specified functions once a brick enters/leaves the button
+# a rectangular or circular button that calls specified functions once a brick enters/leaves the button
 class Button(UIStructureBlock):
 
     def __init__(
@@ -125,6 +123,7 @@ class Button(UIStructureBlock):
 
             self.draw_hierarchy(img)
             # NOTE call this before the rest so the button is rendered in front of its children
+            #   we want this behavior because then buttons can be used to toggle visibility of menus they are a part of
 
             # get correct color / icon
             color = self.color

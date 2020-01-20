@@ -12,6 +12,20 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+# MiniMap class
+# This ui element is used to navigate and jump far distances on the main map
+# If a brick gets placed on this map, it moves the center of the main map extent, to the location indicated by the
+# brick.
+#
+# The way the class is implemented at the moment it will only initiate an extent change if no brick is already on
+# the mini-map.
+# ADVANTAGES of this method are, that once a brick has been placed on the mini-map, no misclassified
+# bricks can accidentally move the map extent (this is especially helpful when testing with test footage, since the
+# mini-map can be deactivated by placing a virtual brick on the map).
+# DISADVANTAGES are, that one cannot simply move the
+# brick on the mini-map, since the old brick position will be held active by the Tracker for some time and the new brick
+# position will be recognized by the time the old position is discarded. Therefore the min-map is led to believe, that
+# there already is a brick on it, and it ignores the new input.
 class MiniMap(UIStructureBlock, MapHandler):
 
     def __init__(
@@ -116,6 +130,8 @@ class MiniMap(UIStructureBlock, MapHandler):
         self.pressed_once = False
         super().ui_tick()
 
+    # calculates the new map extent for the controlled map based on the given lego brick position
+    # and starts the render request
     def initiate_teleport(self, brick: LegoBrick):
         map_brick = Extent.remap_brick(brick, self.get_global_area(), self.current_extent)
         c_map_extent = self.controlled_map.current_extent

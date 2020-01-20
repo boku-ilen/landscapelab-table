@@ -1,6 +1,5 @@
 from typing import Optional, Callable, List, Tuple
 import logging
-import numpy as np
 import cv2
 
 from .UIStructureBlock import UIStructureBlock
@@ -14,6 +13,10 @@ GREEN = (0, 255, 0)
 OFFSET = 20
 
 
+# ProgressBar class
+# rectangular progress bare used to visualize progress of certain tasks
+# update can be requested with calculate_progress() if the callable progress_calculation has been defined
+# progress can also be updated manually via update_progress(...)
 class ProgressBar(UIStructureBlock):
 
     def __init__(
@@ -55,6 +58,8 @@ class ProgressBar(UIStructureBlock):
         self.progress: float = 0
         self.progress_calculation: Optional[Callable[[], float]] = None
 
+    # updates the progress
+    # param new_progress: value between 0 and 1
     def update_progress(self, new_progress):
         self.progress = min(new_progress, 1)
         self.config.set("ui-settings", "ui-refreshed", True)
@@ -113,6 +118,7 @@ class ProgressBar(UIStructureBlock):
         else:
             return self.bar_color[0], self.color
 
+    # used to refresh the progress bar
     def calculate_progress(self):
         if self.progress_calculation:
             self.update_progress(self.progress_calculation() / self.target)

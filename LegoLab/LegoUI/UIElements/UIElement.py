@@ -58,6 +58,7 @@ class UIElement:
     def set_visible(self, visible: bool):
         self.visible = visible
 
+    # overwrites current position
     def set_position(self, pos: Vector):
         self.position = pos
 

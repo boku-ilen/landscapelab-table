@@ -14,6 +14,7 @@ from ...ProgramStage import ProgramStage
 from ...Extent import Vector
 
 
+# project specific function used to create the necessary UIElements and link them to their respective callback functions
 def setup_ui(root: UIElement, main_map: MainMap, config: ConfigManager, server: ServerCommunication,
              callback_manager: CallbackManager) \
         -> Tuple[MiniMap, UIElement, Callable]:
@@ -63,6 +64,7 @@ def setup_nav_block_ui(nav_block_root, config, main_map, callback_manager) -> (M
     # get vector constants that will be used to position the ui elements
     c = Constants(config)
 
+    # create elements
     toggle_nav_block_button = Button(config, c.nav_toggle_pos, c.button_size, 'toggle navigation block')
     navigation_block = UIStructureBlock(config, c.nav_block_pos, c.nav_block_size)
     pan_up_button = Button(config, c.cross_offset + c.x, c.button_size, 'pan up', 'button_up')
@@ -81,6 +83,7 @@ def setup_nav_block_ui(nav_block_root, config, main_map, callback_manager) -> (M
     )
     callback_manager.set_mini_map_callbacks(mini_map)
 
+    # setup hierarchy
     nav_block_root.add_child(toggle_nav_block_button)
     toggle_nav_block_button.add_child(navigation_block)
     navigation_block.add_child(pan_up_button)
@@ -123,6 +126,7 @@ def setup_detection_ui(detection_ui_root, server, config, callback_manager):
     # get vector constants that will be used to position the ui elements
     c = Constants(config)
 
+    # create elements
     progress_bar_wind = ProgressBar(
         config,
         c.bot_right_corner - c.x - c.y * 5,
@@ -140,6 +144,7 @@ def setup_detection_ui(detection_ui_root, server, config, callback_manager):
         [(0, 0, 255)]  # bgr
     )
 
+    # set progress calculation callbacks
     asset_type_id = config.get("server", "wind_id")
     progress_bar_wind.target = server.get_energy_target(asset_type_id)
     progress_bar_wind.progress_calculation = partial(server.get_energy_contrib, asset_type_id)
@@ -148,6 +153,7 @@ def setup_detection_ui(detection_ui_root, server, config, callback_manager):
     progress_bar_pv.target = server.get_energy_target(asset_type_id)
     progress_bar_pv.progress_calculation = partial(server.get_energy_contrib, asset_type_id)
 
+    # setup hierarchy
     detection_ui_root.add_child(progress_bar_wind)
     detection_ui_root.add_child(progress_bar_pv)
 

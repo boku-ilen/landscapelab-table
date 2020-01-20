@@ -53,6 +53,7 @@ class UIStructureBlock(UIElement):
 
             self.draw_hierarchy(img)
 
+    # draws the background of the structure block onto an image
     def draw_background(self, img, color, force=False):
 
         if self.show_background_color or force:
@@ -65,6 +66,7 @@ class UIStructureBlock(UIElement):
                 # draw rect
                 UIStructureBlock.rectangle(img, self.get_global_area(), color, cv.FILLED)
 
+    # draws the border of the structure block onto an image
     def draw_border(self, img, color, force=False):
 
         if self.show_border or force:
@@ -100,14 +102,18 @@ class UIStructureBlock(UIElement):
         pos = self.get_global_pos()
         return Extent.from_vectors(pos, pos + self.size)
 
+    # overwrites current position
+    # also updates area
     def set_position(self, pos: Vector):
         self.area.move_by(pos - self.position)
         super().set_position(pos)
 
+    # overwrites current size and updates area
     def set_size(self, size: Vector):
         self.area = Extent(self.area.get_upper_left(), self.position + size)
         self.size = size
 
+    # overwrites current area and updates size and position
     def set_area(self, area: Extent):
         self.position = area.get_upper_left
         self.size = area.get_size()

@@ -134,10 +134,6 @@ class LegoLab:
                 # get the next frame
                 depth_image_3d, color_image = self.input_stream.get_frame()
 
-                # FIXME: fix the method and use it
-                # Analyze only objects on the board / table
-                clipped_color_image = self.board_detector.clip_board(color_image, depth_image_3d)
-
                 # Add some additional information to the debug window
                 color_image_debug = color_image.copy()
                 self.output_stream.add_debug_information(color_image_debug)

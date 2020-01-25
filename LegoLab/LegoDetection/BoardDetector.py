@@ -354,26 +354,6 @@ class BoardDetector:
             for j in range(0, n):
                 cv2.line(frame, hull[j], hull[(j + 1) % n], (255, 0, 0), 3)
 
-    # FIXME: fix the method and use it
-    # Analyze only objects on the board distance
-    def clip_board(self, color_image, depth_image_3d):
-
-        # clipping the color image to the area with the right distance values
-        # TODO: find a working pythonic way
-        if self.board.distance:
-            clipped_color_image = np.where(
-                (depth_image_3d > self.board.distance * (1 + CLIP)) |
-                (depth_image_3d < self.board.distance * (1 - CLIP)),
-            0, color_image)
-        else:
-            clipped_color_image = color_image
-        # not working properly  # FIXME: why is this then still here?
-        # clipped_color_image = np.where((depth_image_3d > clip_dist * (1 + CLIP)).all()
-        #                               or (depth_image_3d < clip_dist * (1 - CLIP)).all(),
-        #                               0, color_image)
-
-        return clipped_color_image
-
     # Compute region of interest (board area) from the color image
     def rectify_image(self, region_of_interest, color_image):
 

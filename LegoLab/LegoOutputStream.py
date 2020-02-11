@@ -3,6 +3,7 @@ import cv2
 import screeninfo
 import numpy as np
 import logging
+from typing import List
 
 from .ProgramStage import ProgramStage, CurrentProgramStage
 from .LegoDetection.Tracker import Tracker
@@ -11,6 +12,7 @@ from .LegoUI.MainMap import MainMap
 from .LegoUI.UIElements.UIElement import UIElement
 from .LegoBricks import LegoBrick, LegoColor, LegoShape, LegoStatus
 from .LegoUI.ImageHandler import ImageHandler
+from .LegoUI.BrickIcon import ExternalBrickIcon, InternalBrickIcon
 from .LegoUI.CallbackManager import CallbackManager
 from .ExtentTracker import ExtentTracker
 from .Extent import Extent
@@ -139,17 +141,20 @@ class LegoOutputStream:
         self.qr_top_right = image_handler.load_image("qr_top_right", (qr_size, qr_size))
 
         # load brick overlay images
-
         self.brick_outdated = image_handler.load_image("outdated_brick")
-        self.brick_internal = image_handler.load_image("internal_brick")
-        self.brick_windmill = image_handler.load_image("windmill_brick")
-        self.brick_pv = image_handler.load_image("pv_brick")
-        self.icon_windmill = image_handler.load_image("windmill_icon")
-        self.icon_pv = image_handler.load_image("pv_icon")
-        self.icon_yes = image_handler.load_image("yes_icon")
-        self.icon_no = image_handler.load_image("no_icon")
-        self.player_teleport = image_handler.load_image("player_teleport")
-        self.player_position = image_handler.load_image("player_position")
+        self.brick_unknown = image_handler.load_image("unknown_brick")
+
+        # load and initialize icon lists
+        internal_icons = config.get("brick_icon_mappings", "internal_bricks")
+        external_icons = config.get("brick_icon_mappings", "external_bricks")
+        self.internal_icon_list: List[InternalBrickIcon] = []
+        self.external_icon_list: List[ExternalBrickIcon] = []
+
+        for rule, icon_name in internal_icons.items():
+            self.internal_icon_list.append(InternalBrickIcon(rule, image_handler.load_image(icon_name)))
+
+        for rule, icon_name in external_icons.items():
+            self.external_icon_list.append(ExternalBrickIcon(rule, image_handler.load_image(icon_name)))
 
     # fetches the correct monitor for the beamer output and writes it's data to the ConfigManager
     @staticmethod
@@ -366,40 +371,24 @@ class LegoOutputStream:
     # returns the correct brick icon for any given brick
     def get_brick_icon(self, brick, virtual):
 
+        # return x icon if brick is outdated
         if brick.status == LegoStatus.OUTDATED_BRICK:
             return self.brick_outdated
 
+        # search for correct internal icon and return it if brick is internal
         elif brick.status == LegoStatus.INTERNAL_BRICK:
-            return self.brick_internal
+            for icon_candidate in self.internal_icon_list:
+                if icon_candidate.matches(brick):
+                    return icon_candidate.icon
 
-        else:
-            # set different icons for if brick is virtual
-            if virtual and (brick.asset_id == 1 or brick.asset_id == 2):
-                return self.icon_pv
-            elif virtual and brick.asset_id == 3:
-                return self.icon_windmill
+        # search for correct internal icon and return it if brick is external
+        elif brick.status == LegoStatus.EXTERNAL_BRICK:
+            for icon_candidate in self.external_icon_list:
+                if icon_candidate.matches(brick, virtual):
+                    return icon_candidate.icon
 
-            # set icons if brick is not virtual
-            # or icons are the same independently of virtual-property
-            if brick.asset_id == 1 or brick.asset_id == 2:
-                return self.brick_pv
-            elif brick.asset_id == 3:
-                return self.brick_windmill
-            elif brick.asset_id == 4:
-                return self.player_teleport
-            elif brick.asset_id == 13:
-                return self.player_position
-            # allow only square bricks for yes / no
-            # NOTE no longer necessary since rectangle bricks will now be marked OUTDATED when in evaluation stage
-            elif brick.shape == LegoShape.SQUARE_BRICK:
-                if brick.asset_id == 11:
-                    return self.icon_yes
-                elif brick.asset_id == 12:
-                    return self.icon_no
-            else:
-                # rectangle bricks are marked as outdated
-                # but create request is pushed anyway
-                return self.brick_outdated
+        # return "unknown brick" icon if no icon matches
+        return self.brick_unknown
 
     # closing the outputstream if it is defined
     def close(self):

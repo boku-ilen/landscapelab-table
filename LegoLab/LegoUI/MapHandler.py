@@ -60,7 +60,10 @@ class MapHandler:
         pan_distance = config.get('map_settings', 'pan_distance')
         zoom_strength = config.get('map_settings', 'zoom_strength')
 
-        # TODO document "api" functions
+        # these functions can be used to interact with the map
+        # by calling these functions one can pan and zoom on the map
+        # the functions will automatically request a new rendered map extent from the QGIS plugin
+        # they need accept an unused brick parameter to make it possible to call these functions via UICallback
         self.pan_up = partial(self.modify_extent, pan_up_modifier, pan_distance)
         self.pan_down = partial(self.modify_extent, pan_down_modifier, pan_distance)
         self.pan_left = partial(self.modify_extent, pan_left_modifier, pan_distance)

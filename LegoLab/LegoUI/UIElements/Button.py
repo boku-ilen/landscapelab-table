@@ -121,9 +121,10 @@ class Button(UIStructureBlock):
 
         if self.visible:
 
+            # draw children of button
+            # call this before the rest so the button is rendered in front of its children
+            # we want this behavior because then buttons can be used to toggle visibility of menus they are a part of
             self.draw_hierarchy(img)
-            # NOTE call this before the rest so the button is rendered in front of its children
-            #   we want this behavior because then buttons can be used to toggle visibility of menus they are a part of
 
             # get correct color / icon
             color = self.color
@@ -132,12 +133,8 @@ class Button(UIStructureBlock):
                 color = self.color_pressed
                 icon = self.icon_pressed
 
-            # draw the button
-            self.draw_background(img, color)                                # background
-
-            if icon is not None:                                            # icon
-
-                # draw the icon
+            # draw the actual button
+            self.draw_background(img, color)
+            if icon is not None:  # draw icon if defined
                 ImageHandler.img_on_background(img, icon, self.get_global_pos().as_point())
-
-            self.draw_border(img, self.border_color)                        # border
+            self.draw_border(img, self.border_color)

@@ -13,7 +13,8 @@ logger = logging.getLogger('MainLogger')
 
 # ListenerThread class
 # used for communication with QGIS-plugin
-class ListenerThread(threading.Thread):
+# relies on map handler to send closing message
+class QGISListenerThread(threading.Thread):
 
     def __init__(self, config: ConfigManager, map_dict: Dict[str, MapHandler]):
         threading.Thread.__init__(self)

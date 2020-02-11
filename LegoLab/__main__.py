@@ -14,7 +14,7 @@ from .ServerCommunication import ServerCommunication
 from .LegoDetection.Tracker import Tracker
 from .ConfigManager import ConfigManager
 from .ParameterManager import ParameterManager
-from .LegoUI.ListenerThread import ListenerThread
+from .LegoUI.QGISListenerThread import QGISListenerThread
 from .ServerListenerThread import ServerListenerThread
 
 
@@ -74,8 +74,8 @@ class LegoLab:
 
         # Initialize and start the QGIS listener Thread
         # also request the first rendered map section
-        self.listener_thread = ListenerThread(self.config, map_dict)
-        self.listener_thread.start()
+        self.qgis_listener_thread = QGISListenerThread(self.config, map_dict)
+        self.qgis_listener_thread.start()
         self.main_map.request_render()
         mini_map.request_render()
 

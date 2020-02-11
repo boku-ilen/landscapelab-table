@@ -60,6 +60,7 @@ class MapHandler:
         pan_distance = config.get('map_settings', 'pan_distance')
         zoom_strength = config.get('map_settings', 'zoom_strength')
 
+        # TODO document "api" functions
         self.pan_up = partial(self.modify_extent, pan_up_modifier, pan_distance)
         self.pan_down = partial(self.modify_extent, pan_down_modifier, pan_distance)
         self.pan_left = partial(self.modify_extent, pan_left_modifier, pan_distance)
@@ -146,6 +147,5 @@ class MapHandler:
 
     # closes sockets
     def end(self):
-        # self.sock.sendto(self.exit_keyword.encode(), self.qgis_addr)
         self.sock.sendto(self.exit_keyword.encode(), self.lego_addr)
         self.sock.close()

@@ -71,6 +71,7 @@ class LegoBrick:
         # map the lego brick asset_id from color & shape
         self.asset_id = config.get("EVALUATION_BRICKS", str(self.color.name))
 
+    # returns an independent clone of this brick
     def clone(self):
         clone = LegoBrick(self.centroid_x, self.centroid_y, self.shape, self.color)
         clone.status = self.status

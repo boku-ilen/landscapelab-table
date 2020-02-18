@@ -21,12 +21,12 @@ class QGISListenerThread(threading.Thread):
 
         # create socket
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.sock.bind((config.get('qgis_interaction', 'QGIS_IP'), config.get('qgis_interaction', 'LEGO_READ_PORT')))
-        self.udp_buffer_size = config.get('qgis_interaction', 'UDP_BUFFER_SIZE')
+        self.sock.bind((config.get('qgis_interaction', 'qgis_ip'), config.get('qgis_interaction', 'lego_read_port')))
+        self.udp_buffer_size = config.get('qgis_interaction', 'udp_buffer_size')
 
         # remember update keyword
-        self.update_keyword = config.get('qgis_interaction', 'UPDATE_KEYWORD')
-        self.exit_keyword = config.get('qgis_interaction', 'EXIT_KEYWORD')
+        self.update_keyword = config.get('qgis_interaction', 'update_keyword')
+        self.exit_keyword = config.get('qgis_interaction', 'exit_keyword')
 
         self.map_dict = map_dict
 

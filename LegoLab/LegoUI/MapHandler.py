@@ -36,17 +36,18 @@ class MapHandler:
         ]
         self.current_image = 0
 
-        self.crs = config.get("map_settings", "crs")
+        self.crs = config.get("map_settings", "coordinate_reference_system")
 
         # set socket & connection info
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.qgis_addr = (config.get('qgis_interaction', 'QGIS_IP'), config.get('qgis_interaction', 'QGIS_READ_PORT'))
-        self.lego_addr = (config.get('qgis_interaction', 'QGIS_IP'), config.get('qgis_interaction', 'LEGO_READ_PORT'))
+        qgis_ip = config.get('qgis_interaction', 'qgis_ip')
+        self.qgis_addr = (qgis_ip, config.get('qgis_interaction', 'qgis_read_port'))
+        self.lego_addr = (qgis_ip, config.get('qgis_interaction', 'lego_read_port'))
 
         # get communication info
-        self.image_path: str = config.get('qgis_interaction', 'QGIS_IMAGE_PATH')
-        self.render_keyword = config.get('qgis_interaction', 'RENDER_KEYWORD')
-        self.exit_keyword = config.get('qgis_interaction', 'EXIT_KEYWORD')
+        self.image_path: str = config.get('qgis_interaction', 'qgis_image_path')
+        self.render_keyword = config.get('qgis_interaction', 'render_keyword')
+        self.exit_keyword = config.get('qgis_interaction', 'exit_keyword')
 
         # set extent modifiers
         pan_up_modifier = np.array([0, 1, 0, 1])

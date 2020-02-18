@@ -43,14 +43,14 @@ def setup_ui(root: UIElement, main_map: MainMap, config: ConfigManager, server: 
 # constant class used by the ui setup methods to easily access vector constants
 class Constants:
     def __init__(self, config):
-        self.scale_factor = config.get("ui-settings", "scale-factor")
+        self.scale_factor = config.get("ui_settings", "scale_factor")
         self.button_size = Vector(50, 50) * self.scale_factor
 
         self.x = self.button_size ** Vector(1, 0)  # x offset       ** is element wise multiplication
         self.y = self.button_size ** Vector(0, 1)  # y offset
 
-        self.screen_width = config.get("beamer-resolution", "width")
-        self.screen_height = config.get("beamer-resolution", "height")
+        self.screen_width = config.get("beamer_resolution", "width")
+        self.screen_height = config.get("beamer_resolution", "height")
         self.bot_right_corner = Vector(self.screen_width, self.screen_height)
         self.nav_toggle_pos = Vector(20, 20) * self.scale_factor
         self.nav_block_pos = Vector(-10, -10) * self.scale_factor
@@ -110,7 +110,7 @@ def setup_nav_block_ui(nav_block_root, config, main_map, callback_manager) -> (M
     confirm_button.set_callback(UIActionType.PRESS, tracker_callbacks[TrackerActions.CONFIRM_BRICKS])
 
     ui_callbacks = callback_manager.ui_actions
-    if config.get("ui-settings", "nav-block-toggle"):
+    if config.get("ui_settings", "nav_block_toggle"):
         # this makes the button toggle
         toggle_nav_block_button.set_callback(UIActionType.PRESS, ui_callbacks[UiActions.TOGGLE_NAV_BLOCK])
     else:

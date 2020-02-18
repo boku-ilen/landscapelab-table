@@ -33,11 +33,11 @@ class Tracker:
         self.ui_root = ui_root
 
         # get ticker thresholds from config
-        self.min_distance = config.get("tracker-thresholds", "min-distance")
-        self.external_min_appeared = config.get("tracker-thresholds", "external-min-appeared")
-        self.external_max_disappeared = config.get("tracker-thresholds", "external-max-disappeared")
-        self.internal_min_appeared = config.get("tracker-thresholds", "internal-min-appeared")
-        self.internal_max_disappeared = config.get("tracker-thresholds", "internal-max-disappeared")
+        self.min_distance = config.get("tracker_thresholds", "min_distance")
+        self.external_min_appeared = config.get("tracker_thresholds", "external_min_appeared")
+        self.external_max_disappeared = config.get("tracker_thresholds", "external_max_disappeared")
+        self.internal_min_appeared = config.get("tracker_thresholds", "internal_min_appeared")
+        self.internal_max_disappeared = config.get("tracker_thresholds", "internal_max_disappeared")
         self.allowed_bricks = {
             ProgramStage.EVALUATION: [
                 (LegoColor.RED_BRICK, LegoShape.SQUARE_BRICK),

@@ -31,13 +31,13 @@ class Button(UIStructureBlock):
 
         # overwrite none values with defaults
         if color is None:
-            color = config.get("ui-settings", "button-background-color")
+            color = config.get("ui_settings", "button_background_color")
         if active_color is None:
-            active_color = config.get("ui-settings", "button-active-background-color")
+            active_color = config.get("ui_settings", "button_active_background_color")
         if border_color is None:
-            border_color = config.get("ui-settings", "button-border-color")
+            border_color = config.get("ui_settings", "button_border_color")
         if border_weight is None:
-            border_weight = config.get("ui-settings", "button-border-weight")
+            border_weight = config.get("ui_settings", "button_border_weight")
 
         # call super init
         super().__init__(

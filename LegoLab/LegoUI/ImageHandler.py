@@ -19,7 +19,7 @@ class ImageHandler:
 
         self.resource_path = ConfigManager.reconstruct_path(
             os.getcwd(),
-            self.config.get("resources", "relative-path")
+            self.config.get("resources", "relative_path")
         )
 
     # loads images stores them in a dictionary with additional info and returns this dictionary

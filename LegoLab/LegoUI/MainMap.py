@@ -16,8 +16,8 @@ class MainMap(MapHandler):
         self.server = server
 
         # get desired screen resolution
-        resolution_x = int(config.get("beamer-resolution", "width"))
-        resolution_y = int(config.get("beamer-resolution", "height"))
+        resolution_x = int(config.get("beamer_resolution", "width"))
+        resolution_y = int(config.get("beamer_resolution", "height"))
 
         super().__init__(
             config,

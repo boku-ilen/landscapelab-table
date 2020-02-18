@@ -43,7 +43,7 @@ class ProgressBar(UIStructureBlock):
 
         self.config = config
 
-        default_bar_color = config.get("ui-settings", "progress-bar-color")
+        default_bar_color = config.get("ui_settings", "progress_bar_color")
 
         if bar_color is None:
             self.bar_color = [(color[2], color[1], color[0]) for color in default_bar_color]
@@ -62,7 +62,7 @@ class ProgressBar(UIStructureBlock):
     # param new_progress: value between 0 and 1
     def update_progress(self, new_progress):
         self.progress = min(new_progress, 1)
-        self.config.set("ui-settings", "ui-refreshed", True)
+        self.config.set("ui_settings", "ui_refreshed", True)
         # TODO find better solution for flag
 
     # draws this element + all child elements to the given image

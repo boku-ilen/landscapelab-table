@@ -96,10 +96,10 @@ class LegoOutputStream:
         cv2.namedWindow(LegoOutputStream.WINDOW_NAME_DEBUG, cv2.WINDOW_AUTOSIZE)
 
         # create beamer window
-        beamer_id = self.config.get("beamer-resolution", "screen-id")
+        beamer_id = self.config.get("beamer_resolution", "screen_id")
         if beamer_id >= 0:
-            pos_x = config.get("beamer-resolution", "pos-x")
-            pos_y = config.get("beamer-resolution", "pos-y")
+            pos_x = config.get("beamer_resolution", "pos_x")
+            pos_y = config.get("beamer_resolution", "pos_y")
 
             logger.info("beamer coords: {} {}".format(pos_x, pos_y))
 
@@ -159,7 +159,7 @@ class LegoOutputStream:
     # fetches the correct monitor for the beamer output and writes it's data to the ConfigManager
     @staticmethod
     def set_beamer_config_info(config):
-        beamer_id = config.get("beamer-resolution", "screen-id")
+        beamer_id = config.get("beamer_resolution", "screen_id")
         if beamer_id >= 0:
             monitors = screeninfo.get_monitors()
 
@@ -167,10 +167,10 @@ class LegoOutputStream:
             beamer_id = min(beamer_id, len(monitors) - 1)
 
             beamer = monitors[beamer_id]
-            config.set("beamer-resolution", "width", beamer.width)
-            config.set("beamer-resolution", "height", beamer.height)
-            config.set("beamer-resolution", "pos-x", beamer.x - 1)
-            config.set("beamer-resolution", "pos-y", beamer.y - 1)
+            config.set("beamer_resolution", "width", beamer.width)
+            config.set("beamer_resolution", "height", beamer.height)
+            config.set("beamer_resolution", "pos_x", beamer.x - 1)
+            config.set("beamer_resolution", "pos_y", beamer.y - 1)
 
             ExtentTracker.get_instance().beamer = Extent(0, 0, beamer.width, beamer.height)
 
@@ -271,8 +271,8 @@ class LegoOutputStream:
     # called every frame when in ProgramStage WHITE_BALANCE
     def draw_white_frame(self):
         frame = np.ones([
-            self.config.get("beamer-resolution", "height"),
-            self.config.get("beamer-resolution", "width"),
+            self.config.get("beamer_resolution", "height"),
+            self.config.get("beamer_resolution", "width"),
             4
         ]) * 255
         cv2.imshow(LegoOutputStream.WINDOW_NAME_BEAMER, frame)
@@ -305,7 +305,7 @@ class LegoOutputStream:
     def redraw_lego_detection(self):
         # check flags if any part of the frame has changed
         if self.config.get("map_settings", 'map_refreshed') \
-                or self.config.get("ui-settings", "ui-refreshed") \
+                or self.config.get("ui_settings", "ui_refreshed") \
                 or Tracker.BRICKS_REFRESHED \
                 or LegoOutputStream.MOUSE_BRICKS_REFRESHED:
 
@@ -327,7 +327,7 @@ class LegoOutputStream:
 
             # reset flags
             self.config.set("map_settings", "map_refreshed", False)
-            self.config.set("ui-settings", "ui-refreshed", False)
+            self.config.set("ui_settings", "ui_refreshed", False)
             Tracker.BRICKS_REFRESHED = False
             LegoOutputStream.MOUSE_BRICKS_REFRESHED = False
 

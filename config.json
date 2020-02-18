@@ -1,15 +1,23 @@
 {
+  "developer_read_me": {
+    "1": "keys are generally denoted in snake_case",
+    "2": "in some cases NOTES are added to clear things up, these are cosmetic and will be ignored by the program",
+    "3": "if keys are written in UPPERCASE_WITH_UNDERSCORES the program does not reference them by string constant",
+    "4": "instead the key name will be generated dynamically based on enum names",
+    "5": "be careful when renaming these keys, as it is easy to miss instances, where the program accesses these"
+  },
+
   "general": {
     "scenario": "Joglland",
     "starting_location": "auto select",
-    "NOTE": "starting_location overwrites the start location in the server response if an invalid value is given (e.g. 'auto select') it will be ignored",
+    "NOTE": "starting_location overwrites the start location in the server response. If an invalid value is given (e.g. 'auto select') it will be ignored",
     "mini_map_extent": null,
     "NOTE2": "if mini_map_extent is null it will be calculated automatically, otherwise it can be overwritten using [center_x, center_y, zoom_width_in_m]",
     "start_zoom": 20000
   },
 
   "resources": {
-    "relative-path": ["resources"],
+    "relative_path": ["resources"],
     "qr_bottom_left": {
       "path": ["QR_Codes", "bottom_left.png"]
     },
@@ -161,28 +169,28 @@
     "height": 720
   },
 
-  "beamer-resolution": {
-    "screen-id": 1,
-    "NOTE": ["screen id refers to the display the beamer output should be started on",
+  "beamer_resolution": {
+    "screen_id": 1,
+    "NOTE": ["screen id refers to the display the projector output should be started on",
       "if the id exceeds the currently attached screen count the screen with the highest id will be selected",
-      "if the id is negative the beamer output will be shown in a window instead of full-screen"],
+      "if the id is negative the projector output will be shown in a window instead of full-screen"],
     "width": 1800,
     "height": 1000,
-    "pos-x": NaN,
-    "pos-y": NaN
+    "pos_x": NaN,
+    "pos_y": NaN
   },
 
   "qr_code": {
     "threshold": 60
   },
 
-  "tracker-thresholds": {
-    "min-distance": 6,
+  "tracker_thresholds": {
+    "min_distance": 6,
 
-    "external-min-appeared": 6,
-    "external-max-disappeared": 40,
-    "internal-min-appeared": 3,
-    "internal-max-disappeared": 10
+    "external_min_appeared": 6,
+    "external_max_disappeared": 40,
+    "internal_min_appeared": 3,
+    "internal_max_disappeared": 10
   },
 
   "SQUARE_BRICK": {
@@ -213,34 +221,34 @@
   },
 
   "qgis_interaction": {
-    "QGIS_IP": "127.0.0.1",
-    "QGIS_READ_PORT": 5005,
-    "LEGO_READ_PORT": 5006,
-    "UDP_BUFFER_SIZE": 1024,
-    "QGIS_IMAGE_PATH": "C:/landscapelab-dev/qgis/{}.png",
-    "UPDATE_KEYWORD": "update:",
-    "RENDER_KEYWORD": "render:",
-    "EXIT_KEYWORD": "exit"
+    "qgis_ip": "127.0.0.1",
+    "qgis_read_port": 5005,
+    "lego_read_port": 5006,
+    "udp_buffer_size": 1024,
+    "qgis_image_path": "C:/landscapelab-dev/qgis/{}.png",
+    "update_keyword": "update:",
+    "render_keyword": "render:",
+    "exit_keyword": "exit"
   },
 
-  "ui-settings": {
-    "ui-refreshed": true,
+  "ui_settings": {
+    "ui_refreshed": true,
 
-    "scale-factor": 1.25,
-    "nav-block-toggle": true,
+    "scale_factor": 1.25,
+    "nav_block_toggle": true,
 
-    "button-background-color": [255, 255, 255],
-    "button-active-background-color": [200, 200, 200],
-    "button-border-color": [200, 200, 200],
-    "button-border-weight": 2,
+    "button_background_color": [255, 255, 255],
+    "button_active_background_color": [200, 200, 200],
+    "button_border_color": [200, 200, 200],
+    "button_border_weight": 2,
 
-    "nav-block-background-color": [255, 255, 255],
-    "nav-block-border-color": [200, 200, 200],
-    "nav-block-border-weight": 2,
+    "nav_block_background_color": [255, 255, 255],
+    "nav_block_border_color": [200, 200, 200],
+    "nav_block_border_weight": 2,
 
-    "progress-bar-color": [[202, 86, 99], [215, 126, 84], [210, 193, 75], [146, 185, 79], [88, 117, 219], [255, 255, 255]],
+    "progress_bar_color": [[202, 86, 99], [215, 126, 84], [210, 193, 75], [146, 185, 79], [88, 117, 219], [255, 255, 255]],
 
-    "mini-map-extent-color": [128, 128, 128]
+    "mini_map_extent_color": [128, 128, 128]
   },
 
   "button_map": {
@@ -272,7 +280,7 @@
     "extent_height":[
       NaN, NaN
     ],
-    "crs": "EPSG:3857",
+    "coordinate_reference_system": "EPSG:3857",
     "extent_changed": false,
     "map_refreshed": true,
     "pan_distance": [0.5, 0.75, 0.85],

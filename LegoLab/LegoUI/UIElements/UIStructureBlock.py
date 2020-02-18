@@ -23,11 +23,11 @@ class UIStructureBlock(UIElement):
 
         # overwrite none values with defaults
         if color is None:
-            color = config.get("ui-settings", "nav-block-background-color")
+            color = config.get("ui_settings", "nav_block_background_color")
         if border_color is None:
-            border_color = config.get("ui-settings", "nav-block-border-color")
+            border_color = config.get("ui_settings", "nav_block_border_color")
         if border_weight is None:
-            border_weight = config.get("ui-settings", "nav-block-border-weight")
+            border_weight = config.get("ui_settings", "nav_block_border_weight")
 
         # set block position/size
         self.position = position                                            # only modify with set_position

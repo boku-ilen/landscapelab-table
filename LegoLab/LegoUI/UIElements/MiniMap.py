@@ -50,7 +50,7 @@ class MiniMap(UIStructureBlock, MapHandler):
         MapHandler.__init__(self, config, name, self.get_start_extent(config), size.as_point())
 
         if extent_color is None:
-            self.extent_color = config.get("ui-settings", "mini-map-extent-color")
+            self.extent_color = config.get("ui_settings", "mini_map_extent_color")
         else:
             self.extent_color = extent_color
 

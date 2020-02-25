@@ -1,3 +1,12 @@
+#LegoLab
+![![Click to open YouTube Video](https://www.youtube.com/watch?v=lQ_4fjpyTcA)](resources/doc/yt_link.png)
+LegoLab is an open source application that can be used for geospatial planning projects.
+A projector or large screen is used to display an image on a flat, vertical or horizontal surface.
+Participants can now place Lego&reg; bricks on the image to interact with the application.
+A camera captures the bricks and image processing is used to calculate where each brick lies on the projected image.
+![Hardware setup](resources/doc/example1.png) ![Demonstration](resources/doc/example4.jpg)
+![Screenshot](resources/doc/example.png)
+
 # Setup
 
 install python 3.6.8 (or 3.6.7 if corrupted)
@@ -15,23 +24,11 @@ for using video (.bag) without camera:
 for saving the output as .avi file:
 	def run(self, record_video=True):
 
-# QGIS-Plugin
-LegoLab is intended to run in conjunction with the QGIS-Plugin
-[Remote Renderer](https://github.com/boku-ilen/landscapelab-qgis), which it uses to render the displayed map sections.
-At the time of writing the connection between the two components is still a bit finicky. In case the issues will not be
-patched out in time here are some short instructions on what to do and what to avoid doing when starting the
-application:
-
-It is generally advised to start the Remote Rendering process first and LegoLab second. When restarting LegoLab it is
-usually not necessary to stop and restart the Remote Rendering process. However stopping and restarting the Remote
-Rendering process while LegoLab is running will result in an Connection Error and QGIS will not be able to send messages
-to LegoLab. To resolve this issue simply restart LegoLab.
-
 # Run
 
-run the server
+run [server](https://github.com/boku-ilen/landscapelab-server)
 
-run QGIS-Plugin Remote Rendering
+run [QGIS-Plugin Remote Rendering](https://github.com/boku-ilen/landscapelab-qgis)
 
 start as a module: python.exe -m LegoLab
 

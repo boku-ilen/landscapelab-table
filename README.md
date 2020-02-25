@@ -1,11 +1,17 @@
 #LegoLab
-![![Click to open YouTube Video](https://www.youtube.com/watch?v=lQ_4fjpyTcA)](resources/doc/yt_link.png)
+
 LegoLab is an open source application that can be used for geospatial planning projects.
 A projector or large screen is used to display an image on a flat, vertical or horizontal surface.
 Participants can now place Lego&reg; bricks on the image to interact with the application.
 A camera captures the bricks and image processing is used to calculate where each brick lies on the projected image.
-![Hardware setup](resources/doc/example1.png) ![Demonstration](resources/doc/example4.jpg)
+
+Hardware Setup | Demonstration
+:--|--:
+![Hardware setup](resources/doc/example1.png) | ![Demonstration](resources/doc/example4.jpg)
+
 ![Screenshot](resources/doc/example.png)
+
+![![Click to open YouTube Video](https://www.youtube.com/watch?v=lQ_4fjpyTcA)](resources/doc/yt_link.png)
 
 # Setup
 

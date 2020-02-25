@@ -121,7 +121,7 @@
       "path": ["button_icons", "zoom_out.png"]
     },
     "button_confirm": {
-      "path": ["button_icons", "confirm.png"],
+      "path": ["button_icons", "confirm.png"]
     }
   },
 

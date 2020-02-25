@@ -19,10 +19,11 @@ logger = logging.getLogger('MainLogger')
 # handles render requests, image updates and map navigation
 class MapHandler:
 
-    def __init__(self, config: ConfigManager, name: str, extent: Extent, resolution: Tuple[int, int]):
+    def __init__(self, config: ConfigManager, name: str, extent: Extent, zoom_limits: Tuple[int, int], resolution: Tuple[int, int]):
         self.name = name
         self.config = config
         self.extent_tracker = ExtentTracker.get_instance()
+        self.min_zoom, self.max_zoom = zoom_limits
 
         # set resolution and extent
         self.resolution_x, self.resolution_y = resolution
@@ -54,8 +55,8 @@ class MapHandler:
         pan_down_modifier = np.array([0, -1, 0, -1])
         pan_left_modifier = np.array([-1, 0, -1, 0])
         pan_right_modifier = np.array([1, 0, 1, 0])
-        zoom_in_modifier = np.array([1, 1, -1, -1])
-        zoom_out_modifier = np.array([-1, -1, 1, 1])
+        self.zoom_in_modifier = np.array([1, 1, -1, -1])
+        self.zoom_out_modifier = np.array([-1, -1, 1, 1])
 
         # get navigation settings
         pan_distance = config.get('map_settings', 'pan_distance')
@@ -69,8 +70,8 @@ class MapHandler:
         self.pan_down = partial(self.modify_extent, pan_down_modifier, pan_distance)
         self.pan_left = partial(self.modify_extent, pan_left_modifier, pan_distance)
         self.pan_right = partial(self.modify_extent, pan_right_modifier, pan_distance)
-        self.zoom_in = partial(self.modify_extent, zoom_in_modifier, zoom_strength)
-        self.zoom_out = partial(self.modify_extent, zoom_out_modifier, zoom_strength)
+        self.zoom_in = partial(self.modify_extent, self.zoom_in_modifier, zoom_strength)
+        self.zoom_out = partial(self.modify_extent, self.zoom_out_modifier, zoom_strength)
 
     # reloads the viewport image
     def refresh(self, extent: Extent):
@@ -109,19 +110,40 @@ class MapHandler:
         pass
 
     # modifies the current extent and requests an updated render image
-    # param brick gets ignored so that UIElements can call the function
+    # also enforces zoom limits
+    # param brick gets ignored so that UIElements can call the function (could however be used to change strength of
+    # modification depending on brick type)
     def modify_extent(self, extent_modifier, strength, brick):
-        # modify extent
-        width = self.current_extent.get_width()
-        height = self.current_extent.get_height()
+        # get relevant current extent data
+        width, height = self.current_extent.get_size().as_point()
+        dims = np.array([width, height, width, height])
 
-        move_extent = np.multiply(
-            extent_modifier,
-            np.array([width, height, width, height])
-        ) * strength[0]
+        # calculate value change
+        move_extent = (extent_modifier * dims) * strength[0]
 
+        # apply value change
         next_extent = self.current_extent.clone()
         next_extent.add_extent_modifier(move_extent)
+
+        # check if width is below min zoom
+        diff = self.min_zoom - next_extent.get_width()
+        if diff > 0:
+            change = diff / 2
+            change_ratio = dims / width
+
+            next_extent.add_extent_modifier(
+                self.zoom_out_modifier * (change_ratio * change)
+            )
+
+        # check if width is above max zoom
+        diff = next_extent.get_width() - self.max_zoom
+        if diff > 0:
+            change = diff / 2
+            change_ratio = dims / width
+
+            next_extent.add_extent_modifier(
+                self.zoom_in_modifier * (change_ratio * change)
+            )
 
         # request render
         self.request_render(next_extent)

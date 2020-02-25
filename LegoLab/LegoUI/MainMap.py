@@ -19,10 +19,14 @@ class MainMap(MapHandler):
         resolution_x = int(config.get("beamer_resolution", "width"))
         resolution_y = int(config.get("beamer_resolution", "height"))
 
+        # get zoom limits
+        zoom_limits = config.get("map_settings", "map_zoom_limits")
+
         super().__init__(
             config,
             name,
             self.get_start_extent(scenario),
+            zoom_limits,
             (resolution_x, resolution_y)
         )
 

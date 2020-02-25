@@ -283,6 +283,8 @@
     "extent_changed": false,
     "map_refreshed": true,
     "pan_distance": [0.5, 0.75, 0.85],
-    "zoom_strength": [0.2, 0.5, 0.9]
+    "zoom_strength": [0.2, 0.5, 0.9],
+    "map_zoom_limits": [1000, 100000],
+    "mini_map_zoom_limits": [10000, 1000000]
   }
 }

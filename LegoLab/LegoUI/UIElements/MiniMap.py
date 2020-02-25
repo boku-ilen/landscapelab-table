@@ -44,10 +44,13 @@ class MiniMap(UIStructureBlock, MapHandler):
         self.controlled_map = controlled_map
         self.extent_tracker = ExtentTracker.get_instance()
 
+        # get zoom limits
+        zoom_limits = config.get("map_settings", "mini_map_zoom_limits")
+
         # call super initializers
         UIStructureBlock.__init__(self, config, position, size,
                                   color=color, border_color=border_color, border_weight=border_weight)
-        MapHandler.__init__(self, config, name, self.get_start_extent(config), size.as_point())
+        MapHandler.__init__(self, config, name, self.get_start_extent(config), zoom_limits, size.as_point())
 
         if extent_color is None:
             self.extent_color = config.get("ui_settings", "mini_map_extent_color")

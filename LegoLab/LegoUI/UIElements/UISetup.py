@@ -46,8 +46,11 @@ class Constants:
         self.scale_factor = config.get("ui_settings", "scale_factor")
         self.button_size = Vector(50, 50) * self.scale_factor
 
-        self.x = self.button_size ** Vector(1, 0)  # x offset       ** is element wise multiplication
-        self.y = self.button_size ** Vector(0, 1)  # y offset
+        self.Y = Vector(0, 1)
+        self.X = Vector(1, 0)
+
+        self.x = self.button_size ** self.X  # x offset       ** is element wise multiplication
+        self.y = self.button_size ** self.Y  # y offset
 
         self.screen_width = config.get("beamer_resolution", "width")
         self.screen_height = config.get("beamer_resolution", "height")
@@ -73,7 +76,13 @@ def setup_nav_block_ui(nav_block_root, config, main_map, callback_manager) -> (M
     pan_right_button = Button(config, c.cross_offset + c.y + c.x * 2, c.button_size, 'pan right', 'button_right')
     zoom_in_button = Button(config, c.zoom_offset, c.button_size, 'zoom in', 'button_zoom_in')
     zoom_out_button = Button(config, c.zoom_offset + c.y * 2, c.button_size, 'zoom out', 'button_zoom_out')
-    confirm_button = Button(config, c.cross_offset + c.x + c.y, c.button_size, 'confirm bricks', 'button_confirm')
+    confirm_button = Button(
+        config,
+        c.zoom_offset ** c.X - c.nav_block_pos ** c.Y,  # align with zoom block on x axis, and toggle button on y axis
+        c.button_size,
+        'confirm bricks',
+        'button_confirm'
+    )
     mini_map = MiniMap(
         config,
         'mini_map',

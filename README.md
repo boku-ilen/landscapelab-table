@@ -11,7 +11,7 @@ Hardware Setup | Demonstration
 
 ![Screenshot](resources/doc/example.png)
 
-![![Click to open YouTube Video](resources/doc/yt_link.png)](https://www.youtube.com/watch?v=lQ_4fjpyTcA)
+[![Click to open YouTube Video](resources/doc/yt_link.png)](https://www.youtube.com/watch?v=lQ_4fjpyTcA)
 
 # Setup
 

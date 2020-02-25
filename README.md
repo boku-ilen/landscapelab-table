@@ -1,4 +1,4 @@
-#LegoLab
+# LegoLab
 
 LegoLab is an open source application that can be used for geospatial planning projects.
 A projector or large screen is used to display an image on a flat, vertical or horizontal surface.
@@ -11,7 +11,7 @@ Hardware Setup | Demonstration
 
 ![Screenshot](resources/doc/example.png)
 
-![![Click to open YouTube Video](https://www.youtube.com/watch?v=lQ_4fjpyTcA)](resources/doc/yt_link.png)
+![![Click to open YouTube Video](resources/doc/yt_link.png)](https://www.youtube.com/watch?v=lQ_4fjpyTcA)
 
 # Setup
 

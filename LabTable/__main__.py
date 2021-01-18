@@ -2,24 +2,24 @@ import logging.config
 import numpy as np
 
 from .ProgramStage import ProgramStage, CurrentProgramStage
-from .LegoDetection.BoardDetector import BoardDetector
-from .LegoDetection.ShapeDetector import ShapeDetector
-from .LegoInputStream import LegoInputStream
-from .LegoOutputStream import LegoOutputStream, LegoOutputChannel
-from .LegoUI.MainMap import MainMap
-from .LegoUI.CallbackManager import CallbackManager
-from .LegoUI.UIElements.UISetup import setup_ui
-from .LegoUI.UIElements.UIElement import UIElement
+from .BrickDetection.BoardDetector import BoardDetector
+from .BrickDetection.ShapeDetector import ShapeDetector
+from .TableInputStream import LegoInputStream
+from .TableOutputStream import LegoOutputStream, LegoOutputChannel
+from .TableUI.MainMap import MainMap
+from .TableUI.CallbackManager import CallbackManager
+from .TableUI.UIElements.UISetup import setup_ui
+from .TableUI.UIElements.UIElement import UIElement
 from .ServerCommunication import ServerCommunication
-from .LegoDetection.Tracker import Tracker
+from .BrickDetection.Tracker import Tracker
 from .ConfigManager import ConfigManager
 from .ParameterManager import ParameterManager
-from .LegoUI.QGISListenerThread import QGISListenerThread
-from .ServerListenerThread import ServerListenerThread
+from .TableUI.QGISListenerThread import QGISListenerThread
+from .SchedulerThread import SchedulerThread
 
 
 # configure logging
-logger = logging.getLogger('MainLogger')
+logger = logging.getLogger(__name__)
 
 try:
     logging.config.fileConfig('logging.conf')
@@ -34,7 +34,7 @@ CHANNELS_NUMBER = 3
 
 
 # this class manages the base workflow and handles the main loop
-class LegoLab:
+class LabTable:
 
     def __init__(self):
 
@@ -84,7 +84,7 @@ class LegoLab:
         self.server.brick_update_callback = progress_bar_update_function
 
         # Initialize and start the server listener thread
-        self.server_listener_thread = ServerListenerThread(
+        self.server_listener_thread = SchedulerThread(
             self.config,
             self.server,
             self.tracker,
@@ -254,5 +254,5 @@ class LegoLab:
 
 # execute the main class  ' TODO: meaningful rename
 if __name__ == '__main__':
-    main = LegoLab()
+    main = LabTable()
     main.run()

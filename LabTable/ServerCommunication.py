@@ -1,3 +1,6 @@
+
+# FIXME: THIS CLASS WILL BE COMPLETELY REWORKED TO COMMUNICATE WITH THE CLIENT DIRECTLY
+
 import logging
 import requests
 import json
@@ -8,7 +11,7 @@ from .ExtentTracker import ExtentTracker
 from .ProgramStage import ProgramStage
 
 # Configure logging
-logger = logging.getLogger('MainLogger')
+logger = logging.getLogger(__name__)
 
 # Constants for server communication
 HTTP = "http://"

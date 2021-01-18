@@ -5,7 +5,7 @@ import logging
 from .LegoBricks import LegoBrick
 from .Vector import Vector
 
-logger = logging.getLogger('MainLogger')
+logger = logging.getLogger(__name__)
 
 
 # Extent class

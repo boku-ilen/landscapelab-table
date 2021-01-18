@@ -4,7 +4,7 @@ from typing import Optional
 # Configure logging
 from enum import Enum
 
-logger = logging.getLogger('MainLogger')
+logger = logging.getLogger(__name__)
 
 
 # constants for color

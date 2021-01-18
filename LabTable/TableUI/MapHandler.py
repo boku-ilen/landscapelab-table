@@ -11,7 +11,7 @@ from ..Extent import Extent
 from ..ExtentTracker import ExtentTracker
 
 # Configure Logger
-logger = logging.getLogger('MainLogger')
+logger = logging.getLogger(__name__)
 
 
 # MapHandler class

@@ -8,7 +8,7 @@ from ..ConfigManager import ConfigManager
 from ..Extent import Extent
 
 # Configure logger
-logger = logging.getLogger('MainLogger')
+logger = logging.getLogger(__name__)
 
 
 # ListenerThread class

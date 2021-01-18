@@ -7,7 +7,7 @@ from ...ConfigManager import ConfigManager
 from ...Vector import Vector, Point
 
 # Configure logger
-logger = logging.getLogger('MainLogger')
+logger = logging.getLogger(__name__)
 
 GREEN = (0, 255, 0)
 OFFSET = 20

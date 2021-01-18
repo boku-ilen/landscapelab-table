@@ -2,15 +2,15 @@ from typing import Dict, Tuple, List, Type
 from enum import Enum
 import logging
 
-from ..LegoUI.UICallback import UICallback
+from ..TableUI.UICallback import UICallback
 from .UIElements.UIElement import UIElement
 from .MainMap import MainMap
 from .UIElements.MiniMap import MiniMap
-from ..LegoDetection.Tracker import Tracker
+from ..BrickDetection.Tracker import Tracker
 from ..ProgramStage import CurrentProgramStage, ProgramStage
 from ..ConfigManager import ConfigManager, ConfigError
 
-logger = logging.getLogger('MainLogger')
+logger = logging.getLogger(__name__)
 
 NamedCallbacks = Dict[Enum, UICallback]
 MappedCallbacks = Dict[int, Tuple[Enum, UICallback]]

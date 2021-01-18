@@ -1,5 +1,6 @@
 
 # Used pyrealsense2 on License: Apache 2.0.
+# FIXME: we might abstract this further so alternate webcams could be used
 import pyrealsense2 as rs  # FIXME: CG: this currently requires python 3.6
 import logging
 import numpy as np

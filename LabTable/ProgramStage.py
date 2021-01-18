@@ -1,9 +1,10 @@
-from .LegoUI.UICallback import UICallback
+from .TableUI.UICallback import UICallback
 
 from enum import Enum
 from typing import Dict
 
 
+# FIXME: Program Stages will be triggered and retrieved in the future by the GameEngine within the LandscapeLab Client
 class ProgramStage(Enum):
     WHITE_BALANCE = 1
     FIND_CORNERS = 2

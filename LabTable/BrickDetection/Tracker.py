@@ -2,13 +2,13 @@ import logging
 from typing import List
 
 from ..LegoBricks import LegoBrick, LegoStatus, LegoColor, LegoShape
-from ..LegoUI.UIElements.UIElement import UIElement
+from ..TableUI.UIElements.UIElement import UIElement
 from ..ProgramStage import ProgramStage
 from ..ExtentTracker import ExtentTracker
 from ..Extent import Extent
 
 # configure logging
-logger = logging.getLogger('MainLogger')
+logger = logging.getLogger(__name__)
 
 PLAYER_POSITION_ASSET_ID = 13
 

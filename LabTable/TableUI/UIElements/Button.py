@@ -10,7 +10,7 @@ from typing import Dict, List
 import logging
 
 # Configure Logger
-logger = logging.getLogger('MainLogger')
+logger = logging.getLogger(__name__)
 
 
 # a rectangular or circular button that calls specified functions once a brick enters/leaves the button

@@ -6,21 +6,21 @@ import logging
 from typing import List
 
 from .ProgramStage import ProgramStage, CurrentProgramStage
-from .LegoDetection.Tracker import Tracker
+from .BrickDetection.Tracker import Tracker
 from .ConfigManager import ConfigManager
-from .LegoUI.MainMap import MainMap
-from .LegoUI.UIElements.UIElement import UIElement
+from .TableUI.MainMap import MainMap
+from .TableUI.UIElements.UIElement import UIElement
 from .LegoBricks import LegoBrick, LegoColor, LegoShape, LegoStatus
-from .LegoUI.ImageHandler import ImageHandler
-from .LegoUI.BrickIcon import ExternalBrickIcon, InternalBrickIcon
-from .LegoUI.CallbackManager import CallbackManager
+from .TableUI.ImageHandler import ImageHandler
+from .TableUI.BrickIcon import ExternalBrickIcon, InternalBrickIcon
+from .TableUI.CallbackManager import CallbackManager
 from .ExtentTracker import ExtentTracker
 from .Extent import Extent
 from .Board import Board
-from .ServerListenerThread import ServerListenerThread
+from .SchedulerThread import SchedulerThread
 
 # enable logger
-logger = logging.getLogger('MainLogger')
+logger = logging.getLogger(__name__)
 
 # drawing constants
 BRICK_DISPLAY_SIZE = 10
@@ -79,7 +79,7 @@ class LegoOutputStream:
                  config: ConfigManager,
                  board: Board,
                  program_stage: CurrentProgramStage,
-                 server_thread: ServerListenerThread,
+                 server_thread: SchedulerThread,
                  video_output_name=None):
 
         self.config = config

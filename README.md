@@ -1,8 +1,8 @@
-# LegoLab
+# LabTable
 
-LegoLab is an open source application that can be used for geospatial planning projects.
+The LabTable is an open source application that can be used for geospatial planning projects.
 A projector or large screen is used to display an image on a flat, vertical or horizontal surface.
-Participants can now place Lego&reg; bricks on the image to interact with the application.
+Participants can now place interlocking bricks on the image to interact with the application.
 A camera captures the bricks and image processing is used to calculate where each brick lies on the projected image.
 
 Hardware Setup | Demonstration
@@ -21,7 +21,7 @@ install libraries if missing (see requirements.txt)
 
 for using life stream: 
 	connect realsense camera 
-	place four QR-codes to set the lego detection board
+	place four QR-codes to set the brick detection board
 
 for using video (.bag) without camera:
 	use an optional parameter 'usestream' with the .bag file name
@@ -36,7 +36,7 @@ run [server](https://github.com/boku-ilen/landscapelab-server)
 
 run [QGIS-Plugin Remote Rendering](https://github.com/boku-ilen/landscapelab-qgis)
 
-start as a module: python.exe -m LegoLab
+start as a module: python.exe -m LabTable
 
 # Parameters
 Optional:
@@ -57,6 +57,6 @@ Optional:
   overwrites default starting location defined in config
 
 # Examples
-python.exe -m (...)/LegoLab
+python.exe -m (...)/LabTable
 
-(...)/python.exe -m (...)/LegoLab --usestream=stream.bag --threshold=155
+(...)/python.exe -m (...)/LabTable --usestream=stream.bag --threshold=155

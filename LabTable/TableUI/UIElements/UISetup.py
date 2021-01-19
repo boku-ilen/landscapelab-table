@@ -9,13 +9,13 @@ from .ProgressBar import ProgressBar
 from ..CallbackManager import CallbackManager, MapActions, UiActions, TrackerActions
 from ..MainMap import MainMap
 from ...Configurator import Configurator
-from ...ServerCommunication import ServerCommunication
+from ...Communicator import Communicator
 from LabTable.Model.ProgramStage import ProgramStage
 from LabTable.Model.Extent import Vector
 
 
 # project specific function used to create the necessary UIElements and link them to their respective callback functions
-def setup_ui(root: UIElement, main_map: MainMap, config: Configurator, server: ServerCommunication,
+def setup_ui(root: UIElement, main_map: MainMap, config: Configurator, server: Communicator,
              callback_manager: CallbackManager) \
         -> Tuple[MiniMap, UIElement, Callable]:
 

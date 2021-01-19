@@ -1,7 +1,7 @@
 from .UIStructureBlock import UIStructureBlock
 from ..MapHandler import MapHandler
 from ..ImageHandler import ImageHandler
-from ...LegoBricks import LegoBrick, LegoStatus
+from ...Brick import Brick, BrickStatus
 from ...Extent import Extent, Vector
 from ...ExtentTracker import ExtentTracker
 from ...ConfigManager import ConfigManager
@@ -109,11 +109,11 @@ class MiniMap(UIStructureBlock, MapHandler):
 
     # checks if a given brick lies on top of the block or any of it's children
     # also initiates a teleport to the specified position
-    def brick_on_element(self, brick: LegoBrick) -> bool:
+    def brick_on_element(self, brick: Brick) -> bool:
 
         if self.visible:
             if self.pos_on_block(Vector.from_brick(brick)):
-                if brick.status == LegoStatus.CANDIDATE_BRICK or brick.status == LegoStatus.INTERNAL_BRICK:
+                if brick.status == BrickStatus.CANDIDATE_BRICK or brick.status == BrickStatus.INTERNAL_BRICK:
                     if not self.pressed:
                         self.initiate_teleport(brick)
 
@@ -133,9 +133,9 @@ class MiniMap(UIStructureBlock, MapHandler):
         self.pressed_once = False
         super().ui_tick()
 
-    # calculates the new map extent for the controlled map based on the given lego brick position
+    # calculates the new map extent for the controlled map based on the given brick position
     # and starts the render request
-    def initiate_teleport(self, brick: LegoBrick):
+    def initiate_teleport(self, brick: Brick):
         map_brick = Extent.remap_brick(brick, self.get_global_area(), self.current_extent)
         c_map_extent = self.controlled_map.current_extent
 

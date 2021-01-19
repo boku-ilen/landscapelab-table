@@ -1,9 +1,9 @@
 from typing import Optional, Callable
 
-from ..LegoBricks import LegoBrick
+from ..Brick import Brick
 
 
-Callback = Callable[[Optional[LegoBrick]], None]
+Callback = Callable[[Optional[Brick]], None]
 
 
 # callback class
@@ -16,7 +16,7 @@ class UICallback:
         self.callback: Optional[Callback] = None
 
     # calls the current callback function
-    def call(self, brick: Optional[LegoBrick]):
+    def call(self, brick: Optional[Brick]):
         if self.callback is not None:
             self.callback(brick)
 

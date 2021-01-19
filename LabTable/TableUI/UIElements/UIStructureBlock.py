@@ -1,6 +1,6 @@
 from ...Extent import Extent
 from ...Vector import Vector
-from ...LegoBricks import LegoBrick
+from ...Brick import Brick
 from ..UIElements.UIElement import UIElement
 from ...ConfigManager import ConfigManager
 from typing import List
@@ -80,13 +80,13 @@ class UIStructureBlock(UIElement):
                 UIStructureBlock.rectangle(img, self.get_global_area(), color, self.border_thickness)
 
     # checks if a given brick lies on top of the block or any of it's children
-    def brick_on_element(self, brick: LegoBrick) -> bool:
+    def brick_on_element(self, brick: Brick) -> bool:
         if self.visible:
             return super().brick_on_element(brick) or self.pos_on_block(Vector.from_brick(brick))
         return False
 
     # checks if a given (unconfirmed) brick would land on top of the block or any of it's children
-    def brick_would_land_on_element(self, brick: LegoBrick) -> bool:
+    def brick_would_land_on_element(self, brick: Brick) -> bool:
         if self.visible:
             return super().brick_would_land_on_element(brick) or self.pos_on_block(Vector.from_brick(brick))
         return False

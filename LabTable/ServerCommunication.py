@@ -5,7 +5,7 @@ import logging
 import requests
 import json
 
-from .LegoBricks import LegoBrick, LegoStatus
+from .Brick import Brick, BrickStatus
 from .Extent import Extent
 from .ExtentTracker import ExtentTracker
 from .ProgramStage import ProgramStage
@@ -29,7 +29,7 @@ PLAYER_POSITION_ASSET_ID = str(13)
 
 
 class ServerCommunication:
-    """Creates and removes lego instances"""
+    """Creates and removes remote brick instances"""
 
     def __init__(self, config, program_stage):
 
@@ -56,24 +56,24 @@ class ServerCommunication:
         # Return True if status code is 200
         return True
 
-    # Create lego instance
-    def create_lego_instance(self, lego_brick: LegoBrick):
+    # Create remote brick instance
+    def create_remote_brick_instance(self, brick: Brick):
 
-        logger.debug("creating a lego instance...")
+        logger.debug("creating a brick instance...")
 
-        # Compute geographical coordinates for lego bricks
-        Extent.calc_world_pos(lego_brick, self.extent_tracker.board, self.extent_tracker.map_extent)
+        # Compute geographical coordinates for bricks
+        Extent.calc_world_pos(brick, self.extent_tracker.board, self.extent_tracker.map_extent)
 
-        # Map the lego brick asset_id from color & shape
+        # Map the brick asset_id from color & shape
         if self.program_stage.current_stage == ProgramStage.EVALUATION:
-            lego_brick.map_evaluation_asset_id(self.config)
+            brick.map_evaluation_asset_id(self.config)
         else:
-            lego_brick.map_asset_id(self.config)
+            brick.map_asset_id(self.config)
 
-        # Send request creating lego instance and save the response
+        # Send request creating remote brick instance and save the response
         create_instance_msg = "{http}{ip}{prefix}{command}{scenario_id}/{brick_id}/{brick_x}/{brick_y}".format(
             http=HTTP, ip=self.ip, prefix=PREFIX, command=CREATE_ASSET_POS, scenario_id=self.scenario_id,
-            brick_id=str(lego_brick.asset_id), brick_x=str(lego_brick.map_pos_x), brick_y=str(lego_brick.map_pos_y)
+            brick_id=str(brick.asset_id), brick_x=str(brick.map_pos_x), brick_y=str(brick.map_pos_y)
         )
 
         logger.debug(create_instance_msg)
@@ -85,32 +85,32 @@ class ServerCommunication:
             # If status code is 200, save response text
             lego_instance_response_text = json.loads(lego_instance_response.text)
 
-            # Match given instance id with lego brick id
+            # Match given instance id with brick id
             lego_instance_creation_success = lego_instance_response_text.get("creation_success")
 
             if lego_instance_creation_success:
 
                 # Get assetpos_id in response
-                lego_brick.assetpos_id = lego_instance_response_text.get("assetpos_id")
+                brick.assetpos_id = lego_instance_response_text.get("assetpos_id")
 
                 # call brick update callback function to update progress bars etc.
                 self.brick_update_callback()
 
             else:
-                # If the asset creation was not possible, set lego brick outdated
-                lego_brick.status = LegoStatus.OUTDATED_BRICK
+                # If the asset creation was not possible, set brick outdated
+                brick.status = BrickStatus.OUTDATED_BRICK
 
             logger.debug("creation_success: {}, assetpos_id: {}"
-                         .format(lego_instance_creation_success, lego_brick.assetpos_id))
+                         .format(lego_instance_creation_success, brick.assetpos_id))
 
-    # Remove lego instance
-    def remove_lego_instance(self, lego_instance):
+    # Remove remote brick instance
+    def remove_remote_brick_instance(self, brick_instance):
 
-        # Send a request to remove lego instance
-        logger.debug(HTTP + self.ip + PREFIX + REMOVE_ASSET_POS + str(lego_instance.assetpos_id))
+        # Send a request to remove brick instance
+        logger.debug(HTTP + self.ip + PREFIX + REMOVE_ASSET_POS + str(brick_instance.assetpos_id))
         lego_remove_instance_response = requests.get(HTTP + self.ip
-                                                     + PREFIX + REMOVE_ASSET_POS + str(lego_instance.assetpos_id))
-        logger.debug("remove instance {}, response {}".format(lego_instance, lego_remove_instance_response))
+                                                     + PREFIX + REMOVE_ASSET_POS + str(brick_instance.assetpos_id))
+        logger.debug("remove instance {}, response {}".format(brick_instance, lego_remove_instance_response))
 
         # call brick update callback function to update progress bars etc.
         self.brick_update_callback()
@@ -142,7 +142,7 @@ class ServerCommunication:
 
     def get_stored_lego_instances(self, asset_id):
 
-        logger.debug("getting stored lego brick instances from the server...")
+        logger.debug("getting stored brick instances from the server...")
 
         stored_instances_list = []
 
@@ -162,8 +162,8 @@ class ServerCommunication:
                 # Save all instances with their properties as a list
                 for assetpos_id in stored_assets:
 
-                    # Create a lego brick instance
-                    stored_instance = LegoBrick(None, None, None, None)
+                    # Create a brick instance
+                    stored_instance = Brick(None, None, None, None)
 
                     # Get the map position of the player
                     position = stored_assets[assetpos_id]["position"]
@@ -185,7 +185,7 @@ class ServerCommunication:
                     stored_instance.color = color
                     stored_instance.asset_id = asset_id
                     stored_instance.assetpos_id = assetpos_id
-                    stored_instance.status = LegoStatus.EXTERNAL_BRICK
+                    stored_instance.status = BrickStatus.EXTERNAL_BRICK
 
                     # Calculate map position of a brick
                     Extent.calc_local_pos(stored_instance, self.extent_tracker.board,

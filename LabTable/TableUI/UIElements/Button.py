@@ -1,7 +1,7 @@
 from ..UIElements.UIElement import UIActionType
 from ..UIElements.UIStructureBlock import UIStructureBlock
 from ..UICallback import UICallback
-from ...LegoBricks import LegoBrick, LegoStatus
+from ...Brick import Brick, BrickStatus
 from ..ImageHandler import ImageHandler
 from ...ConfigManager import ConfigManager
 from ...Vector import Vector
@@ -80,12 +80,12 @@ class Button(UIStructureBlock):
 
     # checks if a given brick lies on top of the button or any of it's children
     # also executes callback functions press and hold
-    def brick_on_element(self, brick: LegoBrick) -> bool:
+    def brick_on_element(self, brick: Brick) -> bool:
         if self.visible:
 
             if self.pos_on_block(Vector.from_brick(brick)):
 
-                if brick.status == LegoStatus.CANDIDATE_BRICK or brick.status == LegoStatus.INTERNAL_BRICK:
+                if brick.status == BrickStatus.CANDIDATE_BRICK or brick.status == BrickStatus.INTERNAL_BRICK:
                     if not self.pressed:
                         self.call(UIActionType.PRESS, brick)
                     else:

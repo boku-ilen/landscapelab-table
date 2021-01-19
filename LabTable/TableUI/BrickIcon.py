@@ -1,5 +1,5 @@
 from typing import Dict, Optional
-from ..LegoBricks import LegoColor, LegoShape, LegoBrick
+from ..Brick import BrickColor, BrickShape, Brick
 from abc import ABC
 
 VIRTUAL_STRING = 'virtual'
@@ -26,7 +26,7 @@ class ExternalBrickIcon(BrickIcon):
         self.virtual_rule: Optional[bool] = ExternalBrickIcon.extract_virtual_rule(rule)
 
     # checks if the given brick matches the rules and should use this icon
-    def matches(self, brick: LegoBrick, virtual: bool):
+    def matches(self, brick: Brick, virtual: bool):
 
         if brick.asset_id == self.id_rule:
             return virtual == self.virtual_rule or self.virtual_rule is None
@@ -65,11 +65,11 @@ class InternalBrickIcon(BrickIcon):
 
     def __init__(self, rule: str, icon: Dict):
         super().__init__(icon)
-        self.color_rule: Optional[LegoColor] = InternalBrickIcon.extract_color_rule(rule)
-        self.shape_rule: Optional[LegoShape] = InternalBrickIcon.extract_shape_rule(rule)
+        self.color_rule: Optional[BrickColor] = InternalBrickIcon.extract_color_rule(rule)
+        self.shape_rule: Optional[BrickShape] = InternalBrickIcon.extract_shape_rule(rule)
 
     # checks if the given brick matches the rules and should use this icon
-    def matches(self, brick: LegoBrick):
+    def matches(self, brick: Brick):
 
         if brick.color == self.color_rule or self.color_rule is None:
             return brick.shape == self.shape_rule or self.shape_rule is None
@@ -83,7 +83,7 @@ class InternalBrickIcon(BrickIcon):
 
         if color_string == "":
             return None
-        return LegoColor[color_string]
+        return BrickColor[color_string]
 
     # extracts the shape rule from the rule string
     @staticmethod
@@ -92,4 +92,4 @@ class InternalBrickIcon(BrickIcon):
 
         if shape_string == "":
             return None
-        return LegoShape[shape_string]
+        return BrickShape[shape_string]

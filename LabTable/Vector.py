@@ -1,4 +1,4 @@
-from .LegoBricks import LegoBrick
+from .Brick import Brick
 
 from typing import Tuple, List
 
@@ -26,7 +26,7 @@ class Vector:
 
     # creates vector from brick position
     @staticmethod
-    def from_brick(brick: LegoBrick):
+    def from_brick(brick: Brick):
         return Vector(brick.centroid_x, brick.centroid_y)
 
     # creates vector from array

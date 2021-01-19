@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 
 # constants for color
-class LegoColor(Enum):
+class BrickColor(Enum):
     UNKNOWN_COLOR = 0
     RED_BRICK = 1
     BLUE_BRICK = 2
@@ -17,7 +17,7 @@ class LegoColor(Enum):
 
 
 # constants for shape
-class LegoShape(Enum):
+class BrickShape(Enum):
     UNKNOWN_SHAPE = 0
     SQUARE_BRICK = 1
     RECTANGLE_BRICK = 2
@@ -26,19 +26,18 @@ class LegoShape(Enum):
 # constants for the detection status
 # INTERNAL: used for buttons and controls
 # EXTERNAL: this has real geographical coordinates and an assetpos_id
-# CANDIDATE: we not yet know if this is a real lego brick
-class LegoStatus(Enum):
+# CANDIDATE: we not yet know if this is a real brick
+class BrickStatus(Enum):
     INTERNAL_BRICK = 0
     EXTERNAL_BRICK = 1
     CANDIDATE_BRICK = 2
     OUTDATED_BRICK = 3
 
 
-# this class represents a lego brick and holds related properties
-class LegoBrick:
+# this class represents a brick and holds related properties
+class Brick:
 
-    def __init__(self, centroid_x: int, centroid_y: int, shape: LegoShape, color: LegoColor):
-
+    def __init__(self, centroid_x: int, centroid_y: int, shape: BrickShape, color: BrickColor):
         # the assetpos_id which the brick has on the server. this needs to be
         # available if it is not a candidate and not internal
         self.assetpos_id = None
@@ -52,28 +51,26 @@ class LegoBrick:
         self.centroid_x: int = centroid_x
         self.centroid_y: int = centroid_y
 
-        self.shape: LegoShape = shape
-        self.color: LegoColor = color
-        self.status: LegoStatus = LegoStatus.CANDIDATE_BRICK
+        self.shape: BrickShape = shape
+        self.color: BrickColor = color
+        self.status: BrickStatus = BrickStatus.CANDIDATE_BRICK
         # these values will ONLY be set if the brick status is EXTERNAL_BRICK
         self.map_pos_x: Optional[float] = None
         self.map_pos_y: Optional[float] = None
 
     # used in program stage PLANNING
     def map_asset_id(self, config):
-
-        # map the lego brick asset_id from color & shape
+        # map the brick asset_id from color & shape
         self.asset_id = config.get(str(self.shape.name), str(self.color.name))
 
     # used in program stage EVALUATION
     def map_evaluation_asset_id(self, config):
-
-        # map the lego brick asset_id from color & shape
+        # map the brick asset_id from color & shape
         self.asset_id = config.get("EVALUATION_BRICKS", str(self.color.name))
 
     # returns an independent clone of this brick
     def clone(self):
-        clone = LegoBrick(self.centroid_x, self.centroid_y, self.shape, self.color)
+        clone = Brick(self.centroid_x, self.centroid_y, self.shape, self.color)
         clone.status = self.status
         clone.assetpos_id = self.assetpos_id
         clone.asset_id = self.asset_id
@@ -94,5 +91,5 @@ class LegoBrick:
         return hash((self.centroid_y, self.centroid_x, self.color, self.shape))
 
     def __str__(self):
-        return "LegoBrick ({}, {}) [{}|{}|{}] {} {}".format(self.centroid_x, self.centroid_y, self.color,
-                                                         self.shape, self.status, self.assetpos_id, self.asset_id)
+        return "Brick ({}, {}) [{}|{}|{}] {} {}".format(self.centroid_x, self.centroid_y, self.color,
+                                                        self.shape, self.status, self.assetpos_id, self.asset_id)

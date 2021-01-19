@@ -1,4 +1,4 @@
-from ...LegoBricks import LegoBrick
+from ...Brick import Brick
 from ...Vector import Vector
 from typing import Optional, List
 from enum import Enum
@@ -14,7 +14,7 @@ class UIElement:
         self.children: List[UIElement] = []
 
     # checks whether a LegoBrick lies on top of this element or any of it's children
-    def brick_on_element(self, brick: LegoBrick) -> bool:
+    def brick_on_element(self, brick: Brick) -> bool:
         if self.visible:
             for child in self.children:
                 if child.brick_on_element(brick):
@@ -22,7 +22,7 @@ class UIElement:
         return False
 
     # checks whether a yet unconfirmed LegoBrick would lie on top of this element or any of it's children
-    def brick_would_land_on_element(self, brick: LegoBrick) -> bool:
+    def brick_would_land_on_element(self, brick: Brick) -> bool:
         if self.visible:
             for child in self.children:
                 if child.brick_would_land_on_element(brick):

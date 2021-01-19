@@ -1,7 +1,7 @@
 import logging
 from typing import List
 
-from ..LegoBricks import LegoBrick, LegoStatus, LegoColor, LegoShape
+from ..Brick import Brick, BrickStatus, BrickColor, BrickShape
 from ..TableUI.UIElements.UIElement import UIElement
 from ..ProgramStage import ProgramStage
 from ..ExtentTracker import ExtentTracker
@@ -19,8 +19,8 @@ class Tracker:
 
     server_communicator = None
     tracked_candidates = {}  # we hold candidates which are not confirmed yet for some ticks
-    confirmed_bricks: List[LegoBrick] = []
-    virtual_bricks: List[LegoBrick] = []
+    confirmed_bricks: List[Brick] = []
+    virtual_bricks: List[Brick] = []
     tracked_disappeared = {}  # we hold confirmed bricks marked for removal after some ticks
     min_distance: int = None
     external_min_appeared: int = None
@@ -40,14 +40,14 @@ class Tracker:
         self.internal_max_disappeared = config.get("tracker_thresholds", "internal_max_disappeared")
         self.allowed_bricks = {
             ProgramStage.EVALUATION: [
-                (LegoColor.RED_BRICK, LegoShape.SQUARE_BRICK),
-                (LegoColor.BLUE_BRICK, LegoShape.SQUARE_BRICK)
+                (BrickColor.RED_BRICK, BrickShape.SQUARE_BRICK),
+                (BrickColor.BLUE_BRICK, BrickShape.SQUARE_BRICK)
             ],
             ProgramStage.PLANNING: [
-                (LegoColor.RED_BRICK, LegoShape.SQUARE_BRICK),
-                (LegoColor.BLUE_BRICK, LegoShape.SQUARE_BRICK),
-                (LegoColor.RED_BRICK, LegoShape.RECTANGLE_BRICK),
-                (LegoColor.BLUE_BRICK, LegoShape.RECTANGLE_BRICK)
+                (BrickColor.RED_BRICK, BrickShape.SQUARE_BRICK),
+                (BrickColor.BLUE_BRICK, BrickShape.SQUARE_BRICK),
+                (BrickColor.RED_BRICK, BrickShape.RECTANGLE_BRICK),
+                (BrickColor.BLUE_BRICK, BrickShape.RECTANGLE_BRICK)
             ]
         }
 
@@ -91,7 +91,7 @@ class Tracker:
             for v_brick in self.virtual_bricks:
 
                 # remove all virtual bricks that have been removed externally
-                if v_brick.status == LegoStatus.EXTERNAL_BRICK and v_brick.asset_id not in s_brick_ids \
+                if v_brick.status == BrickStatus.EXTERNAL_BRICK and v_brick.asset_id not in s_brick_ids \
                         and v_brick.asset_id != PLAYER_POSITION_ASSET_ID:
                     self.virtual_bricks.remove(v_brick)
                     logger.info("removed externally removed virtual brick")
@@ -110,7 +110,7 @@ class Tracker:
 
     # called once a frame while in ProgramStage EVALUATION or PLANNING
     # keeps track of bricks and returns a list of all currently confirmed bricks
-    def update(self, lego_bricks_candidates: List[LegoBrick], program_stage):
+    def update(self, lego_bricks_candidates: List[Brick], program_stage):
 
         # count frames certain bricks have been continuously visible / gone
         self.do_brick_ticks(lego_bricks_candidates)
@@ -136,7 +136,7 @@ class Tracker:
         return self.confirmed_bricks
 
     # iterates over all candidates and manages their tick counters
-    def do_brick_ticks(self, lego_bricks_candidates: List[LegoBrick]):
+    def do_brick_ticks(self, lego_bricks_candidates: List[Brick]):
         # copy the confirmed bricks
         possible_removed_bricks = self.confirmed_bricks.copy()
 
@@ -188,7 +188,7 @@ class Tracker:
             # select correct threshold on whether the brick is internal or not
             # (internal bricks disappear faster)
             target_disappeared = self.external_max_disappeared
-            if brick.status == LegoStatus.INTERNAL_BRICK:
+            if brick.status == BrickStatus.INTERNAL_BRICK:
                 target_disappeared = self.internal_max_disappeared
 
             # check for the threshold value
@@ -202,8 +202,8 @@ class Tracker:
                 Tracker.BRICKS_REFRESHED = True
 
                 # if the brick is associated with an asset also send a remove request to the server
-                if brick.status == LegoStatus.EXTERNAL_BRICK:
-                    self.server_communicator.remove_lego_instance(brick)
+                if brick.status == BrickStatus.EXTERNAL_BRICK:
+                    self.server_communicator.remove_remote_brick_instance(brick)
 
         # remove the disappeared elements from dicts
         for brick in bricks_to_remove:
@@ -218,11 +218,11 @@ class Tracker:
             # mark all bricks as outdated that previously were on ui and now lie on the map or vice versa
             # this might happen when a ui elements visibility gets toggled
             if self.brick_on_ui(brick):
-                if brick.status == LegoStatus.EXTERNAL_BRICK:
+                if brick.status == BrickStatus.EXTERNAL_BRICK:
                     Tracker.set_brick_outdated(brick)
-                    self.server_communicator.remove_lego_instance(brick)
+                    self.server_communicator.remove_remote_brick_instance(brick)
             else:
-                if brick.status == LegoStatus.INTERNAL_BRICK:
+                if brick.status == BrickStatus.INTERNAL_BRICK:
                     Tracker.set_brick_outdated(brick)
 
     def remove_old_virtual_bricks(self):
@@ -231,7 +231,7 @@ class Tracker:
         for v_brick in self.virtual_bricks:
 
             # remove any virtual internal bricks that do not lie on ui elements anymore
-            if v_brick.status == LegoStatus.INTERNAL_BRICK and not self.brick_on_ui(v_brick):
+            if v_brick.status == BrickStatus.INTERNAL_BRICK and not self.brick_on_ui(v_brick):
                 self.virtual_bricks.remove(v_brick)
 
             # remove all previous players
@@ -260,42 +260,42 @@ class Tracker:
                 virtual_brick = self.check_min_distance(candidate, self.virtual_bricks)
                 if virtual_brick and virtual_brick.asset_id != PLAYER_POSITION_ASSET_ID:
                     self.remove_external_virtual_brick(virtual_brick)
-                    candidate.status = LegoStatus.OUTDATED_BRICK
+                    candidate.status = BrickStatus.OUTDATED_BRICK
 
                 else:
                     if self.brick_on_ui(candidate):
-                        candidate.status = LegoStatus.INTERNAL_BRICK
+                        candidate.status = BrickStatus.INTERNAL_BRICK
                     else:
                         if self.check_brick_valid(candidate, program_stage):
-                            candidate.status = LegoStatus.EXTERNAL_BRICK
+                            candidate.status = BrickStatus.EXTERNAL_BRICK
                             # if the brick is associated with an asset also send a create request to the server
-                            self.server_communicator.create_lego_instance(candidate)
+                            self.server_communicator.create_remote_brick_instance(candidate)
                         else:
-                            candidate.status = LegoStatus.OUTDATED_BRICK
+                            candidate.status = BrickStatus.OUTDATED_BRICK
 
-                # add a new lego brick to the confirmed lego bricks list
+                # add a new brick to the confirmed bricks list
                 self.confirmed_bricks.append(candidate)
 
                 Tracker.BRICKS_REFRESHED = True
 
         # loop through all virtual candidates (= all mouse placed bricks on first frame) and set correct status
-        for brick in filter(lambda b: b.status == LegoStatus.CANDIDATE_BRICK, self.virtual_bricks):
+        for brick in filter(lambda b: b.status == BrickStatus.CANDIDATE_BRICK, self.virtual_bricks):
             Tracker.BRICKS_REFRESHED = True
 
             logger.info("classifying mouse brick")
 
             if self.brick_on_ui(brick):
-                brick.status = LegoStatus.INTERNAL_BRICK
+                brick.status = BrickStatus.INTERNAL_BRICK
             else:
-                brick.status = LegoStatus.EXTERNAL_BRICK
-                self.server_communicator.create_lego_instance(brick)
+                brick.status = BrickStatus.EXTERNAL_BRICK
+                self.server_communicator.create_remote_brick_instance(brick)
 
-    # Check if the lego brick lay within min distance to the any in the list
+    # Check if the brick lies within min distance to the any in the list
     def check_min_distance(self, brick, bricks_list):
 
         neighbour_brick = None
 
-        # Look for lego brick within min distance
+        # Look for brick within min distance
         for potential_neighbour in bricks_list:
 
             # Compute distance in both dimensions
@@ -320,7 +320,7 @@ class Tracker:
 
             logger.info("recalculate virtual brick position")
             for brick in self.virtual_bricks:
-                if brick.status == LegoStatus.EXTERNAL_BRICK:
+                if brick.status == BrickStatus.EXTERNAL_BRICK:
                     Extent.calc_local_pos(brick, self.extent_tracker.board, self.extent_tracker.map_extent)
 
             logger.info("set bricks outdated because extent changed")
@@ -330,19 +330,19 @@ class Tracker:
             self.extent_tracker.extent_changed = False
 
     @staticmethod
-    def set_brick_outdated(brick: LegoBrick):
-        brick.status = LegoStatus.OUTDATED_BRICK
+    def set_brick_outdated(brick: Brick):
+        brick.status = BrickStatus.OUTDATED_BRICK
         Tracker.BRICKS_REFRESHED = True
 
-    def set_virtual_brick_at_global_pos_of(self, brick: LegoBrick):
+    def set_virtual_brick_at_global_pos_of(self, brick: Brick):
         virtual_brick = brick.clone()
         Extent.calc_local_pos(virtual_brick, self.extent_tracker.board, self.extent_tracker.map_extent)
 
         self.virtual_bricks.append(virtual_brick)
         Tracker.BRICKS_REFRESHED = True
 
-    def remove_external_virtual_brick(self, brick: LegoBrick):
-        self.server_communicator.remove_lego_instance(brick)
+    def remove_external_virtual_brick(self, brick: Brick):
+        self.server_communicator.remove_remote_brick_instance(brick)
         self.virtual_bricks.remove(brick)
 
     def brick_on_ui(self, brick):
@@ -357,13 +357,13 @@ class Tracker:
     def invalidate_external_bricks(self):
 
         for brick in self.confirmed_bricks:
-            if brick.status == LegoStatus.EXTERNAL_BRICK:
-                # change status of lego bricks to outdated
+            if brick.status == BrickStatus.EXTERNAL_BRICK:
+                # change status of bricks to outdated
                 self.set_virtual_brick_at_global_pos_of(brick)
                 Tracker.set_brick_outdated(brick)
 
     # checks if the brick is allowed in the current program stage
-    def check_brick_valid(self, brick: LegoBrick, stage: ProgramStage):
+    def check_brick_valid(self, brick: Brick, stage: ProgramStage):
         brick_type = (brick.color, brick.shape)
 
         if stage in self.allowed_bricks.keys():

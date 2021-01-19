@@ -107,14 +107,14 @@ class LabTable:
         self.callback_manager.set_output_actions(self.output_stream)
         self.input_stream = LegoInputStream(self.config, self.board, usestream=self.used_stream)
 
-        # initialize the lego detector
+        # initialize the brick detector
         self.shape_detector = ShapeDetector(self.config, self.output_stream)
 
-        # Flag which says whether the lego bricks
+        # Flag which says whether the bricks
         # stored at the server are already marked as virtual
         self.added_stored_lego_bricks_flag = False
 
-    # Run lego bricks detection and tracking code
+    # Run bricks detection and tracking code
     def run(self):
 
         # initialize the input stream
@@ -124,7 +124,7 @@ class LabTable:
         region_of_interest = np.zeros((self.config.get("resolution", "height"),
                                        self.config.get("resolution", "width"), CHANNELS_NUMBER), np.uint8)
 
-        logger.info("initialized lego input stream")
+        logger.info("initialized input stream")
 
         try:
 
@@ -148,11 +148,11 @@ class LabTable:
                 elif self.program_stage.current_stage == ProgramStage.FIND_CORNERS:
                     self.detect_corners(color_image)
 
-                # in this stage lego bricks have "yes"/"no" meaning
+                # in this stage bricks have "yes"/"no" meaning
                 elif self.program_stage.current_stage == ProgramStage.EVALUATION:
                     self.do_lego_detection(region_of_interest, color_image)
 
-                # in this stage lego bricks have assets meaning
+                # in this stage bricks have assets meaning
                 elif self.program_stage.current_stage == ProgramStage.PLANNING:
                     self.do_lego_detection(region_of_interest, color_image)
 
@@ -187,8 +187,8 @@ class LabTable:
         # if all boarders were found change channel and start next stage
         if all_board_corners_found:
 
-            # Use distance to set possible lego brick size
-            logger.debug("Calculate possible lego brick size")
+            # Use distance to set possible brick size
+            logger.debug("Calculate possible brick size")
             self.shape_detector.calculate_possible_lego_dimensions(self.board.distance)
 
             logger.debug("Used threshold for qr-codes -> {}".format(self.board.threshold_qrcode))
@@ -200,7 +200,7 @@ class LabTable:
 
     def do_lego_detection(self, region_of_interest, color_image):
         # If the board is detected take only the region
-        # of interest and start lego bricks detection
+        # of interest and start brick detection
 
         # Take only the region of interest from the color image
         region_of_interest = self.board_detector.rectify_image(region_of_interest, color_image)
@@ -215,18 +215,18 @@ class LabTable:
         # Loop over the contours
         for contour in contours:
 
-            # Check if the contour is a lego brick candidate (shape and color can be detected)
-            brick_candidate = self.shape_detector.detect_lego_brick(contour, region_of_interest)
+            # Check if the contour is a brick candidate (shape and color can be detected)
+            brick_candidate = self.shape_detector.detect_brick(contour, region_of_interest)
 
             if brick_candidate:
-                # Update the properties list of all potential lego bricks which are found in the frame
+                # Update the properties list of all potential bricks which are found in the frame
                 potential_lego_bricks_list.append(brick_candidate)
 
-                # mark potential lego brick contours
+                # mark potential brick contours
                 LegoOutputStream.mark_candidates(region_of_interest_debug, contour)
 
         # TODO (future releases) implement this as stage transition callback in ProgramStage
-        # Get already stored lego brick instances from server
+        # Get already stored brick instances from server
         if self.program_stage.current_stage == ProgramStage.PLANNING \
                 and not self.added_stored_lego_bricks_flag:
 
@@ -234,8 +234,8 @@ class LabTable:
 
             self.added_stored_lego_bricks_flag = True
 
-        # Compute tracked lego bricks dictionary using the centroid tracker and set of properties
-        # Mark stored lego bricks virtual
+        # Compute tracked bricks dictionary using the centroid tracker and set of properties
+        # Mark stored bricks virtual
         tracked_lego_bricks = self.tracker.update(potential_lego_bricks_list, self.program_stage.current_stage)
 
         # Loop over the tracked objects and label them in the stream

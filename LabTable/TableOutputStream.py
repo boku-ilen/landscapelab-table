@@ -10,7 +10,7 @@ from .BrickDetection.Tracker import Tracker
 from .ConfigManager import ConfigManager
 from .TableUI.MainMap import MainMap
 from .TableUI.UIElements.UIElement import UIElement
-from .LegoBricks import LegoBrick, LegoColor, LegoShape, LegoStatus
+from .Brick import Brick, BrickColor, BrickShape, BrickStatus
 from .TableUI.ImageHandler import ImageHandler
 from .TableUI.BrickIcon import ExternalBrickIcon, InternalBrickIcon
 from .TableUI.CallbackManager import CallbackManager
@@ -205,22 +205,22 @@ class LegoOutputStream:
     def mark_candidates(frame, candidate_contour):
         cv2.drawContours(frame, [candidate_contour], IDX_DRAW_ALL, DARK_GRAY, CONTOUR_THICKNESS)
 
-    # we label the identified lego bricks in the stream
+    # we label the identified bricks in the stream
     @staticmethod
-    def labeling(frame, tracked_lego_brick: LegoBrick):
-        # Draw lego bricks IDs
-        text = "ID {}".format(tracked_lego_brick.assetpos_id)
-        tracked_lego_brick_position = tracked_lego_brick.centroid_x, tracked_lego_brick.centroid_y
-        cv2.putText(frame, text, (tracked_lego_brick.centroid_x - BRICK_LABEL_OFFSET,
-                                  tracked_lego_brick.centroid_y - BRICK_LABEL_OFFSET),
+    def labeling(frame, tracked_brick: Brick):
+        # Draw brick IDs
+        text = "ID {}".format(tracked_brick.assetpos_id)
+        tracked_lego_brick_position = tracked_brick.centroid_x, tracked_brick.centroid_y
+        cv2.putText(frame, text, (tracked_brick.centroid_x - BRICK_LABEL_OFFSET,
+                                  tracked_brick.centroid_y - BRICK_LABEL_OFFSET),
                     cv2.FONT_HERSHEY_SIMPLEX, FONT_SIZE, DARK_GRAY, FONT_THICKNESS)
 
-        # Draw lego bricks contour names
-        # FIXME: put other caption like id of the lego brick
-        cv2.putText(frame, tracked_lego_brick.status.name, tracked_lego_brick_position,
+        # Draw brick contour names
+        # FIXME: put other caption like id of the brick
+        cv2.putText(frame, tracked_brick.status.name, tracked_lego_brick_position,
                     cv2.FONT_HERSHEY_SIMPLEX, FONT_SIZE, DARK_GRAY, FONT_THICKNESS)
 
-        # Draw lego bricks centroid points
+        # Draw brick centroid points
         cv2.circle(frame, tracked_lego_brick_position, RADIUS, GREEN, cv2.FILLED)
 
     # Add some additional information to the debug window
@@ -338,7 +338,7 @@ class LegoOutputStream:
         overlay_target = render_target.copy()
 
         # filter external bricks out of the virtual brick list and iterate over them
-        for brick in filter(lambda b: b.status == LegoStatus.EXTERNAL_BRICK, self.tracker.virtual_bricks):
+        for brick in filter(lambda b: b.status == BrickStatus.EXTERNAL_BRICK, self.tracker.virtual_bricks):
             self.render_brick(brick, overlay_target, True)
 
         # add overlay_target to render_target with alpha_value
@@ -353,7 +353,7 @@ class LegoOutputStream:
         # render virtual bricks on top of transparent overlay_target
         overlay_target = render_target.copy()
         # iterate over all non-external virtual bricks and draw them to the overlay_target
-        for brick in list(filter(lambda b: b.status != LegoStatus.EXTERNAL_BRICK, self.tracker.virtual_bricks)):
+        for brick in list(filter(lambda b: b.status != BrickStatus.EXTERNAL_BRICK, self.tracker.virtual_bricks)):
             self.render_brick(brick, overlay_target, True)
 
         # add overlay_target to render_target with alpha_value
@@ -372,17 +372,17 @@ class LegoOutputStream:
     def get_brick_icon(self, brick, virtual):
 
         # return x icon if brick is outdated
-        if brick.status == LegoStatus.OUTDATED_BRICK:
+        if brick.status == BrickStatus.OUTDATED_BRICK:
             return self.brick_outdated
 
         # search for correct internal icon and return it if brick is internal
-        elif brick.status == LegoStatus.INTERNAL_BRICK:
+        elif brick.status == BrickStatus.INTERNAL_BRICK:
             for icon_candidate in self.internal_icon_list:
                 if icon_candidate.matches(brick):
                     return icon_candidate.icon
 
         # search for correct internal icon and return it if brick is external
-        elif brick.status == LegoStatus.EXTERNAL_BRICK:
+        elif brick.status == BrickStatus.EXTERNAL_BRICK:
             for icon_candidate in self.external_icon_list:
                 if icon_candidate.matches(brick, virtual):
                     return icon_candidate.icon
@@ -408,13 +408,13 @@ class LegoOutputStream:
 
             if event == cv2.EVENT_LBUTTONDOWN or event == cv2.EVENT_RBUTTONDOWN:
 
-                color = LegoColor.BLUE_BRICK
+                color = BrickColor.BLUE_BRICK
                 if event == cv2.EVENT_RBUTTONDOWN:
-                    color = LegoColor.RED_BRICK
+                    color = BrickColor.RED_BRICK
 
                 # create brick on mouse position
                 mouse_brick = Extent.remap_brick(
-                    LegoBrick(x, y, LegoShape.SQUARE_BRICK, color),
+                    Brick(x, y, BrickShape.SQUARE_BRICK, color),
                     self.extent_tracker.beamer, self.extent_tracker.board
                 )
 

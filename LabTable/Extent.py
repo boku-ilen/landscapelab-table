@@ -2,7 +2,7 @@ from typing import Tuple
 import numpy as np
 import logging
 
-from .LegoBricks import LegoBrick
+from .Brick import Brick
 from .Vector import Vector
 
 logger = logging.getLogger(__name__)
@@ -218,11 +218,11 @@ class Extent:
     #                  +----------------------------+
     # maps a brick from one extent to another
     @staticmethod
-    def remap_brick(brick: LegoBrick, old_extent: 'Extent', new_extent: 'Extent'):
+    def remap_brick(brick: Brick, old_extent: 'Extent', new_extent: 'Extent'):
         remapped_brick = brick.clone()
 
         if old_extent is None or new_extent is None:
-            logger.warning("Could not remap the lego brick")
+            logger.warning("Could not remap the brick: {}".format(brick))
 
         else:
             x, y = Extent.remap_point(
@@ -255,7 +255,7 @@ class Extent:
 
     # calculates map position of a brick from any given local extent
     @staticmethod
-    def calc_world_pos(brick: LegoBrick, local_extent: 'Extent', global_extent: 'Extent'):
+    def calc_world_pos(brick: Brick, local_extent: 'Extent', global_extent: 'Extent'):
         remapped_brick = Extent.remap_brick(brick, local_extent, global_extent)
         brick.map_pos_x = remapped_brick.centroid_x
         brick.map_pos_y = remapped_brick.centroid_y
@@ -264,7 +264,7 @@ class Extent:
 
     # calculates local position based on it's map position
     @staticmethod
-    def calc_local_pos(brick: LegoBrick, local_extent: 'Extent', global_extent: 'Extent'):
+    def calc_local_pos(brick: Brick, local_extent: 'Extent', global_extent: 'Extent'):
         calc_brick = brick.clone()
         calc_brick.centroid_x = brick.map_pos_x
         calc_brick.centroid_y = brick.map_pos_y

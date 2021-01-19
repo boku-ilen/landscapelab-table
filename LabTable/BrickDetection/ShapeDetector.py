@@ -11,7 +11,7 @@ import cv2  # TODO: fix the requirements.txt or provide library
 import numpy as np
 import math
 
-from ..LegoBricks import LegoBrick, LegoShape, LegoColor
+from ..Brick import Brick, BrickShape, BrickColor
 
 
 # enable logger
@@ -27,9 +27,9 @@ BRICK_LENGTH_BUFFER = 2
 # Camera's depth field of view
 HORIZONTAL_ANGLE = 65
 VERTICAL_ANGLE = 40
-# Lego brick real size in cm
-LEGO_BRICK_SHORT_SIDE = 1.58
-LEGO_BRICK_LONG_SIDE = 3.18
+# brick real size in cm
+BRICK_SHORT_SIDE = 1.58
+BRICK_LONG_SIDE = 3.18
 
 # Hue histogram configurations
 # Color channels
@@ -53,10 +53,10 @@ masks_configuration = {
     #LegoColor.GREEN_BRICK: [
     #    (np.array([40, 100, 50]), np.array([80, 255, 255])),
     #],
-    LegoColor.BLUE_BRICK: [
+    BrickColor.BLUE_BRICK: [
         (np.array([80, 100, 50]), np.array([140, 255, 255])),
     ],
-    LegoColor.RED_BRICK: [
+    BrickColor.RED_BRICK: [
         (np.array([0, 100, 50]), np.array([20, 255, 255])),
         (np.array([160, 100, 50]), np.array([180, 255, 255])),
     ]
@@ -73,7 +73,7 @@ class ShapeDetector:
 
     pipeline = None
 
-    # Initialize possible lego brick sizes
+    # Initialize possible brick sizes
     min_square_length = None
     max_square_length = None
     min_rectangle_length = None
@@ -90,14 +90,14 @@ class ShapeDetector:
         self.output_stream = output_stream
         self.resolution_width = config.get("resolution", "width")
 
-    # Check if the contour is a lego brick
+    # Check if the contour is a brick
     # TODO: remove frame if nothing to draw anymore
-    def detect_lego_brick(self, contour, frame) -> LegoBrick:
+    def detect_brick(self, contour, frame) -> Brick:
 
         # Initialize the contour name and approximate the contour
         # with Douglas-Peucker algorithm
-        contour_shape: LegoShape = LegoShape.UNKNOWN_SHAPE
-        detected_color: LegoColor = LegoColor.UNKNOWN_COLOR
+        contour_shape: BrickShape = BrickShape.UNKNOWN_SHAPE
+        detected_color: BrickColor = BrickColor.UNKNOWN_COLOR
         epsilon = 0.1 * cv2.arcLength(contour, True)
         approx = cv2.approxPolyDP(contour, epsilon, True)
 
@@ -127,7 +127,7 @@ class ShapeDetector:
                     # Check if contour is a rectangle or square
                     contour_shape = self.check_if_square(approx)
 
-                    if contour_shape is LegoShape.UNKNOWN_SHAPE:
+                    if contour_shape is BrickShape.UNKNOWN_SHAPE:
                         logger.debug("Don't draw -> unknown shape")
                     else:
                         # Compute the bounding box of the contour
@@ -138,7 +138,7 @@ class ShapeDetector:
                         detected_color = self.find_most_frequent_hue(bbox, frame)
 
                         # Eliminate wrong colors contours
-                        if detected_color == LegoColor.UNKNOWN_COLOR:
+                        if detected_color == BrickColor.UNKNOWN_COLOR:
                             logger.debug("Don't draw -> unknown color")
                         else:
                             logger.debug("Draw contour:\n Shape: {}\n Color: {}\n "
@@ -147,18 +147,18 @@ class ShapeDetector:
                                                 centroid_x, centroid_y, cv2.contourArea(contour)))
 
                             # return a LegoBrick with the detected parameters
-                            return LegoBrick(centroid_x, centroid_y, contour_shape, detected_color)
+                            return Brick(centroid_x, centroid_y, contour_shape, detected_color)
 
         return None  # FIXME: CG: we might to differ?
 
-    # Check if the contour has a lego brick shape: square or rectangle
-    def check_if_square(self, rotated_bbox) -> LegoShape:
+    # Check if the contour has a brick shape: square or rectangle
+    def check_if_square(self, rotated_bbox) -> BrickShape:
 
         rotated_bbox_lengths = self.calculate_rotated_bbox_lengths(rotated_bbox)
 
         # Prevent division by zero
         if int(rotated_bbox_lengths[1]) is 0:
-            return LegoShape.UNKNOWN_SHAPE
+            return BrickShape.UNKNOWN_SHAPE
 
         # Compute the aspect ratio of the two lengths
         aspect_ratio = int(rotated_bbox_lengths[0]) / int(rotated_bbox_lengths[1])
@@ -166,31 +166,31 @@ class ShapeDetector:
         # Check if aspect ratio is near 1:1
         if MIN_SQ <= aspect_ratio <= MAX_SQ:
 
-            # Check if sides of the square lego brick are not too short/long
+            # Check if sides of the square brick are not too short/long
             if not (self.min_square_length < rotated_bbox_lengths[0] < self.max_square_length) \
                     and (self.min_square_length < rotated_bbox_lengths[1] < self.max_square_length):
                 logger.debug("Wrong square sides lengths: {}".format(rotated_bbox_lengths))
-                return LegoShape.UNKNOWN_SHAPE
+                return BrickShape.UNKNOWN_SHAPE
 
             logger.debug("Rotated bbox size: {}".format(rotated_bbox_lengths))
             logger.debug("Square ratio: {}".format(aspect_ratio))
-            return LegoShape.SQUARE_BRICK
+            return BrickShape.SQUARE_BRICK
 
         # Check if aspect ratio is near 2:1
         elif MIN_REC < aspect_ratio < MAX_REC:
 
-            # Check if sides of the rectangle lego brick are not too short/long
+            # Check if sides of the rectangle brick are not too short/long
             if not (self.min_rectangle_length < rotated_bbox_lengths[0] < self.max_rectangle_length) \
                     and (self.min_rectangle_length < rotated_bbox_lengths[1] < self.max_rectangle_length):
                 logger.debug("Wrong rectangle sides lengths: {}".format(rotated_bbox_lengths))
-                return LegoShape.UNKNOWN_SHAPE
+                return BrickShape.UNKNOWN_SHAPE
 
             logger.debug("Rotated bbox size: {}".format(rotated_bbox_lengths))
             logger.debug("Rectangle ratio: {}".format(aspect_ratio))
-            return LegoShape.RECTANGLE_BRICK
+            return BrickShape.RECTANGLE_BRICK
 
         else:
-            return LegoShape.UNKNOWN_SHAPE
+            return BrickShape.UNKNOWN_SHAPE
 
     # Compute two sides lengths of the contour, which have a common corner
     @staticmethod
@@ -252,7 +252,7 @@ class ShapeDetector:
         for x in range(new_width):
             for y in range(new_height):
 
-                # Take only the area of the lego brick bounding box
+                # Take only the area of the brick bounding box
                 hsv_bbox = frame_hsv[new_upper_y + y, new_left_x + x]
 
                 # Check if saturation is correct
@@ -283,7 +283,7 @@ class ShapeDetector:
                         return detected_color
 
         # Return if no configured color detected
-        return LegoColor.UNKNOWN_COLOR
+        return BrickColor.UNKNOWN_COLOR
 
     @staticmethod
     def calculate_tangent(angle):
@@ -291,7 +291,7 @@ class ShapeDetector:
         tangent = math.tan(angle * math.pi / 180)
         return tangent
 
-    # Calculate possible lego brick dimensions using distance to the board
+    # Calculate possible brick dimensions using distance to the board
     def calculate_possible_lego_dimensions(self, board_distance):
 
         # Use a tangent of the half of horizontal angle to calculate the display width in mm
@@ -299,20 +299,20 @@ class ShapeDetector:
         # Calculate how many pixels give one centimeter
         one_cm_in_pixel = 10 * self.resolution_width / horizontal_side_length
 
-        # Calculate the squared lego brick side
-        square_length = one_cm_in_pixel * LEGO_BRICK_SHORT_SIDE
+        # Calculate the squared brick side
+        square_length = one_cm_in_pixel * BRICK_SHORT_SIDE
         # Add buffer
         self.min_square_length = square_length - BRICK_LENGTH_BUFFER
         self.max_square_length = square_length + BRICK_LENGTH_BUFFER
-        # Calculate the squared lego brick area
+        # Calculate the squared brick area
         self.min_square_area = self.min_square_length * self.min_square_length
         self.max_square_area = self.max_square_length * self.max_square_length
 
-        # Calculate the long side of a rectangle lego brick
-        rectangle_length = one_cm_in_pixel * LEGO_BRICK_LONG_SIDE
+        # Calculate the long side of a rectangle brick
+        rectangle_length = one_cm_in_pixel * BRICK_LONG_SIDE
         # Add buffer
         self.min_rectangle_length = rectangle_length - BRICK_LENGTH_BUFFER
         self.max_rectangle_length = rectangle_length + BRICK_LENGTH_BUFFER
-        # Calculate the squared lego brick area
+        # Calculate the squared brick area
         self.min_rectangle_area = self.min_square_length * self.min_rectangle_length
         self.max_rectangle_area = self.max_square_length * self.max_rectangle_length

@@ -155,8 +155,8 @@
   },
 
   "server": {
-    "ip": "141.244.151.130",
-
+    "ip": "127.0.0.1",
+    "port": "8080",
     "extent_top_left_corner_id": 14,
     "extent_bottom_right_corner_id": 15,
     "wind_id": 2,

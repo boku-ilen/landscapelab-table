@@ -7,4 +7,4 @@ pyzbar  # (https://pypi.org/project/pyzbar/)
 numpy
 shapely
 scipy
-requests  # is not builtin by default
+websockets  # is not builtin by default

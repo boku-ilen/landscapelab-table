@@ -157,6 +157,7 @@
   "server": {
     "ip": "127.0.0.1",
     "port": "8080",
+    "ssl_pem_file": "localhost.pem",
     "extent_top_left_corner_id": 14,
     "extent_bottom_right_corner_id": 15,
     "wind_id": 2,

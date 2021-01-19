@@ -10,7 +10,7 @@ from .TableUI.MainMap import MainMap
 from .TableUI.CallbackManager import CallbackManager
 from .TableUI.UIElements.UISetup import setup_ui
 from .TableUI.UIElements.UIElement import UIElement
-from .ServerCommunication import ServerCommunication
+from .Communicator import Communicator
 from .BrickDetection.Tracker import Tracker
 from .Configurator import Configurator
 from .ParameterManager import ParameterManager
@@ -58,7 +58,7 @@ class LabTable:
         self.board = self.board_detector.board
 
         # Initialize server communication class
-        self.server = ServerCommunication(self.config, self.program_stage)
+        self.server = Communicator(self.config, self.program_stage)
         self.scenario = self.server.get_scenario_info(self.config.get("general", "scenario"))
 
         # Initialize the centroid tracker

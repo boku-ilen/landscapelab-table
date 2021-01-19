@@ -110,7 +110,7 @@ class Communicator:
 
         # Send a request to remove brick instance
         # FIXME: rework protocol, answer never checked
-        lego_remove_instance_response = self.send_message(REMOVE_ASSET_POS + str(brick_instance.assetpos_id))
+        brick_remove_instance_response = self.send_message(REMOVE_ASSET_POS + str(brick_instance.assetpos_id))
 
         # call brick update callback function to update progress bars etc.
         self.brick_update_callback()

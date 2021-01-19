@@ -3,7 +3,7 @@ import threading
 from typing import Callable
 
 from .Configurator import Configurator
-from .ServerCommunication import ServerCommunication
+from .Communicator import Communicator
 from .BrickDetection.Tracker import Tracker
 from LabTable.Model.ProgramStage import ProgramStage
 
@@ -18,7 +18,7 @@ class SchedulerThread(threading.Thread):
     def __init__(
             self,
             config: Configurator,
-            server: ServerCommunication,
+            server: Communicator,
             tracker: Tracker,
             get_program_stage: Callable[[], ProgramStage],
             progress_bar_update_function: Callable

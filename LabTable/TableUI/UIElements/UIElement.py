@@ -1,5 +1,5 @@
-from ...Brick import Brick
-from ...Vector import Vector
+from LabTable.Model.Brick import Brick
+from LabTable.Model.Vector import Vector
 from typing import Optional, List
 from enum import Enum
 

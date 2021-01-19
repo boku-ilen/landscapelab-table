@@ -4,8 +4,8 @@ import threading
 from typing import Dict
 
 from .MapHandler import MapHandler
-from ..ConfigManager import ConfigManager
-from ..Extent import Extent
+from ..Configurator import Configurator
+from LabTable.Model.Extent import Extent
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 # relies on map handler to send closing message
 class QGISListenerThread(threading.Thread):
 
-    def __init__(self, config: ConfigManager, map_dict: Dict[str, MapHandler]):
+    def __init__(self, config: Configurator, map_dict: Dict[str, MapHandler]):
         threading.Thread.__init__(self)
 
         # create socket

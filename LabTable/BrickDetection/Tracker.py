@@ -1,11 +1,11 @@
 import logging
 from typing import List
 
-from ..Brick import Brick, BrickStatus, BrickColor, BrickShape
+from LabTable.Model.Brick import Brick, BrickStatus, BrickColor, BrickShape
 from ..TableUI.UIElements.UIElement import UIElement
-from ..ProgramStage import ProgramStage
+from LabTable.Model.ProgramStage import ProgramStage
 from ..ExtentTracker import ExtentTracker
-from ..Extent import Extent
+from LabTable.Model.Extent import Extent
 
 # configure logging
 logger = logging.getLogger(__name__)

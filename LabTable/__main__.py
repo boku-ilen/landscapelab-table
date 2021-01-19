@@ -1,18 +1,18 @@
 import logging.config
 import numpy as np
 
-from .ProgramStage import ProgramStage, CurrentProgramStage
+from LabTable.Model.ProgramStage import ProgramStage, CurrentProgramStage
 from .BrickDetection.BoardDetector import BoardDetector
 from .BrickDetection.ShapeDetector import ShapeDetector
-from .TableInputStream import LegoInputStream
-from .TableOutputStream import LegoOutputStream, LegoOutputChannel
+from .TableInputStream import TableInputStream
+from .TableOutputStream import TableOutputStream, LegoOutputChannel
 from .TableUI.MainMap import MainMap
 from .TableUI.CallbackManager import CallbackManager
 from .TableUI.UIElements.UISetup import setup_ui
 from .TableUI.UIElements.UIElement import UIElement
 from .ServerCommunication import ServerCommunication
 from .BrickDetection.Tracker import Tracker
-from .ConfigManager import ConfigManager
+from .Configurator import Configurator
 from .ParameterManager import ParameterManager
 from .TableUI.QGISListenerThread import QGISListenerThread
 from .SchedulerThread import SchedulerThread
@@ -39,8 +39,8 @@ class LabTable:
     def __init__(self):
 
         # Initialize config manager
-        self.config = ConfigManager()
-        LegoOutputStream.set_beamer_config_info(self.config)
+        self.config = Configurator()
+        TableOutputStream.set_beamer_config_info(self.config)
 
         # create ui root element and callback manager
         ui_root = UIElement()
@@ -94,7 +94,7 @@ class LabTable:
         self.server_listener_thread.start()
 
         # initialize the input and output stream
-        self.output_stream = LegoOutputStream(
+        self.output_stream = TableOutputStream(
             self.main_map,
             ui_root,
             self.callback_manager,
@@ -105,7 +105,7 @@ class LabTable:
             self.server_listener_thread
         )
         self.callback_manager.set_output_actions(self.output_stream)
-        self.input_stream = LegoInputStream(self.config, self.board, usestream=self.used_stream)
+        self.input_stream = TableInputStream(self.config, self.board, usestream=self.used_stream)
 
         # initialize the brick detector
         self.shape_detector = ShapeDetector(self.config, self.output_stream)
@@ -118,7 +118,7 @@ class LabTable:
     def run(self):
 
         # initialize the input stream
-        self.input_stream = LegoInputStream(self.config, self.board, usestream=self.used_stream)
+        self.input_stream = TableInputStream(self.config, self.board, usestream=self.used_stream)
 
         # Initialize ROI as a black RGB-image
         region_of_interest = np.zeros((self.config.get("resolution", "height"),
@@ -223,7 +223,7 @@ class LabTable:
                 potential_lego_bricks_list.append(brick_candidate)
 
                 # mark potential brick contours
-                LegoOutputStream.mark_candidates(region_of_interest_debug, contour)
+                TableOutputStream.mark_candidates(region_of_interest_debug, contour)
 
         # TODO (future releases) implement this as stage transition callback in ProgramStage
         # Get already stored brick instances from server
@@ -240,7 +240,7 @@ class LabTable:
 
         # Loop over the tracked objects and label them in the stream
         for tracked_lego_brick in tracked_lego_bricks:
-            LegoOutputStream.labeling(region_of_interest_debug, tracked_lego_brick)
+            TableOutputStream.labeling(region_of_interest_debug, tracked_lego_brick)
 
         # write current frame to the stream output
         self.output_stream.write_to_file(region_of_interest_debug)

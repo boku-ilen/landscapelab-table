@@ -11,7 +11,7 @@ import cv2  # TODO: fix the requirements.txt or provide library
 import numpy as np
 import math
 
-from ..Brick import Brick, BrickShape, BrickColor
+from LabTable.Model.Brick import Brick, BrickShape, BrickColor
 
 
 # enable logger

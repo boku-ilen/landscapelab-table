@@ -9,7 +9,7 @@ import numpy as np
 logger = logging.getLogger(__name__)
 
 
-class LegoInputStream:
+class TableInputStream:
 
     # The configuration instance of the realsense camera
     realsense_config = None

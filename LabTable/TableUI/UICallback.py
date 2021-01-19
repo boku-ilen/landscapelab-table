@@ -1,6 +1,6 @@
 from typing import Optional, Callable
 
-from ..Brick import Brick
+from LabTable.Model.Brick import Brick
 
 
 Callback = Callable[[Optional[Brick]], None]

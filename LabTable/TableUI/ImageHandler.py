@@ -4,7 +4,7 @@ import logging
 import cv2
 import os
 
-from ..ConfigManager import ConfigManager, ConfigError
+from ..Configurator import Configurator, ConfigError
 
 # enable logger
 logger = logging.getLogger(__name__)
@@ -14,10 +14,10 @@ logger = logging.getLogger(__name__)
 # does image operations like loading and displaying
 class ImageHandler:
 
-    def __init__(self, config: ConfigManager):
+    def __init__(self, config: Configurator):
         self.config = config
 
-        self.resource_path = ConfigManager.reconstruct_path(
+        self.resource_path = Configurator.reconstruct_path(
             os.getcwd(),
             self.config.get("resources", "relative_path")
         )
@@ -38,7 +38,7 @@ class ImageHandler:
             logger.error(err_msg)
             raise ConfigError(err_msg)
 
-        image_path = ConfigManager.reconstruct_path(self.resource_path, image_dict['path'])
+        image_path = Configurator.reconstruct_path(self.resource_path, image_dict['path'])
         img = cv2.imread(image_path, -1)
 
         # resize if size is not None or size specified in config

@@ -2,10 +2,10 @@ import logging
 import threading
 from typing import Callable
 
-from .ConfigManager import ConfigManager
+from .Configurator import Configurator
 from .ServerCommunication import ServerCommunication
 from .BrickDetection.Tracker import Tracker
-from .ProgramStage import ProgramStage
+from LabTable.Model.ProgramStage import ProgramStage
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -17,7 +17,7 @@ class SchedulerThread(threading.Thread):
 
     def __init__(
             self,
-            config: ConfigManager,
+            config: Configurator,
             server: ServerCommunication,
             tracker: Tracker,
             get_program_stage: Callable[[], ProgramStage],

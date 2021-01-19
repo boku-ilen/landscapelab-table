@@ -1,10 +1,10 @@
 from .UIStructureBlock import UIStructureBlock
 from ..MapHandler import MapHandler
 from ..ImageHandler import ImageHandler
-from ...Brick import Brick, BrickStatus
-from ...Extent import Extent, Vector
+from LabTable.Model.Brick import Brick, BrickStatus
+from LabTable.Model.Extent import Extent, Vector
 from ...ExtentTracker import ExtentTracker
-from ...ConfigManager import ConfigManager
+from ...Configurator import Configurator
 
 from typing import List
 import logging
@@ -30,7 +30,7 @@ class MiniMap(UIStructureBlock, MapHandler):
 
     def __init__(
             self,
-            config: ConfigManager,
+            config: Configurator,
             name: str,
             position: Vector,
             size: Vector,

@@ -1,4 +1,4 @@
-from .TableUI.UICallback import UICallback
+from LabTable.TableUI.UICallback import UICallback
 
 from enum import Enum
 from typing import Dict

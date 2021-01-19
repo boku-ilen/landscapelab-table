@@ -7,8 +7,8 @@ from .UIElements.UIElement import UIElement
 from .MainMap import MainMap
 from .UIElements.MiniMap import MiniMap
 from ..BrickDetection.Tracker import Tracker
-from ..ProgramStage import CurrentProgramStage, ProgramStage
-from ..ConfigManager import ConfigManager, ConfigError
+from LabTable.Model.ProgramStage import CurrentProgramStage, ProgramStage
+from ..Configurator import Configurator, ConfigError
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +63,7 @@ class UiActions(Enum):
 # executes it
 class CallbackManager:
 
-    def __init__(self, config: ConfigManager):
+    def __init__(self, config: Configurator):
         self.config = config
 
         # define program stage change actions
@@ -95,7 +95,7 @@ class CallbackManager:
     @staticmethod
     # takes a List of NamedCallbacks, tries to find a button mapping for each individual action
     # and stores those button mappings in one large dictionary
-    def find_button_mapping(action_sets: List[NamedCallbacks], config: ConfigManager) -> MappedCallbacks:
+    def find_button_mapping(action_sets: List[NamedCallbacks], config: Configurator) -> MappedCallbacks:
         ret: MappedCallbacks = {}
 
         # iterates over all NamedCallbacks (remember NamedCallbacks is a List itself)

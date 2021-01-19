@@ -5,10 +5,10 @@ import logging
 import requests
 import json
 
-from .Brick import Brick, BrickStatus
-from .Extent import Extent
+from LabTable.Model.Brick import Brick, BrickStatus
+from LabTable.Model.Extent import Extent
 from .ExtentTracker import ExtentTracker
-from .ProgramStage import ProgramStage
+from LabTable.Model.ProgramStage import ProgramStage
 
 # Configure logging
 logger = logging.getLogger(__name__)

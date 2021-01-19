@@ -1,8 +1,8 @@
-from ...Extent import Extent
-from ...Vector import Vector
-from ...Brick import Brick
+from LabTable.Model.Extent import Extent
+from LabTable.Model.Vector import Vector
+from LabTable.Model.Brick import Brick
 from ..UIElements.UIElement import UIElement
-from ...ConfigManager import ConfigManager
+from ...Configurator import Configurator
 from typing import List
 import cv2 as cv
 
@@ -12,7 +12,7 @@ class UIStructureBlock(UIElement):
 
     def __init__(
             self,
-            config: ConfigManager,
+            config: Configurator,
             position: Vector,
             size: Vector,
             color: List = None,

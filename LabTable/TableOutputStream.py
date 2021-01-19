@@ -5,18 +5,18 @@ import numpy as np
 import logging
 from typing import List
 
-from .ProgramStage import ProgramStage, CurrentProgramStage
+from LabTable.Model.ProgramStage import ProgramStage, CurrentProgramStage
 from .BrickDetection.Tracker import Tracker
-from .ConfigManager import ConfigManager
+from .Configurator import Configurator
 from .TableUI.MainMap import MainMap
 from .TableUI.UIElements.UIElement import UIElement
-from .Brick import Brick, BrickColor, BrickShape, BrickStatus
+from LabTable.Model.Brick import Brick, BrickColor, BrickShape, BrickStatus
 from .TableUI.ImageHandler import ImageHandler
 from .TableUI.BrickIcon import ExternalBrickIcon, InternalBrickIcon
 from .TableUI.CallbackManager import CallbackManager
 from .ExtentTracker import ExtentTracker
-from .Extent import Extent
-from .Board import Board
+from LabTable.Model.Extent import Extent
+from LabTable.Model.Board import Board
 from .SchedulerThread import SchedulerThread
 
 # enable logger
@@ -64,7 +64,7 @@ class LegoOutputChannel(Enum):
 
 
 # this class handles the output video streams
-class LegoOutputStream:
+class TableOutputStream:
 
     WINDOW_NAME_DEBUG = 'DEBUG WINDOW'
     WINDOW_NAME_BEAMER = 'BEAMER WINDOW'
@@ -76,7 +76,7 @@ class LegoOutputStream:
                  ui_root: UIElement,
                  callback_manager: CallbackManager,
                  tracker: Tracker,
-                 config: ConfigManager,
+                 config: Configurator,
                  board: Board,
                  program_stage: CurrentProgramStage,
                  server_thread: SchedulerThread,
@@ -90,10 +90,10 @@ class LegoOutputStream:
         self.server_thread = server_thread
 
         self.active_channel = LegoOutputChannel.CHANNEL_BOARD_DETECTION
-        self.active_window = LegoOutputStream.WINDOW_NAME_DEBUG  # TODO: implement window handling
+        self.active_window = TableOutputStream.WINDOW_NAME_DEBUG  # TODO: implement window handling
 
         # create debug window
-        cv2.namedWindow(LegoOutputStream.WINDOW_NAME_DEBUG, cv2.WINDOW_AUTOSIZE)
+        cv2.namedWindow(TableOutputStream.WINDOW_NAME_DEBUG, cv2.WINDOW_AUTOSIZE)
 
         # create beamer window
         beamer_id = self.config.get("beamer_resolution", "screen_id")
@@ -103,12 +103,12 @@ class LegoOutputStream:
 
             logger.info("beamer coords: {} {}".format(pos_x, pos_y))
 
-            cv2.namedWindow(LegoOutputStream.WINDOW_NAME_BEAMER, cv2.WND_PROP_FULLSCREEN)
-            cv2.moveWindow(LegoOutputStream.WINDOW_NAME_BEAMER, pos_x, pos_y)
-            cv2.setWindowProperty(LegoOutputStream.WINDOW_NAME_BEAMER, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+            cv2.namedWindow(TableOutputStream.WINDOW_NAME_BEAMER, cv2.WND_PROP_FULLSCREEN)
+            cv2.moveWindow(TableOutputStream.WINDOW_NAME_BEAMER, pos_x, pos_y)
+            cv2.setWindowProperty(TableOutputStream.WINDOW_NAME_BEAMER, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
         else:
-            cv2.namedWindow(LegoOutputStream.WINDOW_NAME_BEAMER, cv2.WINDOW_AUTOSIZE)
-        cv2.setMouseCallback(LegoOutputStream.WINDOW_NAME_BEAMER, self.beamer_mouse_callback)
+            cv2.namedWindow(TableOutputStream.WINDOW_NAME_BEAMER, cv2.WINDOW_AUTOSIZE)
+        cv2.setMouseCallback(TableOutputStream.WINDOW_NAME_BEAMER, self.beamer_mouse_callback)
 
         if video_output_name:
             # Define the codec and create VideoWriter object. The output is stored in .avi file.
@@ -275,7 +275,7 @@ class LegoOutputStream:
             self.config.get("beamer_resolution", "width"),
             4
         ]) * 255
-        cv2.imshow(LegoOutputStream.WINDOW_NAME_BEAMER, frame)
+        cv2.imshow(TableOutputStream.WINDOW_NAME_BEAMER, frame)
         self.last_frame = frame
 
     # displays qr-codes in each corner
@@ -298,7 +298,7 @@ class LegoOutputStream:
         ImageHandler.img_on_background(frame, self.qr_top_right, pos_top_right)
         ImageHandler.img_on_background(frame, self.qr_bottom_left, pos_bottom_left)
         ImageHandler.img_on_background(frame, self.qr_bottom_right, pos_bottom_right)
-        cv2.imshow(LegoOutputStream.WINDOW_NAME_BEAMER, frame)
+        cv2.imshow(TableOutputStream.WINDOW_NAME_BEAMER, frame)
 
     # checks if the frame has updated and redraws it if this is the case
     # called every frame when in ProgramStage EVALUATION or PLANNING
@@ -307,7 +307,7 @@ class LegoOutputStream:
         if self.config.get("map_settings", 'map_refreshed') \
                 or self.config.get("ui_settings", "ui_refreshed") \
                 or Tracker.BRICKS_REFRESHED \
-                or LegoOutputStream.MOUSE_BRICKS_REFRESHED:
+                or TableOutputStream.MOUSE_BRICKS_REFRESHED:
 
             # get map image from map handler
             frame = self.map_handler.get_map_image().copy()
@@ -322,14 +322,14 @@ class LegoOutputStream:
             self.render_bricks(frame)
 
             # display and save frame
-            cv2.imshow(LegoOutputStream.WINDOW_NAME_BEAMER, frame)
+            cv2.imshow(TableOutputStream.WINDOW_NAME_BEAMER, frame)
             self.last_frame = frame
 
             # reset flags
             self.config.set("map_settings", "map_refreshed", False)
             self.config.set("ui_settings", "ui_refreshed", False)
             Tracker.BRICKS_REFRESHED = False
-            LegoOutputStream.MOUSE_BRICKS_REFRESHED = False
+            TableOutputStream.MOUSE_BRICKS_REFRESHED = False
 
     # renders only external virtual bricks
     # since they should be displayed behind the ui unlike any other brick types
@@ -429,4 +429,4 @@ class LegoOutputStream:
                     self.tracker.virtual_bricks.append(mouse_brick)
 
                 # set mouse brick refreshed flag
-                LegoOutputStream.MOUSE_BRICKS_REFRESHED = True
+                TableOutputStream.MOUSE_BRICKS_REFRESHED = True

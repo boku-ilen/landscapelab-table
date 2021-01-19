@@ -1,10 +1,10 @@
 from ..UIElements.UIElement import UIActionType
 from ..UIElements.UIStructureBlock import UIStructureBlock
 from ..UICallback import UICallback
-from ...Brick import Brick, BrickStatus
+from LabTable.Model.Brick import Brick, BrickStatus
 from ..ImageHandler import ImageHandler
-from ...ConfigManager import ConfigManager
-from ...Vector import Vector
+from ...Configurator import Configurator
+from LabTable.Model.Vector import Vector
 from typing import Dict, List
 
 import logging
@@ -18,7 +18,7 @@ class Button(UIStructureBlock):
 
     def __init__(
             self,
-            config: ConfigManager,
+            config: Configurator,
             position: Vector,
             size: Vector,
             name: str = '',

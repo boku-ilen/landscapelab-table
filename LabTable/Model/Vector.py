@@ -1,4 +1,4 @@
-from .Brick import Brick
+from LabTable.Model.Brick import Brick
 
 from typing import Tuple, List
 

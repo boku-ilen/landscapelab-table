@@ -3,7 +3,7 @@ import numpy as np
 import logging
 
 from .Brick import Brick
-from .Vector import Vector
+from LabTable.Model.Vector import Vector
 
 logger = logging.getLogger(__name__)
 

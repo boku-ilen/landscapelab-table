@@ -6,8 +6,8 @@ from shapely import geometry
 import logging.config
 
 from ..ExtentTracker import ExtentTracker
-from ..Extent import Extent
-from ..Board import Board
+from LabTable.Model.Extent import Extent
+from LabTable.Model.Board import Board
 
 
 # configure logging

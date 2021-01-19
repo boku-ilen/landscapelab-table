@@ -1,5 +1,5 @@
 from typing import Dict, Optional
-from ..Brick import BrickColor, BrickShape, Brick
+from LabTable.Model.Brick import BrickColor, BrickShape, Brick
 from abc import ABC
 
 VIRTUAL_STRING = 'virtual'

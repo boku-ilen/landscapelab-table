@@ -1,8 +1,8 @@
 from typing import Dict, Tuple
 
 from .MapHandler import MapHandler
-from ..ConfigManager import ConfigManager, ConfigError
-from ..Extent import Extent
+from ..Configurator import Configurator, ConfigError
+from LabTable.Model.Extent import Extent
 from ..ServerCommunication import ServerCommunication
 
 
@@ -10,7 +10,7 @@ from ..ServerCommunication import ServerCommunication
 # responsible for management of central map
 class MainMap(MapHandler):
 
-    def __init__(self, config: ConfigManager, name, scenario: Dict, server: ServerCommunication):
+    def __init__(self, config: Configurator, name, scenario: Dict, server: ServerCommunication):
 
         self.config = config
         self.server = server

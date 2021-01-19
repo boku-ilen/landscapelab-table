@@ -3,8 +3,8 @@ import logging
 import cv2
 
 from .UIStructureBlock import UIStructureBlock
-from ...ConfigManager import ConfigManager
-from ...Vector import Vector, Point
+from ...Configurator import Configurator
+from LabTable.Model.Vector import Vector, Point
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -21,7 +21,7 @@ class ProgressBar(UIStructureBlock):
 
     def __init__(
             self,
-            config: ConfigManager,
+            config: Configurator,
             position: Vector,
             size: Vector,
             horizontal: bool,

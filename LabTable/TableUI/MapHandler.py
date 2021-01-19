@@ -6,8 +6,8 @@ from typing import Tuple
 import logging
 
 from .ImageHandler import ImageHandler
-from ..ConfigManager import ConfigManager
-from ..Extent import Extent
+from ..Configurator import Configurator
+from LabTable.Model.Extent import Extent
 from ..ExtentTracker import ExtentTracker
 
 # Configure Logger
@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 # handles render requests, image updates and map navigation
 class MapHandler:
 
-    def __init__(self, config: ConfigManager, name: str, extent: Extent, zoom_limits: Tuple[int, int], resolution: Tuple[int, int]):
+    def __init__(self, config: Configurator, name: str, extent: Extent, zoom_limits: Tuple[int, int], resolution: Tuple[int, int]):
         self.name = name
         self.config = config
         self.extent_tracker = ExtentTracker.get_instance()

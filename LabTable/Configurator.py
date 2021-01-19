@@ -12,21 +12,27 @@ class ConfigError(Exception):
         super().__init__(args, kwargs)
 
 
-# TODO: make it a singleton
-class ConfigManager:
+class Configurator:
     """Loads config file and gives access to the data"""
 
     config_data = None
+    __config_file = None
 
     def __init__(self, configfile="config.json"):
 
-        # Load config data
+        # Load inital config data
+        self.config_file = configfile
+        self.refresh()
+
+    # reload configuration file
+    def refresh(self):
+
         try:
-            with open(configfile) as config_file:
+            with open(self.__config_file) as config_file:
                 self.config_data = json.load(config_file)
         except:
-            logger.error("Error opening config file: {}".format(configfile))
-            raise ConfigError("Could not load config data from {}".format(configfile))
+            logger.error("Error opening config file: {}".format(self.__config_file))
+            raise ConfigError("Could not load config data from {}".format(self.__config_file))
 
     # Return searched json data
     def get(self, group, key):

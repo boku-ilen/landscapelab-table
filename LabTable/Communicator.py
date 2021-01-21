@@ -15,17 +15,19 @@ from LabTable.Model.ProgramStage import ProgramStage
 # Configure logging
 logger = logging.getLogger(__name__)
 
-# Constants for server communication
+# remote communication protocol
 URI = "wss://{}:{}"  # this is a websocket ssl connection
-CREATE_ASSET_POS = "/assetpos/create/"
-SET_ASSET_POS = "/assetpos/set/"
-REMOVE_ASSET_POS = "/assetpos/remove/"
+CREATE_ASSET_MSG = "ASSETPOS_CREATE {brick_id} {brick_x} {brick_y}"
+UPDATE_ASSET_MSG = "ASSETPOS_UPDATE {brick_id} {brick_x} {brick_y}"
+REMOVE_ASSET_MSG = "ASSETPOS_REMOVE {brick_id}"
+ANSWER_STRING = "REQUEST_RESULT"
+ASSETPOS_ID_STRING = "ASSETPOS_ID"
+SUCCESS_ANSWER = "SUCCESS"
+FAILURE_ANSWER = "FAILURE"
 GET_SCENARIO_INFO = "/location/scenario/list.json"
 GET_INSTANCES = "/assetpos/get_all/"
 GET_ENERGY_TARGET = "/energy/target/"
 GET_ENERGY_CONTRIBUTION = "/energy/contribution/"
-
-PLAYER_POSITION_ASSET_ID = str(13)
 
 
 class Communicator:
@@ -50,68 +52,67 @@ class Communicator:
         self._ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         self._ssl_context.load_verify_locations(ssl_pem_file)
 
-    # this sends an message to the server and returns the answer
-    async def send_message(self, message):
+    # this sends an message to the server and returns the json answer
+    async def send_message(self, message: str) -> json:
+
         async with websockets.connect( self._uri, ssl=self._ssl_context) as websocket:
+
             logger.debug("sending message: {}".format(message))
             await websocket.send(message)
             ret = await websocket.recv()
             logger.debug("received message: {}".format(ret))
-            return ret
+
+            # we expect json answers only
+            return json.loads(ret)
 
     # Create remote brick instance
     def create_remote_brick_instance(self, brick: Brick):
 
-        logger.debug("creating a brick instance...")
+        logger.debug("creating a brick instance for {}".format(brick))
 
         # Compute geographical coordinates for bricks
         Extent.calc_world_pos(brick, self.extent_tracker.board, self.extent_tracker.map_extent)
 
         # Map the brick asset_id from color & shape
+        # FIXME: generalize ProgramStage logic
         if self.program_stage.current_stage == ProgramStage.EVALUATION:
             brick.map_evaluation_asset_id(self.config)
         else:
             brick.map_asset_id(self.config)
 
         # Send request creating remote brick instance and save the response
-        create_instance_msg = "{command}{scenario_id}/{brick_id}/{brick_x}/{brick_y}".format(
-            command=CREATE_ASSET_POS, scenario_id=self.scenario_id,
+        create_instance_msg = CREATE_ASSET_MSG.format(
             brick_id=str(brick.asset_id), brick_x=str(brick.map_pos_x), brick_y=str(brick.map_pos_y)
         )
 
-        lego_instance_response = self.send_message(create_instance_msg)
-
-        # FIXME: rework protocol
-        # If status code is 200, save response text
-        lego_instance_response_text = json.loads(lego_instance_response.text)
-
-        # Match given instance id with brick id
-        lego_instance_creation_success = lego_instance_response_text.get("creation_success")
-
-        if lego_instance_creation_success:
+        response = self.send_message(create_instance_msg)
+        if response.get(ANSWER_STRING) is SUCCESS_ANSWER:
 
             # Get assetpos_id in response
-            brick.assetpos_id = lego_instance_response_text.get("assetpos_id")
+            brick.assetpos_id = response.get(ASSETPOS_ID_STRING)
 
             # call brick update callback function to update progress bars etc.
             self.brick_update_callback()
 
         else:
-            # If the asset creation was not possible, set brick outdated
-            brick.status = BrickStatus.OUTDATED_BRICK
 
-        logger.debug("creation_success: {}, assetpos_id: {}"
-                     .format(lego_instance_creation_success, brick.assetpos_id))
+            # If the asset creation was not possible, set brick outdated
+            logger.warning("could not remotely create brick {}".format(brick))
+            brick.status = BrickStatus.OUTDATED_BRICK
 
     # Remove remote brick instance
     def remove_remote_brick_instance(self, brick_instance):
 
         # Send a request to remove brick instance
-        # FIXME: rework protocol, answer never checked
-        brick_remove_instance_response = self.send_message(REMOVE_ASSET_POS + str(brick_instance.assetpos_id))
+        response = self.send_message(REMOVE_ASSET_MSG.format(brick_instance.assetpos_id))
 
-        # call brick update callback function to update progress bars etc.
-        self.brick_update_callback()
+        if response.get(ANSWER_STRING) == SUCCESS_ANSWER:
+
+            # call brick update callback function to update progress bars etc.
+            self.brick_update_callback()
+
+        else:
+            logger.warning("could not remove remote brick {}".format(brick_instance))
 
     def get_scenario_info(self, scenario_name):
 
@@ -132,7 +133,7 @@ class Communicator:
         logger.error('Could not find scenario with name {}'.format(scenario_name))
         raise LookupError('No scenario with name {} exists'.format(scenario_name))
 
-    def get_stored_lego_instances(self, asset_id):
+    def get_stored_brick_instances(self, asset_id):
 
         logger.debug("getting stored brick instances from the server...")
 

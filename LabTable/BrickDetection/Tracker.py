@@ -65,7 +65,7 @@ class Tracker:
         asset_ids = self.config.get("stored_instances", "asset_ids")
         server_bricks = []
         for asset_id in asset_ids:
-            server_bricks += self.server_communicator.get_stored_lego_instances(asset_id)
+            server_bricks += self.server_communicator.get_stored_brick_instances(asset_id)
 
         # handle bricks
         if server_bricks is not None:

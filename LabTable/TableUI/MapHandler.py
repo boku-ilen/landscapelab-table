@@ -43,7 +43,7 @@ class MapHandler:
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         qgis_ip = config.get('qgis_interaction', 'qgis_ip')
         self.qgis_addr = (qgis_ip, config.get('qgis_interaction', 'qgis_read_port'))
-        self.lego_addr = (qgis_ip, config.get('qgis_interaction', 'lego_read_port'))
+        self.table_addr = (qgis_ip, config.get('qgis_interaction', 'table_read_port'))
 
         # get communication info
         self.image_path: str = config.get('qgis_interaction', 'qgis_image_path')
@@ -173,5 +173,5 @@ class MapHandler:
 
     # closes sockets
     def end(self):
-        self.sock.sendto(self.exit_keyword.encode(), self.lego_addr)
+        self.sock.sendto(self.exit_keyword.encode(), self.table_addr)
         self.sock.close()

@@ -17,7 +17,6 @@ logger = logging.getLogger(__name__)
 
 # Constants for server communication
 URI = "wss://{}:{}"  # this is a websocket ssl connection
-PREFIX = "/landscapelab-dev"
 CREATE_ASSET_POS = "/assetpos/create/"
 SET_ASSET_POS = "/assetpos/set/"
 REMOVE_ASSET_POS = "/assetpos/remove/"
@@ -25,7 +24,6 @@ GET_SCENARIO_INFO = "/location/scenario/list.json"
 GET_INSTANCES = "/assetpos/get_all/"
 GET_ENERGY_TARGET = "/energy/target/"
 GET_ENERGY_CONTRIBUTION = "/energy/contribution/"
-JSON = ".json"
 
 PLAYER_POSITION_ASSET_ID = str(13)
 
@@ -247,8 +245,6 @@ class Communicator:
 
         # check if request successful
         # FIXME: rework protocol
-        if not self.check_status_code_200(target_return.status_code):
-            raise ConnectionError("Bad Request: {}".format(get_asset_target_msg))
 
         # return energy target
         return json.loads(target_return.text)['energy_target']

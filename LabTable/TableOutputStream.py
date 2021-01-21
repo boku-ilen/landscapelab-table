@@ -45,7 +45,7 @@ LINE_HEIGHT = 20
 PLAYER_POSITION_ASSET_ID = 13
 
 
-class LegoOutputChannel(Enum):
+class TableOutputChannel(Enum):
 
     CHANNEL_BOARD_DETECTION = 1
     CHANNEL_ROI = 2
@@ -54,13 +54,13 @@ class LegoOutputChannel(Enum):
         value = self.value + 1
         if value > 2:
             value = 2
-        return LegoOutputChannel(value)
+        return TableOutputChannel(value)
 
     def prev(self):
         value = self.value - 1
         if value < 1:
             value = 1
-        return LegoOutputChannel(value)
+        return TableOutputChannel(value)
 
 
 # this class handles the output video streams
@@ -89,7 +89,7 @@ class TableOutputStream:
         self.program_stage = program_stage
         self.server_thread = server_thread
 
-        self.active_channel = LegoOutputChannel.CHANNEL_BOARD_DETECTION
+        self.active_channel = TableOutputChannel.CHANNEL_BOARD_DETECTION
         self.active_window = TableOutputStream.WINDOW_NAME_DEBUG  # TODO: implement window handling
 
         # create debug window
@@ -210,18 +210,18 @@ class TableOutputStream:
     def labeling(frame, tracked_brick: Brick):
         # Draw brick IDs
         text = "ID {}".format(tracked_brick.assetpos_id)
-        tracked_lego_brick_position = tracked_brick.centroid_x, tracked_brick.centroid_y
+        tracked_brick_position = tracked_brick.centroid_x, tracked_brick.centroid_y
         cv2.putText(frame, text, (tracked_brick.centroid_x - BRICK_LABEL_OFFSET,
                                   tracked_brick.centroid_y - BRICK_LABEL_OFFSET),
                     cv2.FONT_HERSHEY_SIMPLEX, FONT_SIZE, DARK_GRAY, FONT_THICKNESS)
 
         # Draw brick contour names
         # FIXME: put other caption like id of the brick
-        cv2.putText(frame, tracked_brick.status.name, tracked_lego_brick_position,
+        cv2.putText(frame, tracked_brick.status.name, tracked_brick_position,
                     cv2.FONT_HERSHEY_SIMPLEX, FONT_SIZE, DARK_GRAY, FONT_THICKNESS)
 
         # Draw brick centroid points
-        cv2.circle(frame, tracked_lego_brick_position, RADIUS, GREEN, cv2.FILLED)
+        cv2.circle(frame, tracked_brick_position, RADIUS, GREEN, cv2.FILLED)
 
     # Add some additional information to the debug window
     def add_debug_information(self, frame):
@@ -264,7 +264,7 @@ class TableOutputStream:
 
         elif program_stage.current_stage == ProgramStage.EVALUATION \
                 or program_stage.current_stage == ProgramStage.PLANNING:
-            self.redraw_lego_detection()
+            self.redraw_brick_detection()
 
     # displays a white screen
     # so that the board detector can more easily detect the qr-codes later
@@ -302,7 +302,7 @@ class TableOutputStream:
 
     # checks if the frame has updated and redraws it if this is the case
     # called every frame when in ProgramStage EVALUATION or PLANNING
-    def redraw_lego_detection(self):
+    def redraw_brick_detection(self):
         # check flags if any part of the frame has changed
         if self.config.get("map_settings", 'map_refreshed') \
                 or self.config.get("ui_settings", "ui_refreshed") \

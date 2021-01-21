@@ -5,7 +5,7 @@ from LabTable.Model.ProgramStage import ProgramStage, CurrentProgramStage
 from .BrickDetection.BoardDetector import BoardDetector
 from .BrickDetection.ShapeDetector import ShapeDetector
 from .TableInputStream import TableInputStream
-from .TableOutputStream import TableOutputStream, LegoOutputChannel
+from .TableOutputStream import TableOutputStream, TableOutputChannel
 from .TableUI.MainMap import MainMap
 from .TableUI.CallbackManager import CallbackManager
 from .TableUI.UIElements.UISetup import setup_ui
@@ -112,7 +112,7 @@ class LabTable:
 
         # Flag which says whether the bricks
         # stored at the server are already marked as virtual
-        self.added_stored_lego_bricks_flag = False
+        self.added_stored_bricks_flag = False
 
     # Run bricks detection and tracking code
     def run(self):
@@ -139,7 +139,7 @@ class LabTable:
                 self.output_stream.add_debug_information(color_image_debug)
 
                 # always write the current frame to the board detection channel
-                self.output_stream.write_to_channel(LegoOutputChannel.CHANNEL_BOARD_DETECTION, color_image_debug)
+                self.output_stream.write_to_channel(TableOutputChannel.CHANNEL_BOARD_DETECTION, color_image_debug)
 
                 # call different functions depending on program state
                 if self.program_stage.current_stage == ProgramStage.WHITE_BALANCE:
@@ -150,11 +150,11 @@ class LabTable:
 
                 # in this stage bricks have "yes"/"no" meaning
                 elif self.program_stage.current_stage == ProgramStage.EVALUATION:
-                    self.do_lego_detection(region_of_interest, color_image)
+                    self.do_brick_detection(region_of_interest, color_image)
 
                 # in this stage bricks have assets meaning
                 elif self.program_stage.current_stage == ProgramStage.PLANNING:
-                    self.do_lego_detection(region_of_interest, color_image)
+                    self.do_brick_detection(region_of_interest, color_image)
 
         finally:
             # handle the output stream correctly
@@ -189,16 +189,16 @@ class LabTable:
 
             # Use distance to set possible brick size
             logger.debug("Calculate possible brick size")
-            self.shape_detector.calculate_possible_lego_dimensions(self.board.distance)
+            self.shape_detector.calculate_possible_brick_dimensions(self.board.distance)
 
             logger.debug("Used threshold for qr-codes -> {}".format(self.board.threshold_qrcode))
-            self.output_stream.set_active_channel(LegoOutputChannel.CHANNEL_ROI)
+            self.output_stream.set_active_channel(TableOutputChannel.CHANNEL_ROI)
             self.program_stage.next()
 
         # use different thresholds for board detection
         self.board_detector.adjust_threshold_qrcode()
 
-    def do_lego_detection(self, region_of_interest, color_image):
+    def do_brick_detection(self, region_of_interest, color_image):
         # If the board is detected take only the region
         # of interest and start brick detection
 
@@ -206,8 +206,8 @@ class LabTable:
         region_of_interest = self.board_detector.rectify_image(region_of_interest, color_image)
         region_of_interest_debug = region_of_interest.copy()
 
-        # Initialize legos brick properties list
-        potential_lego_bricks_list = []
+        # Initialize brick properties list
+        potential_bricks_list = []
 
         # detect contours in area of interest
         contours = self.shape_detector.detect_contours(region_of_interest)
@@ -220,7 +220,7 @@ class LabTable:
 
             if brick_candidate:
                 # Update the properties list of all potential bricks which are found in the frame
-                potential_lego_bricks_list.append(brick_candidate)
+                potential_bricks_list.append(brick_candidate)
 
                 # mark potential brick contours
                 TableOutputStream.mark_candidates(region_of_interest_debug, contour)
@@ -228,25 +228,25 @@ class LabTable:
         # TODO (future releases) implement this as stage transition callback in ProgramStage
         # Get already stored brick instances from server
         if self.program_stage.current_stage == ProgramStage.PLANNING \
-                and not self.added_stored_lego_bricks_flag:
+                and not self.added_stored_bricks_flag:
 
             self.tracker.sync_with_server_side_bricks()
 
-            self.added_stored_lego_bricks_flag = True
+            self.added_stored_bricks_flag = True
 
         # Compute tracked bricks dictionary using the centroid tracker and set of properties
         # Mark stored bricks virtual
-        tracked_lego_bricks = self.tracker.update(potential_lego_bricks_list, self.program_stage.current_stage)
+        tracked_bricks = self.tracker.update(potential_bricks_list, self.program_stage.current_stage)
 
         # Loop over the tracked objects and label them in the stream
-        for tracked_lego_brick in tracked_lego_bricks:
-            TableOutputStream.labeling(region_of_interest_debug, tracked_lego_brick)
+        for tracked_brick in tracked_bricks:
+            TableOutputStream.labeling(region_of_interest_debug, tracked_brick)
 
         # write current frame to the stream output
         self.output_stream.write_to_file(region_of_interest_debug)
 
         # Render shape detection images
-        self.output_stream.write_to_channel(LegoOutputChannel.CHANNEL_ROI, region_of_interest_debug)
+        self.output_stream.write_to_channel(TableOutputChannel.CHANNEL_ROI, region_of_interest_debug)
 
     def get_program_stage(self) -> ProgramStage:
         return self.program_stage.current_stage

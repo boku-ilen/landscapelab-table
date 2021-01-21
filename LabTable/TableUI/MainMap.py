@@ -3,14 +3,14 @@ from typing import Dict, Tuple
 from .MapHandler import MapHandler
 from ..Configurator import Configurator, ConfigError
 from LabTable.Model.Extent import Extent
-from ..ServerCommunication import ServerCommunication
+from ..Communicator import Communicator
 
 
 # MainMap class
 # responsible for management of central map
 class MainMap(MapHandler):
 
-    def __init__(self, config: Configurator, name, scenario: Dict, server: ServerCommunication):
+    def __init__(self, config: Configurator, name, scenario: Dict, server: Communicator):
 
         self.config = config
         self.server = server

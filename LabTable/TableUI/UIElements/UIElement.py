@@ -13,7 +13,7 @@ class UIElement:
         self.parent: Optional[UIElement] = None
         self.children: List[UIElement] = []
 
-    # checks whether a LegoBrick lies on top of this element or any of it's children
+    # checks whether a Brick lies on top of this element or any of it's children
     def brick_on_element(self, brick: Brick) -> bool:
         if self.visible:
             for child in self.children:
@@ -21,7 +21,7 @@ class UIElement:
                     return True
         return False
 
-    # checks whether a yet unconfirmed LegoBrick would lie on top of this element or any of it's children
+    # checks whether a yet unconfirmed Brick would lie on top of this element or any of it's children
     def brick_would_land_on_element(self, brick: Brick) -> bool:
         if self.visible:
             for child in self.children:

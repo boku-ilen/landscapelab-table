@@ -223,7 +223,7 @@
   "qgis_interaction": {
     "qgis_ip": "127.0.0.1",
     "qgis_read_port": 5005,
-    "lego_read_port": 5006,
+    "table_read_port": 5006,
     "udp_buffer_size": 1024,
     "qgis_image_path": "C:/landscapelab-dev/qgis/{}.png",
     "update_keyword": "update:",

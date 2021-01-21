@@ -24,19 +24,19 @@ def setup_ui(root: UIElement, main_map: MainMap, config: Configurator, server: C
     mini_map, navigation_block = setup_nav_block_ui(nav_block, config, main_map, callback_manager)
 
     # create detection mode ui
-    lego_detection_ui = UIElement()
-    progress_bar_update_function = setup_detection_ui(lego_detection_ui, server, config, callback_manager)
+    brick_detection_ui = UIElement()
+    progress_bar_update_function = setup_detection_ui(brick_detection_ui, server, config, callback_manager)
 
     # setup hierarchy
     root.add_child(nav_block)
-    root.add_child(lego_detection_ui)
+    root.add_child(brick_detection_ui)
 
     # setup ui callback functions
     callback_manager.set_ui_callbacks(navigation_block)
 
     return \
         mini_map,\
-        lego_detection_ui, \
+        brick_detection_ui, \
         progress_bar_update_function
 
 

@@ -103,17 +103,17 @@ class Tracker:
             # re-register all confirmed bricks that have disappeared from the server list
             """
             for c_brick in self.confirmed_bricks:
-                if c_brick.status == LegoStatus.EXTERNAL_BRICK and c_brick.asset_id not in s_brick_ids:
-                    self.server_communicator.create_lego_instance(c_brick)
+                if c_brick.status == Status.EXTERNAL_BRICK and c_brick.asset_id not in s_brick_ids:
+                    self.server_communicator.create_brick_instance(c_brick)
                     logger.info("re-registered missing brick in server: {}".format(c_brick))
             """
 
     # called once a frame while in ProgramStage EVALUATION or PLANNING
     # keeps track of bricks and returns a list of all currently confirmed bricks
-    def update(self, lego_bricks_candidates: List[Brick], program_stage):
+    def update(self, brick_candidates: List[Brick], program_stage):
 
         # count frames certain bricks have been continuously visible / gone
-        self.do_brick_ticks(lego_bricks_candidates)
+        self.do_brick_ticks(brick_candidates)
 
         # remove all bricks that have been gone for too long
         self.remove_overtime_disappeared_bricks()
@@ -136,12 +136,12 @@ class Tracker:
         return self.confirmed_bricks
 
     # iterates over all candidates and manages their tick counters
-    def do_brick_ticks(self, lego_bricks_candidates: List[Brick]):
+    def do_brick_ticks(self, brick_candidates: List[Brick]):
         # copy the confirmed bricks
         possible_removed_bricks = self.confirmed_bricks.copy()
 
         # iterate through all candidates
-        for candidate in lego_bricks_candidates:
+        for candidate in brick_candidates:
 
             # remove the candidate from the possible removed bricks
             if candidate in possible_removed_bricks:

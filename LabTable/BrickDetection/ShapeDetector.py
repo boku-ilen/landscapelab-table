@@ -46,11 +46,11 @@ HIST_SIZE = 181
 # V-value range (0 to 255)
 masks_configuration = {
     # TODO: adjust yellow so skin will be excluded
-    #LegoColor.YELLOW_BRICK: [
+    #BrickColor.YELLOW_BRICK: [
     #    (np.array([10, 100, 100]), np.array([20, 255, 200])),
     #],
     # TODO: adjust green so black will be excluded
-    #LegoColor.GREEN_BRICK: [
+    #BrickColor.GREEN_BRICK: [
     #    (np.array([40, 100, 50]), np.array([80, 255, 255])),
     #],
     BrickColor.BLUE_BRICK: [
@@ -146,7 +146,7 @@ class ShapeDetector:
                                          format(contour_shape, detected_color,
                                                 centroid_x, centroid_y, cv2.contourArea(contour)))
 
-                            # return a LegoBrick with the detected parameters
+                            # return a Brick with the detected parameters
                             return Brick(centroid_x, centroid_y, contour_shape, detected_color)
 
         return None  # FIXME: CG: we might to differ?
@@ -292,7 +292,7 @@ class ShapeDetector:
         return tangent
 
     # Calculate possible brick dimensions using distance to the board
-    def calculate_possible_lego_dimensions(self, board_distance):
+    def calculate_possible_brick_dimensions(self, board_distance):
 
         # Use a tangent of the half of horizontal angle to calculate the display width in mm
         horizontal_side_length = 2 * board_distance * self.calculate_tangent(HORIZONTAL_ANGLE / 2)

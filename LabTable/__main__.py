@@ -22,9 +22,11 @@ from .SchedulerThread import SchedulerThread
 logger = logging.getLogger(__name__)
 
 try:
-    logging.config.fileConfig('logging.conf')
+    logging.config.fileConfig('logging.conf', disable_existing_loggers=False)
     logger.info("Logging initialized")
-except:
+except Exception as e:
+    print("logging could not be initialized. trying fallback.")
+    print(e)
     logging.basicConfig(level=logging.INFO)
     logging.info("Could not initialize: logging.conf not found or misconfigured")
 
@@ -57,16 +59,15 @@ class LabTable:
         self.board_detector = BoardDetector(self.config, self.config.get("qr_code", "threshold"))
         self.board = self.board_detector.board
 
-        # Initialize server communication class
+        # Initialize websocket communication class
         self.server = Communicator(self.config, self.program_stage)
-        self.scenario = self.server.get_scenario_info(self.config.get("general", "scenario"))
 
         # Initialize the centroid tracker
         self.tracker = Tracker(self.config, self.board, self.server, ui_root)
         self.callback_manager.set_tracker_callbacks(self.tracker)
 
         # initialize map, map callbacks and ui
-        self.main_map = MainMap(self.config, 'main_map', self.scenario, self.server)
+        self.main_map = MainMap(self.config, 'main_map', self.server)
         self.callback_manager.set_map_callbacks(self.main_map)
         mini_map, planning_ui, progress_bar_update_function = \
             setup_ui(ui_root, self.main_map,  self.config, self.server, self.callback_manager)
@@ -157,6 +158,9 @@ class LabTable:
                     self.do_brick_detection(region_of_interest, color_image)
 
         finally:
+            # close the websocket connection
+            self.server.close()
+
             # handle the output stream correctly
             self.output_stream.close()
 

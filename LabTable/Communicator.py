@@ -1,12 +1,12 @@
-
-# FIXME: THIS CLASS WILL BE COMPLETELY REWORKED TO COMMUNICATE WITH THE CLIENT DIRECTLY
-
 import logging
-import websockets
-import asyncio
+import threading
+from typing import Optional
+
+import websocket
 import ssl
 import json
 
+from Configurator import ConfigError
 from LabTable.Model.Brick import Brick, BrickStatus
 from LabTable.Model.Extent import Extent
 from .ExtentTracker import ExtentTracker
@@ -16,54 +16,136 @@ from LabTable.Model.ProgramStage import ProgramStage
 logger = logging.getLogger(__name__)
 
 # remote communication protocol
-URI = "wss://{}:{}"  # this is a websocket ssl connection
-CREATE_ASSET_MSG = "ASSETPOS_CREATE {brick_id} {brick_x} {brick_y}"
-UPDATE_ASSET_MSG = "ASSETPOS_UPDATE {brick_id} {brick_x} {brick_y}"
-REMOVE_ASSET_MSG = "ASSETPOS_REMOVE {brick_id}"
+URL = "ws{s}://{host}:{port}"  # this is a websocket (ssl) connection
+CREATE_ASSET_MSG = {
+    "keyword": "FEATURE_CREATE",
+    "layer": "",
+    "etrs_x": 0.0,
+    "etrs_y": 0.0
+}
+UPDATE_ASSET_MSG = {
+    "keyword": "FEATURE_UPDATE",
+    "layer": "",
+    "object_id": 0,
+    "etrs_x": 0.0,
+    "etrs_y": 0.0
+}
+REMOVE_ASSET_MSG = {
+    "keyword": "FEATURE_REMOVE",
+    "layer": "",
+    "object_id": 0
+}
+GET_SCENARIOS_MSG = {
+    "keyword": "GET_SCENARIOS"
+}
+TELEPORT_TO_MSG = {
+    "keyword": "TELEPORT_TO",
+    "etrs_x": 0.0,
+    "etrs_y": 0.0
+}
+SET_EXTENT_MSG = {
+    "keyword": "TABLE_EXTENT",
+    "min_x": 0.0,
+    "min_y": 0.0,
+    "max_x": 0.0,
+    "max_y": 0.0
+}
+
 ANSWER_STRING = "REQUEST_RESULT"
 ASSETPOS_ID_STRING = "ASSETPOS_ID"
 SUCCESS_ANSWER = "SUCCESS"
 FAILURE_ANSWER = "FAILURE"
-GET_SCENARIO_INFO = "/location/scenario/list.json"
+
 GET_INSTANCES = "/assetpos/get_all/"
 GET_ENERGY_TARGET = "/energy/target/"
 GET_ENERGY_CONTRIBUTION = "/energy/contribution/"
 
 
-class Communicator:
+class Communicator(threading.Thread):
     """Creates and removes remote brick instances"""
 
     _uri = None
     _ssl_context = None
+    _connection_instance = None
+    _connection_open = False
 
     def __init__(self, config, program_stage):
+
+        # call super()
+        threading.Thread.__init__(self)
+        self.name = "[LabTable] Communicator"
 
         self.config = config
         self.program_stage = program_stage  # FIXME: the program stage should be managed remotely now!
         self.extent_tracker = ExtentTracker.get_instance()
         self.scenario_id = None
         self.brick_update_callback = lambda: None
+        self._ssl_context = None
 
         # initialize connection string and ssl configuration
         ip = self.config.get("server", "ip")
         port = self.config.get("server", "port")
         ssl_pem_file = self.config.get("server", "ssl_pem_file")
-        self._uri = URI.format(ip, port)
-        self._ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-        self._ssl_context.load_verify_locations(ssl_pem_file)
+
+        # if ssl is configured load the pem file
+        s = ""
+        if ssl_pem_file:
+            self._ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+            try:
+                self._ssl_context.load_verify_locations(ssl_pem_file)
+                s = "s"
+            except FileNotFoundError:
+                logger.fatal("SSL file configured but not found: {}".format(ssl_pem_file))
+                raise ConfigError("SSL file configured but not found: {}".format(ssl_pem_file))
+
+        self._uri = URL.format(s=s, host=ip, port=port)
+        logger.info("configured remote URL to {}".format(self._uri))
+
+        # start the listener thread
+        self.start()
+
+    def on_message(self, ws, message):
+        print(message)
+
+    def on_error(self, ws, error):
+        logger.error(error)
+        self._connection_open = False
+
+    def on_close(self, ws):
+        self._connection_open = False
+
+    def on_open(self, ws):
+        self._connection_open = True
+
+    def close(self):
+        self._connection_instance.close()
+        logger.info("closing websocket connection")
+
+    # starting the listener thread and perform the connection to the LandscapeLab!
+    def run(self):
+
+        # try to connect to server
+        self._connection_instance = websocket.WebSocketApp(self._uri, on_close=self.on_close,
+                                                           on_message=self.on_message, on_open=self.on_open,
+                                                           on_error=self.on_error)
+        self._connection_instance.run_forever()
 
     # this sends an message to the server and returns the json answer
-    async def send_message(self, message: str) -> json:
+    def send_message(self, message: dict) -> Optional[dict]:
 
-        async with websockets.connect( self._uri, ssl=self._ssl_context) as websocket:
+        logger.debug("sending message: {}".format(message))
 
-            logger.debug("sending message: {}".format(message))
-            await websocket.send(message)
-            ret = await websocket.recv()
+        if self._connection_open:
+            self._connection_instance.send(message)
+            ret = self._connection_instance.recv()
             logger.debug("received message: {}".format(ret))
 
             # we expect json answers only
             return json.loads(ret)
+
+        else:
+            logger.error("Could not send message as there is no connection to the LandscapeLab!")
+            return None
 
     # Create remote brick instance
     def create_remote_brick_instance(self, brick: Brick):
@@ -81,30 +163,34 @@ class Communicator:
             brick.map_asset_id(self.config)
 
         # Send request creating remote brick instance and save the response
-        create_instance_msg = CREATE_ASSET_MSG.format(
-            brick_id=str(brick.asset_id), brick_x=str(brick.map_pos_x), brick_y=str(brick.map_pos_y)
-        )
+        message = CREATE_ASSET_MSG.copy()
+        message["layer"] = brick.layer_id
+        message["etrs_x"] = brick.map_pos_x
+        message["etrs_y"] = brick.map_pos_y
 
-        response = self.send_message(create_instance_msg)
+        threading.Thread("[LabTable] ", self.send_message(message))
         if response.get(ANSWER_STRING) is SUCCESS_ANSWER:
 
             # Get assetpos_id in response
-            brick.assetpos_id = response.get(ASSETPOS_ID_STRING)
+            brick.object_id = response.get(ASSETPOS_ID_STRING)
 
             # call brick update callback function to update progress bars etc.
             self.brick_update_callback()
 
+        # If the asset creation was not possible, set brick outdated
         else:
-
-            # If the asset creation was not possible, set brick outdated
             logger.warning("could not remotely create brick {}".format(brick))
             brick.status = BrickStatus.OUTDATED_BRICK
 
     # Remove remote brick instance
     def remove_remote_brick_instance(self, brick_instance):
 
+        message = REMOVE_ASSET_MSG.copy()
+        message["layer"] = brick_instance.layer
+        message["object_id"] = brick_instance.object_id
+
         # Send a request to remove brick instance
-        response = self.send_message(REMOVE_ASSET_MSG.format(brick_instance.assetpos_id))
+        response = self.send_message(message)
 
         if response.get(ANSWER_STRING) == SUCCESS_ANSWER:
 
@@ -116,10 +202,10 @@ class Communicator:
 
     def get_scenario_info(self, scenario_name):
 
-        request_return = self.send_message("{}".format(GET_SCENARIO_INFO))
+        # request_return = self.send_message("{}".format(GET_SCENARIO_INFO))
 
         # FIXME: rework protocol
-        scenarios = json.loads(request_return.text)
+        scenarios = {}  # WAS = json.loads(request_return.text)
 
         for scenario_key in scenarios:
             scenario = scenarios[scenario_key]
@@ -131,7 +217,7 @@ class Communicator:
                 return scenario
 
         logger.error('Could not find scenario with name {}'.format(scenario_name))
-        raise LookupError('No scenario with name {} exists'.format(scenario_name))
+        # FIXME WAS: raise LookupError('No scenario with name {} exists'.format(scenario_name))
 
     def get_stored_brick_instances(self, asset_id):
 
@@ -174,8 +260,8 @@ class Communicator:
                 # Add missing properties
                 stored_instance.shape = shape
                 stored_instance.color = color
-                stored_instance.asset_id = asset_id
-                stored_instance.assetpos_id = assetpos_id
+                stored_instance.layer_id = asset_id
+                stored_instance.object_id = assetpos_id
                 stored_instance.status = BrickStatus.EXTERNAL_BRICK
 
                 # Calculate map position of a brick
@@ -186,33 +272,17 @@ class Communicator:
 
         return stored_instances_list
 
-    # initiates corner point update of the given main map extent on the server
+    # initiates corner point update of the given main map extent
+    # and informs the LandscapeLab
     def update_extent_info(self, extent: Extent):
 
-        # get the corner IDs
-        top_left_corner_id = self.config.get("server", "extent_top_left_corner_id")
-        bot_right_corner_id = self.config.get("server", "extent_bottom_right_corner_id")
+        message = SET_EXTENT_MSG.copy()
+        message["min_x"] = extent.x_min
+        message["min_y"] = extent.y_min
+        message["max_x"] = extent.x_max
+        message["max_y"] = extent.y_max
 
-        # create the request messages
-        create_top_left_msg = "{command}{scenario_id}/{asset_id}/{x}/{y}".format(
-            command=CREATE_ASSET_POS, scenario_id=self.scenario_id,
-            asset_id=top_left_corner_id, x=str(extent.x_min), y=str(extent.y_min)
-        )
-
-        create_bot_right_msg = "{command}{scenario_id}/{asset_id}/{x}/{y}".format(
-            command=CREATE_ASSET_POS, scenario_id=self.scenario_id,
-            asset_id=bot_right_corner_id, x=str(extent.x_max), y=str(extent.y_max)
-        )
-
-        # send the messages
-        tl_ret = self.send_message(create_top_left_msg)
-        br_ret = self.send_message(create_bot_right_msg)
-
-        # log warning if extent corners could not be updated
-        # FIXME: rework protocol
-        if ((not self.check_status_code_200(tl_ret.status_code))
-                or (not self.check_status_code_200(br_ret.status_code))):
-            logger.warning("Could not update main map extent on server")
+        self.send_message(message)
 
     # checks how much energy a given asset type contributes
     # FIXME: this has to be generalized to work with various game objects
@@ -248,4 +318,4 @@ class Communicator:
         # FIXME: rework protocol
 
         # return energy target
-        return json.loads(target_return.text)['energy_target']
+        # return json.loads(target_return.text)['energy_target']

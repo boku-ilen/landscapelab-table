@@ -25,6 +25,10 @@ class SchedulerThread(threading.Thread):
     ):
         threading.Thread.__init__(self)
 
+        # call super()
+        threading.Thread.__init__(self)
+        self.name = "[LabTable] Scheduler"
+
         self.config = config
         self.server = server
         self.ticker = threading.Event()

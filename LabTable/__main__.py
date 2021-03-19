@@ -4,7 +4,7 @@ import numpy as np
 from LabTable.Model.ProgramStage import ProgramStage, CurrentProgramStage
 from .BrickDetection.BoardDetector import BoardDetector
 from .BrickDetection.ShapeDetector import ShapeDetector
-from .TableInputStream import TableInputStream
+from InputStream.TableInputStream import TableInputStream
 from .TableOutputStream import TableOutputStream, TableOutputChannel
 from .TableUI.MainMap import MainMap
 from .TableUI.CallbackManager import CallbackManager
@@ -106,7 +106,7 @@ class LabTable:
             self.server_listener_thread
         )
         self.callback_manager.set_output_actions(self.output_stream)
-        self.input_stream = TableInputStream(self.config, self.board, usestream=self.used_stream)
+        self.input_stream = TableInputStream.get_table_input_stream(self.config, self.board, usestream=self.used_stream)
 
         # initialize the brick detector
         self.shape_detector = ShapeDetector(self.config, self.output_stream)
@@ -119,55 +119,59 @@ class LabTable:
     def run(self):
 
         # initialize the input stream
-        self.input_stream = TableInputStream(self.config, self.board, usestream=self.used_stream)
+        self.input_stream = TableInputStream.get_table_input_stream(self.config, self.board, usestream=self.used_stream)
 
         # Initialize ROI as a black RGB-image
         region_of_interest = np.zeros((self.config.get("resolution", "height"),
                                        self.config.get("resolution", "width"), CHANNELS_NUMBER), np.uint8)
 
-        logger.info("initialized input stream")
+        if self.input_stream.is_initialized():
+            logger.info("initialized input stream")
 
-        try:
+            try:
 
-            # main loop which handles each frame
-            while not self.output_stream.update(self.program_stage):
+                # main loop which handles each frame
+                while not self.output_stream.update(self.program_stage):
 
-                # get the next frame
-                depth_image_3d, color_image = self.input_stream.get_frame()
+                    # get the next frame
+                    depth_image_3d, color_image = self.input_stream.get_frame()
 
-                # Add some additional information to the debug window
-                color_image_debug = color_image.copy()
-                self.output_stream.add_debug_information(color_image_debug)
+                    # Add some additional information to the debug window
+                    color_image_debug = color_image.copy()
+                    self.output_stream.add_debug_information(color_image_debug)
 
-                # always write the current frame to the board detection channel
-                self.output_stream.write_to_channel(TableOutputChannel.CHANNEL_BOARD_DETECTION, color_image_debug)
+                    # always write the current frame to the board detection channel
+                    self.output_stream.write_to_channel(TableOutputChannel.CHANNEL_BOARD_DETECTION, color_image_debug)
 
-                # call different functions depending on program state
-                if self.program_stage.current_stage == ProgramStage.WHITE_BALANCE:
-                    self.white_balance(color_image)
+                    # call different functions depending on program state
+                    if self.program_stage.current_stage == ProgramStage.WHITE_BALANCE:
+                        self.white_balance(color_image)
 
-                elif self.program_stage.current_stage == ProgramStage.FIND_CORNERS:
-                    self.detect_corners(color_image)
+                    elif self.program_stage.current_stage == ProgramStage.FIND_CORNERS:
+                        self.detect_corners(color_image)
 
-                # in this stage bricks have "yes"/"no" meaning
-                elif self.program_stage.current_stage == ProgramStage.EVALUATION:
-                    self.do_brick_detection(region_of_interest, color_image)
+                    # in this stage bricks have "yes"/"no" meaning
+                    elif self.program_stage.current_stage == ProgramStage.EVALUATION:
+                        self.do_brick_detection(region_of_interest, color_image)
 
-                # in this stage bricks have assets meaning
-                elif self.program_stage.current_stage == ProgramStage.PLANNING:
-                    self.do_brick_detection(region_of_interest, color_image)
+                    # in this stage bricks have assets meaning
+                    elif self.program_stage.current_stage == ProgramStage.PLANNING:
+                        self.do_brick_detection(region_of_interest, color_image)
 
-        finally:
-            # close the websocket connection
-            self.server.close()
+            except Exception as e:
+                logger.error("closing because encountered a problem: {}".format(e))
+                logger.debug(e.__traceback__)
 
-            # handle the output stream correctly
-            self.output_stream.close()
+        # close the websocket connection
+        self.server.close()
 
-            # make sure the stream ends correctly
-            self.input_stream.close()
+        # handle the output stream correctly
+        self.output_stream.close()
 
-            self.main_map.end()
+        # make sure the stream ends correctly
+        self.input_stream.close()
+
+        self.main_map.end()
 
     def white_balance(self, color_image):
 

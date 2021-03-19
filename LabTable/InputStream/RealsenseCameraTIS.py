@@ -1,24 +1,20 @@
-
-# Used pyrealsense2 on License: Apache 2.0.
-# FIXME: we might abstract this further so alternate webcams could be used
-import pyrealsense2 as rs  # FIXME: CG: this currently requires python 3.6
 import logging
 import numpy as np
+# Used pyrealsense2 on License: Apache 2.0.
+import pyrealsense2 as rs  # FIXME: CG: this currently requires python 3.6
+
+from InputStream.TableInputStream import TableInputStream
 
 # enable logger
 logger = logging.getLogger(__name__)
 
 
-class TableInputStream:
+class RealsenseCameraTIS(TableInputStream):
 
     # The configuration instance of the realsense camera
     realsense_config = None
     pipeline = None
     depth_scale = None
-
-    # Initialize the resolution
-    width = None
-    height = None
 
     # intermediate storage of actual frames
     color_frame = None
@@ -27,14 +23,12 @@ class TableInputStream:
     # initialize the input stream (from live camera or bag file)
     def __init__(self, config, board, usestream=None):
 
+        # initialize the base class
+        super().__init__(config, board, usestream)
+
+        # initialize realsense specific settings
         self.pipeline = rs.pipeline()
         self.realsense_config = rs.config()
-
-        # Get the resolution from config file
-        self.width = config.get("resolution", "width")
-        self.height = config.get("resolution", "height")
-
-        self.board = board
 
         # FIXME: missing frames when using videostream or too slow processing
         # https://github.com/IntelRealSense/librealsense/issues/2216
@@ -56,11 +50,19 @@ class TableInputStream:
         # Start streaming
         # TODO: optionally rename variable to a more speaking one
         # FIXME: program ends here without further message
-        self.profile = self.pipeline.start(self.realsense_config)
+        try:
+            self.profile = self.pipeline.start(self.realsense_config)
+            # Getting the depth sensor's depth scale
+            depth_sensor = self.profile.get_device().first_depth_sensor()
+            self.depth_scale = depth_sensor.get_depth_scale()
 
-        # Getting the depth sensor's depth scale
-        depth_sensor = self.profile.get_device().first_depth_sensor()
-        self.depth_scale = depth_sensor.get_depth_scale()
+            self.initialized = True
+
+        except RuntimeError as e:
+            logger.fatal("camera could not be initialized: {}".format(e))
+            self.initialized = False
+            # FIXME: follow up?
+
         logger.debug("Depth Scale is: {}".format(self.depth_scale))
 
     def get_frame(self):
@@ -74,9 +76,6 @@ class TableInputStream:
         # Get aligned frames (depth images)
         self.aligned_depth_frame = aligned_frames.get_depth_frame()
         self.color_frame = aligned_frames.get_color_frame()
-
-        # New frame log information
-        # logger.info("!! new frame started")
 
         # Validate that both frames are valid
         if self.aligned_depth_frame and self.color_frame:
@@ -112,4 +111,7 @@ class TableInputStream:
 
     def close(self):
         # Stop streaming
-        self.pipeline.stop()
+        if self.initialized:
+            self.pipeline.stop()
+
+        super().close()

@@ -25,7 +25,7 @@ class BrickShape(Enum):
 
 # constants for the detection status
 # INTERNAL: used for buttons and controls
-# EXTERNAL: this has real geographical coordinates and an assetpos_id
+# EXTERNAL: this has real geographical coordinates and an object_id
 # CANDIDATE: we not yet know if this is a real brick
 class BrickStatus(Enum):
     INTERNAL_BRICK = 0
@@ -38,13 +38,13 @@ class BrickStatus(Enum):
 class Brick:
 
     def __init__(self, centroid_x: int, centroid_y: int, shape: BrickShape, color: BrickColor):
-        # the assetpos_id which the brick has on the server. this needs to be
-        # available if it is not a candidate and not internal
-        self.assetpos_id = None
 
-        # the asset_id which is mapped
-        # from color and shape
-        self.asset_id = None
+        # the object_id which the brick has in the LandscapeLab. this needs to be
+        # available if it is not a candidate and not internal
+        self.object_id = None
+
+        # the identifier of the layer which is mapped from color and shape
+        self.layer_id = None
 
         # the x and y coordinates locally (in stream coordinates)
         # of the center of the detected shape
@@ -54,26 +54,29 @@ class Brick:
         self.shape: BrickShape = shape
         self.color: BrickColor = color
         self.status: BrickStatus = BrickStatus.CANDIDATE_BRICK
+
         # these values will ONLY be set if the brick status is EXTERNAL_BRICK
         self.map_pos_x: Optional[float] = None
         self.map_pos_y: Optional[float] = None
 
     # used in program stage PLANNING
+    # FIXME: dynamic program stages
     def map_asset_id(self, config):
         # map the brick asset_id from color & shape
-        self.asset_id = config.get(str(self.shape.name), str(self.color.name))
+        self.layer_id = config.get(str(self.shape.name), str(self.color.name))
 
     # used in program stage EVALUATION
+    # FIXME: dynamic program stages
     def map_evaluation_asset_id(self, config):
         # map the brick asset_id from color & shape
-        self.asset_id = config.get("EVALUATION_BRICKS", str(self.color.name))
+        self.layer_id = config.get("EVALUATION_BRICKS", str(self.color.name))
 
     # returns an independent clone of this brick
     def clone(self):
         clone = Brick(self.centroid_x, self.centroid_y, self.shape, self.color)
         clone.status = self.status
-        clone.assetpos_id = self.assetpos_id
-        clone.asset_id = self.asset_id
+        clone.object_id = self.object_id
+        clone.layer_id = self.layer_id
         clone.map_pos_x = self.map_pos_x
         clone.map_pos_y = self.map_pos_y
         return clone
@@ -92,4 +95,4 @@ class Brick:
 
     def __str__(self):
         return "Brick ({}, {}) [{}|{}|{}] {} {}".format(self.centroid_x, self.centroid_y, self.color,
-                                                        self.shape, self.status, self.assetpos_id, self.asset_id)
+                                                        self.shape, self.status, self.object_id, self.layer_id)

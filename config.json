@@ -8,9 +8,6 @@
   },
 
   "general": {
-    "scenario": "Joglland",
-    "starting_location": "auto select",
-    "NOTE": "starting_location overwrites the start location in the server response. If an invalid value is given (e.g. 'auto select') it will be ignored",
     "mini_map_extent": null,
     "NOTE2": "if mini_map_extent is null it will be calculated automatically, otherwise it can be overwritten using [center_x, center_y, zoom_width_in_m]",
     "start_zoom": 20000
@@ -156,12 +153,8 @@
 
   "server": {
     "ip": "127.0.0.1",
-    "port": "8080",
-    "ssl_pem_file": "localhost.pem",
-    "extent_top_left_corner_id": 14,
-    "extent_bottom_right_corner_id": 15,
-    "wind_id": 2,
-    "pv_id": 3
+    "port": 5004,
+    "ssl_pem_file": null
     },
 
   "resolution": {
@@ -270,7 +263,11 @@
     "CHANNEL_UP": "r",
     "CHANNEL_DOWN": "f",
     "CHANGE_STAGE": "n",
-    "CONFIRM_BRICKS": "x"
+    "CONFIRM_BRICKS": "x",
+
+    "TOGGLE_NAV_BLOCK": "1",
+    "SET_NAV_BLOCK_VISIBLE": "2",
+    "SET_NAV_BLOCK_INVISIBLE": "3"
   },
 
   "map_settings": {

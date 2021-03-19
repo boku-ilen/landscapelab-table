@@ -16,8 +16,13 @@ logger = logging.getLogger(__name__)
 # relies on map handler to send closing message
 class QGISListenerThread(threading.Thread):
 
+    running = False
+
     def __init__(self, config: Configurator, map_dict: Dict[str, MapHandler]):
+
+        # call super()
         threading.Thread.__init__(self)
+        self.name = "[LabTable] QGIS Listener"
 
         # create socket
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -32,8 +37,10 @@ class QGISListenerThread(threading.Thread):
 
     # waits for messages from qgis plugin and notifies map objects in case they should be updated
     def run(self):
-        logger.info("starting to listen for messages")
-        while True:
+
+        logger.info("starting to listen for qgis messages")
+        self.running = True
+        while self.running:
             data, addr = self.sock.recvfrom(1024)
 
             data = data.decode()
@@ -51,5 +58,9 @@ class QGISListenerThread(threading.Thread):
                     self.map_dict[target_name].refresh(extent)
 
             if data == self.exit_keyword:
-                self.sock.close()
-                break
+                self.close()
+
+    def close(self):
+        logger.info("shutting down QGIS Listener")
+        self.sock.close()
+        self.running = False

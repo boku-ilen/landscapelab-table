@@ -1,3 +1,4 @@
+import json
 import logging.config
 import numpy as np
 
@@ -22,13 +23,20 @@ from .SchedulerThread import SchedulerThread
 logger = logging.getLogger(__name__)
 
 try:
-    logging.config.fileConfig('logging.conf', disable_existing_loggers=False)
+    fp = open("logging.json")
+    config = json.load(fp)
+    fp.close()
+
+    logging.config.dictConfig(config)
+    # logging.config.fileConfig('logging.conf', disable_existing_loggers=True)
     logger.info("Logging initialized")
+
 except Exception as e:
     print("logging could not be initialized. trying fallback.")
     print(e)
     logging.basicConfig(level=logging.INFO)
     logging.info("Could not initialize: logging.conf not found or misconfigured")
+
 
 # Number of RGB channels in
 # region of interest image
@@ -60,7 +68,8 @@ class LabTable:
         self.board = self.board_detector.board
 
         # Initialize websocket communication class
-        self.server = Communicator(self.config, self.program_stage)
+        # and load the settings from the LL
+        self.server = Communicator(self.config)
 
         # Initialize the centroid tracker
         self.tracker = Tracker(self.config, self.board, self.server, ui_root)

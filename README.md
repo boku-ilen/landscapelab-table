@@ -32,7 +32,7 @@ for saving the output as .avi file:
 
 # Run
 
-run [server](https://github.com/boku-ilen/landscapelab-server)
+run [LandscapeLab](https://github.com/boku-ilen/landscapelab)
 
 run [QGIS-Plugin Remote Rendering](https://github.com/boku-ilen/landscapelab-qgis)
 

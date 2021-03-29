@@ -16,23 +16,23 @@ class Configurator:
     """Loads config file and gives access to the data"""
 
     config_data = None
-    __config_file = None
+    _config_file = None
 
     def __init__(self, configfile="config.json"):
 
         # Load inital config data
-        self.config_file = configfile
+        self._config_file = configfile
         self.refresh()
 
     # reload configuration file
     def refresh(self):
 
         try:
-            with open(self.__config_file) as config_file:
+            with open(self._config_file) as config_file:
                 self.config_data = json.load(config_file)
-        except:
-            logger.error("Error opening config file: {}".format(self.__config_file))
-            raise ConfigError("Could not load config data from {}".format(self.__config_file))
+        except Exception as e:
+            logger.exception("Error opening config file: {}".format(e))
+            raise ConfigError("Could not load config data from {}".format(self._config_file))
 
     # Return searched json data
     def get(self, group, key):
@@ -41,7 +41,7 @@ class Configurator:
             value = self.config_data[group][key]
             logger.debug("Get config data: {} -> {} with {}".format(group, key, value))
         except:
-            logger.error("Getting config data {} -> {} without success".format(group, key))
+            logger.warning("Getting config data {} -> {} without success".format(group, key))
             raise ConfigError("Could not get config data {} -> {}".format(group, key))
 
         # Return searched config data value
@@ -53,9 +53,9 @@ class Configurator:
         try:
             self.config_data[group][key] = value
             logger.debug("Overwriting config data {} -> {} with {}".format(group, key, value))
-        except:
+        except Exception as e:
             logger.error("Overwriting config data {} -> {} without success".format(group, key))
-            raise ConfigError("Could not overwrite config data {} -> {}".format(group, key))
+            logger.exception(e)
 
     @staticmethod
     def reconstruct_path(base_path, relative_path: List[str]):

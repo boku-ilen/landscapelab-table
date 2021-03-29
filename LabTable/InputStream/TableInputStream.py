@@ -2,8 +2,6 @@ from abc import abstractmethod
 import logging
 
 # enable logger
-# from InputStream.RealsenseCameraTIS import RealsenseCameraTIS
-
 logger = logging.getLogger(__name__)
 
 
@@ -17,8 +15,7 @@ class TableInputStream:
 
     @staticmethod
     def get_table_input_stream(config, board, usestream=None) -> 'TableInputStream':
-        # FIXME: implement factory
-        cn = "OpenCVCameraTIS"
+        cn = config.get("camera", "implementation") + "CameraTIS"
         module_is = __import__('LabTable.InputStream.' + cn, fromlist=[cn])
         class_ = getattr(module_is, cn)
         logger.debug("initializing {} as input stream".format(class_))

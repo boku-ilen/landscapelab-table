@@ -10,6 +10,7 @@ REAL_STRING = 'real'
 # abstract base class for ExternalBrickIcon and InternalBrickIcon
 # used as container class for brick icons
 class BrickIcon(ABC):
+
     def __init__(self, icon: Dict):
         self.icon: Dict = icon
 
@@ -28,7 +29,7 @@ class ExternalBrickIcon(BrickIcon):
     # checks if the given brick matches the rules and should use this icon
     def matches(self, brick: Brick, virtual: bool):
 
-        if brick.asset_id == self.id_rule:
+        if brick.layer_id == self.id_rule:
             return virtual == self.virtual_rule or self.virtual_rule is None
 
         return False

@@ -209,7 +209,7 @@ class TableOutputStream:
     @staticmethod
     def labeling(frame, tracked_brick: Brick):
         # Draw brick IDs
-        text = "ID {}".format(tracked_brick.assetpos_id)
+        text = "ID {}".format(tracked_brick.object_id)
         tracked_brick_position = tracked_brick.centroid_x, tracked_brick.centroid_y
         cv2.putText(frame, text, (tracked_brick.centroid_x - BRICK_LABEL_OFFSET,
                                   tracked_brick.centroid_y - BRICK_LABEL_OFFSET),
@@ -393,7 +393,7 @@ class TableOutputStream:
     # closing the outputstream if it is defined
     def close(self):
         self.server_thread.ticker.set()
-        logger.info("exit")
+        logger.info("closing table output stream")
         logging.shutdown()
         cv2.destroyAllWindows()
         if self.video_handler:
@@ -421,7 +421,7 @@ class TableOutputStream:
                 # check for nearby virtual bricks
                 virtual_brick = self.tracker.check_min_distance(mouse_brick, self.tracker.virtual_bricks)
 
-                if virtual_brick and virtual_brick.asset_id != PLAYER_POSITION_ASSET_ID:
+                if virtual_brick and virtual_brick.layer_id != PLAYER_POSITION_ASSET_ID:
                     # if mouse brick is on top of other virtual brick, remove that brick
                     self.tracker.remove_external_virtual_brick(virtual_brick)
                 else:

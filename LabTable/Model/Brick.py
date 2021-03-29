@@ -59,18 +59,6 @@ class Brick:
         self.map_pos_x: Optional[float] = None
         self.map_pos_y: Optional[float] = None
 
-    # used in program stage PLANNING
-    # FIXME: dynamic program stages
-    def map_asset_id(self, config):
-        # map the brick asset_id from color & shape
-        self.layer_id = config.get(str(self.shape.name), str(self.color.name))
-
-    # used in program stage EVALUATION
-    # FIXME: dynamic program stages
-    def map_evaluation_asset_id(self, config):
-        # map the brick asset_id from color & shape
-        self.layer_id = config.get("EVALUATION_BRICKS", str(self.color.name))
-
     # returns an independent clone of this brick
     def clone(self):
         clone = Brick(self.centroid_x, self.centroid_y, self.shape, self.color)

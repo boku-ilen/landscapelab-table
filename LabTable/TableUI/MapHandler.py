@@ -19,7 +19,9 @@ logger = logging.getLogger(__name__)
 # handles render requests, image updates and map navigation
 class MapHandler:
 
-    def __init__(self, config: Configurator, name: str, extent: Extent, zoom_limits: Tuple[int, int], resolution: Tuple[int, int]):
+    def __init__(self, config: Configurator, name: str, extent: Extent,
+                 zoom_limits: Tuple[int, int], resolution: Tuple[int, int]):
+
         self.name = name
         self.config = config
         self.extent_tracker = ExtentTracker.get_instance()

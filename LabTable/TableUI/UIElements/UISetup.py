@@ -154,13 +154,14 @@ def setup_detection_ui(detection_ui_root, server, config, callback_manager):
     )
 
     # set progress calculation callbacks
-    asset_type_id = config.get("server", "wind_id")
-    progress_bar_wind.target = server.get_energy_target(asset_type_id)
-    progress_bar_wind.progress_calculation = partial(server.get_energy_contrib, asset_type_id)
+    # FIXME: generalize with game objects
+    # asset_type_id = config.get("server", "wind_id")
+    # progress_bar_wind.target = server.get_energy_target(asset_type_id)
+    # progress_bar_wind.progress_calculation = partial(server.get_energy_contrib, asset_type_id)
 
-    asset_type_id = config.get("server", "pv_id")
-    progress_bar_pv.target = server.get_energy_target(asset_type_id)
-    progress_bar_pv.progress_calculation = partial(server.get_energy_contrib, asset_type_id)
+    # asset_type_id = config.get("server", "pv_id")
+    # progress_bar_pv.target = server.get_energy_target(asset_type_id)
+    # progress_bar_pv.progress_calculation = partial(server.get_energy_contrib, asset_type_id)
 
     # setup hierarchy
     detection_ui_root.add_child(progress_bar_wind)

@@ -1,5 +1,6 @@
 from typing import Dict, Tuple
 
+from Model.Vector import Vector
 from .MapHandler import MapHandler
 from ..Configurator import Configurator, ConfigError
 from LabTable.Model.Extent import Extent
@@ -10,7 +11,7 @@ from ..Communicator import Communicator
 # responsible for management of central map
 class MainMap(MapHandler):
 
-    def __init__(self, config: Configurator, name, scenario: Dict, server: Communicator):
+    def __init__(self, config: Configurator, name, server: Communicator):
 
         self.config = config
         self.server = server
@@ -25,7 +26,7 @@ class MainMap(MapHandler):
         super().__init__(
             config,
             name,
-            self.get_start_extent(scenario),
+            self.get_start_extent(),
             zoom_limits,
             (resolution_x, resolution_y)
         )
@@ -35,9 +36,9 @@ class MainMap(MapHandler):
         config.set("map_settings", "extent_height", [self.current_extent.y_min, self.current_extent.y_max])
 
     # retrieves starting location and defines an extent around this location
-    def get_start_extent(self, scenario):
+    def get_start_extent(self):
 
-        starting_location = self.get_start_location(scenario)
+        starting_location = self.get_start_location()
 
         # extrude start location to start extent
         zoom = self.config.get("general", "start_zoom")
@@ -45,33 +46,13 @@ class MainMap(MapHandler):
         return Extent.around_center(starting_location, zoom, 1)
 
     # reads starting-location from scenario info or config
-    def get_start_location(self, scenario) -> Tuple[float, float]:
-        if len(scenario["locations"]) == 0:
-            raise ConfigError("No locations in scenario {}".format(scenario["name"]))
+    # FIXME: rework protocol (starting location should come from landscapelab)
+    def get_start_location(self) -> Vector:
 
-        # find start location
-        config_starting_location_name = self.config.get("general", "starting_location")
-        config_starting_location = None
+        # FIXME: this should come from the landscape lab
+        starting_location = Vector(0.0, 0.0)
 
-        starting_location = None
-
-        for location_key in scenario["locations"]:
-            location = scenario["locations"][location_key]
-
-            if location["name"] == config_starting_location_name:
-                config_starting_location = location["location"]
-
-            if location["starting_location"]:
-                starting_location = location["location"]
-
-        # overwrite starting location if the config-defined starting location exists
-        if config_starting_location:
-            starting_location = config_starting_location
-
-        # choose first location if no starting location was found
-        if not starting_location:
-            first_key = next(iter(scenario["locations"]))
-            starting_location = scenario["locations"][first_key]["location"]
+        # TODO: maybe overwrite starting location if the config-defined starting location exists
 
         return starting_location
 

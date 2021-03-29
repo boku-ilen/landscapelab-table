@@ -71,28 +71,29 @@ class Tracker:
         if server_bricks is not None:
 
             # get list of all currently known brick IDs
-            v_brick_ids = [b.asset_id for b in self.virtual_bricks]
-            c_brick_ids = [b.asset_id for b in self.confirmed_bricks]
-            s_brick_ids = [b.asset_id for b in server_bricks]
+            v_brick_ids = [b.layer_id for b in self.virtual_bricks]
+            c_brick_ids = [b.layer_id for b in self.confirmed_bricks]
+            s_brick_ids = [b.layer_id for b in server_bricks]
 
             for brick in server_bricks:
 
                 # set the current player
-                if brick.asset_id == PLAYER_POSITION_ASSET_ID and brick != self.player:
+                # FIXME: rework this, as this is not provided via brick anymore
+                if brick.layer_id == PLAYER_POSITION_ASSET_ID and brick != self.player:
                     self.player = brick
                     self.set_virtual_brick_at_global_pos_of(self.player)
                     logger.debug("set the player {}".format(self.player))
 
                 # add server brick to virtual bricks if it's ID is unknown
-                elif brick.asset_id not in v_brick_ids \
-                        and brick.asset_id not in c_brick_ids:
+                elif brick.layer_id not in v_brick_ids \
+                        and brick.layer_id not in c_brick_ids:
                     self.virtual_bricks.append(brick)
 
             for v_brick in self.virtual_bricks:
 
                 # remove all virtual bricks that have been removed externally
-                if v_brick.status == BrickStatus.EXTERNAL_BRICK and v_brick.asset_id not in s_brick_ids \
-                        and v_brick.asset_id != PLAYER_POSITION_ASSET_ID:
+                if v_brick.status == BrickStatus.EXTERNAL_BRICK and v_brick.layer_id not in s_brick_ids \
+                        and v_brick.layer_id != PLAYER_POSITION_ASSET_ID:
                     self.virtual_bricks.remove(v_brick)
                     logger.info("removed externally removed virtual brick")
 
@@ -235,7 +236,7 @@ class Tracker:
                 self.virtual_bricks.remove(v_brick)
 
             # remove all previous players
-            elif v_brick.asset_id == PLAYER_POSITION_ASSET_ID and v_brick != self.player:
+            elif v_brick.layer_id == PLAYER_POSITION_ASSET_ID and v_brick != self.player:
                 self.remove_external_virtual_brick(v_brick)
                 logger.debug("removed previous players {}".format(v_brick))
 

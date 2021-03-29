@@ -16,9 +16,7 @@ class ParameterManager:
         parser.add_argument("--threshold", type=int,
                             help="overwrites the threshold for black-white image to recognize qr-codes")
         parser.add_argument("--usestream", help="path and name of the file with saved .bag stream")
-        # FIXME: THESE NEXT PARAMETERS WILL BE RETRIEVED FROM THE CLIENT IN THE FUTURE OR ARE NOT NEEDED AT ALL
         parser.add_argument("--ip", help="overwrites default server ip defined in config")
-        parser.add_argument("--scenario", type=str, help="overwrites default starting scenario defined in config")
         parser.add_argument("--starting_location", type=str,
                             help="overwrites default starting location defined in config")
 
@@ -32,9 +30,6 @@ class ParameterManager:
 
         if parser_arguments.ip is not None:
             config.set("server", "ip", parser_arguments.ip)
-
-        if parser_arguments.scenario is not None:
-            config.set("general", "scenario", parser_arguments.scenario)
 
         if parser_arguments.starting_location is not None:
             config.set("general", "starting_location", parser_arguments.starting_location)

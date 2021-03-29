@@ -44,7 +44,7 @@ class QGISListenerThread(threading.Thread):
             data, addr = self.sock.recvfrom(1024)
 
             data = data.decode()
-            logger.info(data)
+            logger.debug("recieved qgis message: {}".format(data))
             if data.startswith(self.update_keyword):
 
                 # convert extent to numpy array

@@ -1,7 +1,7 @@
 import logging
 import numpy as np
 # Used pyrealsense2 on License: Apache 2.0.
-import pyrealsense2 as rs  # FIXME: CG: this currently requires python 3.6
+import pyrealsense2.pyrealsense2 as rs
 
 from .TableInputStream import TableInputStream
 

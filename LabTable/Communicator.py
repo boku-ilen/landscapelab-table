@@ -7,11 +7,11 @@ import websocket
 import ssl
 import json
 
-from Configurator import ConfigError
+from .Configurator import ConfigError
 from LabTable.Model.Brick import Brick, BrickStatus
 from LabTable.Model.Extent import Extent
 from .ExtentTracker import ExtentTracker
-from LabTable.Model.ProgramStage import ProgramStage
+
 
 # Configure logging
 logger = logging.getLogger(__name__)

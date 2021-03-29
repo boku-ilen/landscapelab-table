@@ -5,7 +5,7 @@ import numpy as np
 from LabTable.Model.ProgramStage import ProgramStage, CurrentProgramStage
 from .BrickDetection.BoardDetector import BoardDetector
 from .BrickDetection.ShapeDetector import ShapeDetector
-from InputStream.TableInputStream import TableInputStream
+from .InputStream.TableInputStream import TableInputStream
 from .TableOutputStream import TableOutputStream, TableOutputChannel
 from .TableUI.MainMap import MainMap
 from .TableUI.CallbackManager import CallbackManager

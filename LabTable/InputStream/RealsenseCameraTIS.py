@@ -3,7 +3,7 @@ import numpy as np
 # Used pyrealsense2 on License: Apache 2.0.
 import pyrealsense2 as rs  # FIXME: CG: this currently requires python 3.6
 
-from InputStream.TableInputStream import TableInputStream
+from .TableInputStream import TableInputStream
 
 # enable logger
 logger = logging.getLogger(__name__)

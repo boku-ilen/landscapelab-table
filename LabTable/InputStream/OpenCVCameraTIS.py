@@ -2,7 +2,7 @@
 import logging
 import cv2
 
-from InputStream.TableInputStream import TableInputStream
+from .TableInputStream import TableInputStream
 
 logger = logging.getLogger(__name__)
 

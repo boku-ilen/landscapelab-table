@@ -19,7 +19,7 @@ class TableInputStream:
     def get_table_input_stream(config, board, usestream=None) -> 'TableInputStream':
         # FIXME: implement factory
         cn = "OpenCVCameraTIS"
-        module_is = __import__('InputStream.' + cn)
+        module_is = __import__('LabTable.InputStream.' + cn)
         module_rs = getattr(module_is, cn)
         class_ = getattr(module_rs, cn)
         logger.debug("initializing {} as input stream".format(class_))

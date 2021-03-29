@@ -1,6 +1,6 @@
 from typing import Dict, Tuple
 
-from Model.Vector import Vector
+from LabTable.Model.Vector import Vector
 from .MapHandler import MapHandler
 from ..Configurator import Configurator, ConfigError
 from LabTable.Model.Extent import Extent

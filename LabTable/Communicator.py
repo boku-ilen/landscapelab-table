@@ -1,6 +1,7 @@
 import logging
 import threading
-from typing import Optional
+import uuid
+from typing import Optional, Callable
 
 import websocket
 import ssl
@@ -20,28 +21,28 @@ URL = "ws{s}://{host}:{port}"  # this is a websocket (ssl) connection
 CREATE_ASSET_MSG = {
     "keyword": "FEATURE_CREATE",
     "layer": "",
-    "etrs_x": 0.0,
-    "etrs_y": 0.0
+    "projected_x": 0.0,
+    "projected_y": 0.0
 }
 UPDATE_ASSET_MSG = {
     "keyword": "FEATURE_UPDATE",
     "layer": "",
     "object_id": 0,
-    "etrs_x": 0.0,
-    "etrs_y": 0.0
+    "projected_x": 0.0,
+    "projected_y": 0.0
 }
 REMOVE_ASSET_MSG = {
     "keyword": "FEATURE_REMOVE",
     "layer": "",
     "object_id": 0
 }
-GET_SCENARIOS_MSG = {
-    "keyword": "GET_SCENARIOS"
+GET_SETTINGS_MSG = {
+    "keyword": "GET_SETTINGS"
 }
 TELEPORT_TO_MSG = {
     "keyword": "TELEPORT_TO",
-    "etrs_x": 0.0,
-    "etrs_y": 0.0
+    "projected_x": 0.0,
+    "projected_y": 0.0
 }
 SET_EXTENT_MSG = {
     "keyword": "TABLE_EXTENT",
@@ -51,10 +52,7 @@ SET_EXTENT_MSG = {
     "max_y": 0.0
 }
 
-ANSWER_STRING = "REQUEST_RESULT"
-ASSETPOS_ID_STRING = "ASSETPOS_ID"
-SUCCESS_ANSWER = "SUCCESS"
-FAILURE_ANSWER = "FAILURE"
+ANSWER_STRING = "success"
 
 GET_INSTANCES = "/assetpos/get_all/"
 GET_ENERGY_TARGET = "/energy/target/"
@@ -68,17 +66,16 @@ class Communicator(threading.Thread):
     _ssl_context = None
     _connection_instance = None
     _connection_open = False
+    _message_stack = {}
 
-    def __init__(self, config, program_stage):
+    def __init__(self, config):
 
         # call super()
         threading.Thread.__init__(self)
         self.name = "[LabTable] Communicator"
 
         self.config = config
-        self.program_stage = program_stage  # FIXME: the program stage should be managed remotely now!
         self.extent_tracker = ExtentTracker.get_instance()
-        self.scenario_id = None
         self.brick_update_callback = lambda: None
         self._ssl_context = None
 
@@ -105,10 +102,27 @@ class Communicator(threading.Thread):
         self.start()
 
     def on_message(self, ws, message):
-        print(message)
+        json_message = json.loads(message)
+        logger.debug("received message: {}".format(json_message))
+        message_id = int(json_message["message_id"])
+        if json_message[ANSWER_STRING]:
+            if message_id in self._message_stack:
+                callback = self._message_stack[message_id]
+                del json_message["message_id"]
+                del json_message[ANSWER_STRING]
+                if callback:
+                    del self._message_stack[message_id]
+                    callback(json_message)
+                else:
+                    logger.warning("could not find associated callback to message: {}".format(message_id))
+            else:
+                logger.warning("received unknown answer in message: {}".format(message))
+                logger.debug(self._message_stack)
+        else:
+            logger.warning("request {} was unsuccessful.".format(message_id))
 
     def on_error(self, ws, error):
-        logger.error(error)
+        logger.exception(error)
         self._connection_open = False
 
     def on_close(self, ws):
@@ -116,6 +130,8 @@ class Communicator(threading.Thread):
 
     def on_open(self, ws):
         self._connection_open = True
+        # send a welcome message and set the config provided by the LL
+        self.get_labtable_settings()
 
     def close(self):
         self._connection_instance.close()
@@ -131,56 +147,65 @@ class Communicator(threading.Thread):
         self._connection_instance.run_forever()
 
     # this sends an message to the server and returns the json answer
-    def send_message(self, message: dict) -> Optional[dict]:
-
-        logger.debug("sending message: {}".format(message))
+    def send_message(self, message: dict, callback: Callable):
 
         if self._connection_open:
-            self._connection_instance.send(message)
-            ret = self._connection_instance.recv()
-            logger.debug("received message: {}".format(ret))
+            # add a message_id and register the answer callback to it
+            message_id = uuid.uuid4().int
+            message["message_id"] = str(message_id)
+            logger.debug("sending message: {}".format(message))
+            self._message_stack[message_id] = callback
 
-            # we expect json answers only
-            return json.loads(ret)
+            # send the actual message and return
+            self._connection_instance.send(json.dumps(message))
 
         else:
-            logger.error("Could not send message as there is no connection to the LandscapeLab!")
-            return None
+            logger.error("Could not send message {} as there is no connection to the LandscapeLab!".format(message))
+
+    # get the initial configuration settings related to the LabTable from the LL
+    def get_labtable_settings(self):
+
+        # store the settings we later got as answer in our configuration
+        def settings_callback(response: dict):
+            logger.debug(response)
+            for key in response:
+                group, entry = key.split("-")
+                self.config.set(group, entry, response[key])
+
+        message = GET_SETTINGS_MSG
+        # TODO: maybe fetch information about own system and send it to the LL
+        self.send_message(message, settings_callback)
 
     # Create remote brick instance
     def create_remote_brick_instance(self, brick: Brick):
+
+        def create_callback(response: dict):
+
+            if response.get(ANSWER_STRING) is SUCCESS_ANSWER:
+
+                # Get assetpos_id in response
+                brick.object_id = response.get(ASSETPOS_ID_STRING)
+
+                # call brick update callback function to update progress bars etc.
+                self.brick_update_callback()
+
+            # If the asset creation was not possible, set brick outdated
+            else:
+                logger.warning("could not remotely create brick {}".format(brick))
+                brick.status = BrickStatus.OUTDATED_BRICK
 
         logger.debug("creating a brick instance for {}".format(brick))
 
         # Compute geographical coordinates for bricks
         Extent.calc_world_pos(brick, self.extent_tracker.board, self.extent_tracker.map_extent)
 
-        # Map the brick asset_id from color & shape
-        # FIXME: generalize ProgramStage logic
-        if self.program_stage.current_stage == ProgramStage.EVALUATION:
-            brick.map_evaluation_asset_id(self.config)
-        else:
-            brick.map_asset_id(self.config)
-
         # Send request creating remote brick instance and save the response
         message = CREATE_ASSET_MSG.copy()
         message["layer"] = brick.layer_id
-        message["etrs_x"] = brick.map_pos_x
-        message["etrs_y"] = brick.map_pos_y
+        message["projected_x"] = brick.map_pos_x
+        message["projected_y"] = brick.map_pos_y
 
-        threading.Thread("[LabTable] ", self.send_message(message))
-        if response.get(ANSWER_STRING) is SUCCESS_ANSWER:
-
-            # Get assetpos_id in response
-            brick.object_id = response.get(ASSETPOS_ID_STRING)
-
-            # call brick update callback function to update progress bars etc.
-            self.brick_update_callback()
-
-        # If the asset creation was not possible, set brick outdated
-        else:
-            logger.warning("could not remotely create brick {}".format(brick))
-            brick.status = BrickStatus.OUTDATED_BRICK
+        self.send_message(message, create_callback)
 
     # Remove remote brick instance
     def remove_remote_brick_instance(self, brick_instance):
@@ -200,33 +225,13 @@ class Communicator(threading.Thread):
         else:
             logger.warning("could not remove remote brick {}".format(brick_instance))
 
-    def get_scenario_info(self, scenario_name):
-
-        # request_return = self.send_message("{}".format(GET_SCENARIO_INFO))
-
-        # FIXME: rework protocol
-        scenarios = {}  # WAS = json.loads(request_return.text)
-
-        for scenario_key in scenarios:
-            scenario = scenarios[scenario_key]
-
-            if scenario['name'] == scenario_name:
-                # save scenario id for further communication
-                self.scenario_id = scenario_key
-
-                return scenario
-
-        logger.error('Could not find scenario with name {}'.format(scenario_name))
-        # FIXME WAS: raise LookupError('No scenario with name {} exists'.format(scenario_name))
-
     def get_stored_brick_instances(self, asset_id):
 
         logger.debug("getting stored brick instances from the server...")
 
         stored_instances_list = []
 
-        stored_instances_msg = "{command}{asset_id}{json}".format(command=GET_INSTANCES, asset_id=str(asset_id),
-                                                                  json=JSON)
+        stored_instances_msg = "{command}{asset_id}{json}".format(command=GET_INSTANCES, asset_id=str(asset_id))
         stored_instances_response = self.send_message(stored_instances_msg)
 
         # FIXME: rework protocol
@@ -276,13 +281,16 @@ class Communicator(threading.Thread):
     # and informs the LandscapeLab
     def update_extent_info(self, extent: Extent):
 
+        def extent_callback(response: dict):
+            pass
+
         message = SET_EXTENT_MSG.copy()
         message["min_x"] = extent.x_min
         message["min_y"] = extent.y_min
         message["max_x"] = extent.x_max
         message["max_y"] = extent.y_max
 
-        self.send_message(message)
+        self.send_message(message, extent_callback)
 
     # checks how much energy a given asset type contributes
     # FIXME: this has to be generalized to work with various game objects

@@ -179,14 +179,16 @@ class BoardDetector:
             # data is not set yet, add the new found data
             if "TL" in code_data and self.all_codes_polygons_points[0] is None:
                 self.all_codes_polygons_points[0] = code.polygon
+                logger.debug("detected TL at {}".format(code.polygon))
             if "TR" in code_data and self.all_codes_polygons_points[1] is None:
                 self.all_codes_polygons_points[1] = code.polygon
+                logger.debug("detected TR at {}".format(code.polygon))
             if "BR" in code_data and self.all_codes_polygons_points[2] is None:
                 self.all_codes_polygons_points[2] = code.polygon
+                logger.debug("detected BL at {}".format(code.polygon))
             if "BL" in code_data and self.all_codes_polygons_points[3] is None:
                 self.all_codes_polygons_points[3] = code.polygon
-
-        logger.debug("All found codes polygon points: {}".format(self.all_codes_polygons_points))
+                logger.debug("detected BR at {}".format(code.polygon))
 
     # Detect the board using four QR-Codes in the board corners
     def detect_board(self, color_image):
@@ -380,10 +382,8 @@ class BoardDetector:
         diff = cv2.absdiff(color_image, self.background.astype("uint8"))
         diff = cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY)
         ret_val, diff = cv2.threshold(diff, self.board.threshold_qrcode, MAX_VALUE, cv2.THRESH_BINARY)
-        logger.debug("Using threshold for qr-codes {}".format(self.board.threshold_qrcode))
 
-        # Return difference between
-        # the current frame and background
+        # Return difference between the current frame and background
         return diff
 
     # saves the average image over a certain time period returns true if enough iterations were done
@@ -405,6 +405,9 @@ class BoardDetector:
     # Adjust cyclically the threshold for finding qr-codes
     # Example: 60 -> 76 -> 44 -> 90 -> 18 -> ...
     def adjust_threshold_qrcode(self):
+
+        # store last treshold value
+        old_th = self.board.threshold_qrcode
 
         # Count frames
         self.detect_corners_frames_number += 1
@@ -445,4 +448,5 @@ class BoardDetector:
             elif self.board.threshold_qrcode > MAX_THRESHOLD:
                 self.board.threshold_qrcode -= MAX_THRESHOLD
 
-
+        if old_th != self.board.threshold_qrcode:
+            logger.debug("changed qr-code treshold value to {}".format(self.board.threshold_qrcode))

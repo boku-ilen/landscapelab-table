@@ -15,11 +15,19 @@ class TableInputStream:
 
     @staticmethod
     def get_table_input_stream(config, board, usestream=None) -> 'TableInputStream':
+
+        ret = None
         cn = config.get("camera", "implementation") + "CameraTIS"
-        module_is = __import__('LabTable.InputStream.' + cn, fromlist=[cn])
-        class_ = getattr(module_is, cn)
-        logger.debug("initializing {} as input stream".format(class_))
-        return class_(config, board, usestream)
+
+        try:
+            module_is = __import__('LabTable.InputStream.' + cn, fromlist=[cn])
+            class_ = getattr(module_is, cn)
+            ret = class_(config, board, usestream)
+            logger.debug("initializing {} as input stream".format(class_))
+        except ModuleNotFoundError as e:
+            logger.fatal("Could not initialize camera with Module {}".format(cn))
+
+        return ret
 
     # initialize the input stream (from live camera or bag file)
     def __init__(self, config, board, usestream):

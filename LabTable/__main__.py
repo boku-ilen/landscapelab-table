@@ -134,7 +134,7 @@ class LabTable:
         region_of_interest = np.zeros((self.config.get("resolution", "height"),
                                        self.config.get("resolution", "width"), CHANNELS_NUMBER), np.uint8)
 
-        if self.input_stream.is_initialized():
+        if self.input_stream and self.input_stream.is_initialized():
             logger.info("initialized input stream")
 
             try:
@@ -175,10 +175,12 @@ class LabTable:
         self.server.close()
 
         # handle the output stream correctly
-        self.output_stream.close()
+        if self.output_stream:
+            self.output_stream.close()
 
         # make sure the stream ends correctly
-        self.input_stream.close()
+        if self.input_stream:
+            self.input_stream.close()
 
         self.main_map.end()
 

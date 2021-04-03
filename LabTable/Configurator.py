@@ -37,12 +37,14 @@ class Configurator:
     # Return searched json data
     def get(self, group, key):
 
+        value = ""  # FIXME:
+
         try:
             value = self.config_data[group][key]
             logger.debug("Get config data: {} -> {} with {}".format(group, key, value))
-        except:
+        except Exception as e:
             logger.warning("Getting config data {} -> {} without success".format(group, key))
-            raise ConfigError("Could not get config data {} -> {}".format(group, key))
+            logger.debug(e.__traceback__)
 
         # Return searched config data value
         return value

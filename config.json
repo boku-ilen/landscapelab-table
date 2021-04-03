@@ -14,7 +14,9 @@
   },
 
   "camera": {
-    "implementation": "Realsense"
+    "implementation": "Realsense",
+    "base_distance": 3.0,
+    "opencv_device_nr": 6
   },
 
   "resources": {

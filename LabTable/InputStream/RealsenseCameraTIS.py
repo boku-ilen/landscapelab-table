@@ -23,15 +23,15 @@ class RealsenseCameraTIS(TableInputStream):
     # initialize the input stream (from live camera or bag file)
     def __init__(self, config, board, usestream=None):
 
-        # initialize the base class
-        super().__init__(config, board, usestream)
-
         # initialize realsense specific settings
         self.pipeline = rs.pipeline()
         self.realsense_config = rs.config()
 
         # FIXME: missing frames when using videostream or too slow processing
         # https://github.com/IntelRealSense/librealsense/issues/2216
+
+        # initialize the base class
+        super().__init__(config, board, usestream)
 
         # Use recorded depth and color streams and its configuration
         # If problems with colors occur, check bgr/rgb channels configurations

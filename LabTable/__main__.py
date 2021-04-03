@@ -127,9 +127,6 @@ class LabTable:
     # Run bricks detection and tracking code
     def run(self):
 
-        # initialize the input stream
-        self.input_stream = TableInputStream.get_table_input_stream(self.config, self.board, usestream=self.used_stream)
-
         # Initialize ROI as a black RGB-image
         region_of_interest = np.zeros((self.config.get("resolution", "height"),
                                        self.config.get("resolution", "width"), CHANNELS_NUMBER), np.uint8)

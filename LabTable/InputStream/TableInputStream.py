@@ -38,6 +38,8 @@ class TableInputStream:
 
         self.board = board
 
+        logger.info("initialized input stream with board {} ({} x {})".format(board, self.width, self.height))
+
     @abstractmethod
     def get_frame(self):
         pass

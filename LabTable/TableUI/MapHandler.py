@@ -44,8 +44,9 @@ class MapHandler:
         # set socket & connection info
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         qgis_ip = config.get('qgis_interaction', 'qgis_ip')
+        local_ip = config.get('qgis_interaction', 'local_ip')
         self.qgis_addr = (qgis_ip, config.get('qgis_interaction', 'qgis_read_port'))
-        self.table_addr = (qgis_ip, config.get('qgis_interaction', 'table_read_port'))
+        self.table_addr = (local_ip, config.get('qgis_interaction', 'table_read_port'))
 
         # get communication info
         self.image_path: str = config.get('qgis_interaction', 'qgis_image_path')

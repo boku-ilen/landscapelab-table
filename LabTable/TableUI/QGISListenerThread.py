@@ -26,7 +26,7 @@ class QGISListenerThread(threading.Thread):
 
         # create socket
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.sock.bind((config.get('qgis_interaction', 'qgis_ip'), config.get('qgis_interaction', 'table_read_port')))
+        self.sock.bind((config.get('qgis_interaction', 'local_ip'), config.get('qgis_interaction', 'table_read_port')))
         self.udp_buffer_size = config.get('qgis_interaction', 'udp_buffer_size')
 
         # remember update keyword

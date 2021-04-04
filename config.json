@@ -221,10 +221,11 @@
 
   "qgis_interaction": {
     "qgis_ip": "127.0.0.1",
+    "local_ip": "127.0.0.1",
     "qgis_read_port": 5005,
     "table_read_port": 5006,
     "udp_buffer_size": 1024,
-    "qgis_image_path": "C:/landscapelab-dev/qgis/{}.png",
+    "qgis_image_path": "/tmp/{}.png",
     "update_keyword": "update:",
     "render_keyword": "render:",
     "exit_keyword": "exit"

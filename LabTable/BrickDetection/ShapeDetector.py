@@ -7,7 +7,9 @@
 
 import logging
 from builtins import staticmethod
-import cv2  # TODO: fix the requirements.txt or provide library
+from typing import Optional
+
+import cv2
 import numpy as np
 import math
 
@@ -92,7 +94,7 @@ class ShapeDetector:
 
     # Check if the contour is a brick
     # TODO: remove frame if nothing to draw anymore
-    def detect_brick(self, contour, frame) -> Brick:
+    def detect_brick(self, contour, frame) -> Optional[Brick]:
 
         # Initialize the contour name and approximate the contour
         # with Douglas-Peucker algorithm
@@ -113,7 +115,7 @@ class ShapeDetector:
                 centroid_x = int((moments_dict["m10"] / moments_dict["m00"]))
                 centroid_y = int((moments_dict["m01"] / moments_dict["m00"]))
 
-                # TODO: Control if work correctly
+                # TODO: test if algorithm works correctly
                 # Eliminate too small contours
                 if cv2.contourArea(contour) < self.min_square_area:
                     logger.debug("Don't draw -> area too small")
@@ -148,8 +150,7 @@ class ShapeDetector:
 
                             # return a Brick with the detected parameters
                             return Brick(centroid_x, centroid_y, contour_shape, detected_color)
-
-        return None  # FIXME: CG: we might to differ?
+        return None
 
     # Check if the contour has a brick shape: square or rectangle
     def check_if_square(self, rotated_bbox) -> BrickShape:

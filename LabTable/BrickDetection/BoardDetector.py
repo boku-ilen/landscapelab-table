@@ -42,6 +42,7 @@ MAX_THRESHOLD = 255
 class BoardDetector:
 
     background = None
+    last_color_image = None
 
     def __init__(self, config, threshold_qrcode):
 
@@ -392,12 +393,17 @@ class BoardDetector:
         # Save background
         if self.current_loop == 0:
             self.background = color_image.copy().astype("float")
+            self.last_color_image = self.background
 
-        if self.current_loop < MAX_LOOP_NUMBER:
+        if self.current_loop < MAX_LOOP_NUMBER:  # FIXME: add an additional earlier break if no more change is detected
             # Update a running average
             cv2.accumulateWeighted(color_image, self.background, INPUT_WEIGHT)
             self.current_loop += 1
+            if self.last_color_image.all() == self.background.all():
+                logger.debug("found a stable white balance")
+                return True
         else:
+            logger.debug("maximum numbers of frames reached for a stable white balance")
             return True
 
         return False

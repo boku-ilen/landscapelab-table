@@ -1,6 +1,6 @@
 from typing import Optional
 
-from LabTable.Model.Extent import Extent
+from .Model.Extent import Extent
 
 
 # singleton class that keeps track of the different Extents that need to be globally available

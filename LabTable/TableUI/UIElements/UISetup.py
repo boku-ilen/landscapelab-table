@@ -9,7 +9,7 @@ from .ProgressBar import ProgressBar
 from ..CallbackManager import CallbackManager, MapActions, UiActions, TrackerActions
 from ..MainMap import MainMap
 from ...Configurator import Configurator
-from ...Communicator import Communicator
+from Communication.Communicator import Communicator
 from LabTable.Model.ProgramStage import ProgramStage
 from LabTable.Model.Extent import Vector
 

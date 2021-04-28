@@ -3,9 +3,9 @@ import threading
 from typing import Callable
 
 from .Configurator import Configurator
-from .Communicator import Communicator
+from .Communication.Communicator import Communicator
 from .BrickDetection.Tracker import Tracker
-from LabTable.Model.ProgramStage import ProgramStage
+from .Model.ProgramStage import ProgramStage
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -15,15 +15,8 @@ WAIT_SECONDS = 5
 
 class SchedulerThread(threading.Thread):
 
-    def __init__(
-            self,
-            config: Configurator,
-            server: Communicator,
-            tracker: Tracker,
-            get_program_stage: Callable[[], ProgramStage],
-            progress_bar_update_function: Callable
-    ):
-        threading.Thread.__init__(self)
+    def __init__(self, config: Configurator, server: Communicator, tracker: Tracker,
+                 get_program_stage: Callable[[], ProgramStage], progress_bar_update_function: Callable):
 
         # call super()
         threading.Thread.__init__(self)
@@ -47,7 +40,6 @@ class SchedulerThread(threading.Thread):
 
             # check if in correct program stage
             if self.get_program_stage() is ProgramStage.PLANNING:
-
                 self.lock.acquire()
 
                 # sync bricks and the player with server
@@ -59,4 +51,3 @@ class SchedulerThread(threading.Thread):
                 self.lock.release()
 
             logger.debug("finished routine server request")
-

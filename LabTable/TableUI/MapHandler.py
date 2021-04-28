@@ -41,18 +41,6 @@ class MapHandler:
 
         self.crs = config.get("map_settings", "coordinate_reference_system")
 
-        # set socket & connection info
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        qgis_ip = config.get('qgis_interaction', 'qgis_ip')
-        local_ip = config.get('qgis_interaction', 'local_ip')
-        self.qgis_addr = (qgis_ip, config.get('qgis_interaction', 'qgis_read_port'))
-        self.table_addr = (local_ip, config.get('qgis_interaction', 'table_read_port'))
-
-        # get communication info
-        self.image_path: str = config.get('qgis_interaction', 'qgis_image_path')
-        self.render_keyword = config.get('qgis_interaction', 'render_keyword')
-        self.exit_keyword = config.get('qgis_interaction', 'exit_keyword')
-
         # set extent modifiers
         pan_up_modifier = np.array([0, 1, 0, 1])
         pan_down_modifier = np.array([0, -1, 0, -1])
@@ -77,11 +65,12 @@ class MapHandler:
         self.zoom_out = partial(self.modify_extent, self.zoom_out_modifier, zoom_strength)
 
     # reloads the viewport image
-    def refresh(self, extent: Extent):
+    def refresh(self, extent: Extent, buffer):
         logger.info("refreshing map")
 
         unused_slot = (self.current_image + 1) % 2
 
+        # FIXME: use cv.imdecode from a framebuffer
         image = cv.imread(self.image_path.format(self.name), -1)
         image = ImageHandler.ensure_alpha_channel(image)
 
@@ -151,30 +140,6 @@ class MapHandler:
         # request render
         self.request_render(next_extent)
 
-    # requests a new rendered map extent from qgis plugin
-    def request_render(self, extent: Extent = None):
-
-        if extent is None:
-            extent = self.current_extent
-
-        self.send(
-            '{keyword}{target_name} {required_resolution} {crs} {extent0} {extent1} {extent2} {extent3}'.format(
-                keyword=self.render_keyword, target_name=self.name, required_resolution=self.resolution_x, crs=self.crs,
-                extent0=extent.x_min, extent1=extent.y_min, extent2=extent.x_max, extent3=extent.y_max
-            )
-            .encode()
-        )
-
-    # sends a message to qgis
-    def send(self, msg: bytes):
-        logger.debug('sending to qgis: {}'.format(msg))
-        self.sock.sendto(msg, self.qgis_addr)
-
     # returns current map image
     def get_map_image(self):
         return self.map_image[self.current_image]
-
-    # closes sockets
-    def end(self):
-        self.sock.sendto(self.exit_keyword.encode(), self.table_addr)
-        self.sock.close()

@@ -2,7 +2,9 @@ import json
 import logging.config
 import numpy as np
 
-from LabTable.Model.ProgramStage import ProgramStage, CurrentProgramStage
+from Communication.LLCommunicator import LLCommunicator
+from .Communication.QGISCommunicator import QGISCommunicator
+from .Model.ProgramStage import ProgramStage, CurrentProgramStage
 from .BrickDetection.BoardDetector import BoardDetector
 from .BrickDetection.ShapeDetector import ShapeDetector
 from .InputStream.TableInputStream import TableInputStream
@@ -11,13 +13,10 @@ from .TableUI.MainMap import MainMap
 from .TableUI.CallbackManager import CallbackManager
 from .TableUI.UIElements.UISetup import setup_ui
 from .TableUI.UIElements.UIElement import UIElement
-from .Communicator import Communicator
 from .BrickDetection.Tracker import Tracker
 from .Configurator import Configurator
 from .ParameterManager import ParameterManager
-from .TableUI.QGISListenerThread import QGISListenerThread
 from .SchedulerThread import SchedulerThread
-
 
 # configure logging
 logger = logging.getLogger(__name__)
@@ -36,7 +35,6 @@ except Exception as e:
     print(e)
     logging.basicConfig(level=logging.INFO)
     logging.info("Could not initialize: logging.conf not found or misconfigured")
-
 
 # Number of RGB channels in
 # region of interest image
@@ -69,51 +67,38 @@ class LabTable:
 
         # Initialize websocket communication class
         # and load the settings from the LL
-        self.server = Communicator(self.config)
+        self.ll_communicator = LLCommunicator(self.config)
+        self.ll_communicator.get_labtable_settings()
 
         # Initialize the centroid tracker
-        self.tracker = Tracker(self.config, self.board, self.server, ui_root)
+        self.tracker = Tracker(self.config, self.board, self.ll_communicator, ui_root)
         self.callback_manager.set_tracker_callbacks(self.tracker)
 
         # initialize map, map callbacks and ui
-        self.main_map = MainMap(self.config, 'main_map', self.server)
+        self.main_map = MainMap(self.config, 'main_map', self.ll_communicator)
         self.callback_manager.set_map_callbacks(self.main_map)
         mini_map, planning_ui, progress_bar_update_function = \
-            setup_ui(ui_root, self.main_map,  self.config, self.server, self.callback_manager)
-        map_dict = {self.main_map.name: self.main_map, mini_map.name: mini_map}
+            setup_ui(ui_root, self.main_map, self.config, self.ll_communicator, self.callback_manager)
 
-        # Initialize and start the QGIS listener Thread
+        # Initialize the qgis communication
         # also request the first rendered map section
-        self.qgis_listener_thread = QGISListenerThread(self.config, map_dict)
-        self.qgis_listener_thread.start()
+        map_dict = {self.main_map.name: self.main_map, mini_map.name: mini_map}
+        self.qgis_communicator = QGISCommunicator(self.config, map_dict)
         self.main_map.request_render()
         mini_map.request_render()
 
         # link the progress_bar_update_function to the brick_update_callback so that it will be called whenever an asset
         # is added or removed from the server
-        self.server.brick_update_callback = progress_bar_update_function
+        self.ll_communicator.brick_update_callback = progress_bar_update_function
 
-        # Initialize and start the server listener thread
-        self.server_listener_thread = SchedulerThread(
-            self.config,
-            self.server,
-            self.tracker,
-            self.get_program_stage,
-            progress_bar_update_function
-        )
+        # Initialize and start the data syncronization thread
+        self.server_listener_thread = SchedulerThread(self.config, self.ll_communicator, self.tracker,
+                                                      self.get_program_stage, progress_bar_update_function)
         self.server_listener_thread.start()
 
         # initialize the input and output stream
-        self.output_stream = TableOutputStream(
-            self.main_map,
-            ui_root,
-            self.callback_manager,
-            self.tracker,
-            self.config,
-            self.board,
-            self.program_stage,
-            self.server_listener_thread
-        )
+        self.output_stream = TableOutputStream(self.main_map, ui_root, self.callback_manager, self.tracker,
+                                               self.config, self.board, self.program_stage, self.server_listener_thread)
         self.callback_manager.set_output_actions(self.output_stream)
         self.input_stream = TableInputStream.get_table_input_stream(self.config, self.board, usestream=self.used_stream)
 
@@ -169,7 +154,8 @@ class LabTable:
                 logger.debug(e.__traceback__)
 
         # close the websocket connection
-        self.server.close()
+        self.ll_communicator.close()
+        self.qgis_communicator.close()
 
         # handle the output stream correctly
         if self.output_stream:
@@ -178,8 +164,6 @@ class LabTable:
         # make sure the stream ends correctly
         if self.input_stream:
             self.input_stream.close()
-
-        self.main_map.end()
 
     def white_balance(self, color_image):
 
@@ -192,8 +176,6 @@ class LabTable:
     # -> self.board_detector.all_codes_polygons_points
     def detect_corners(self, color_image):
 
-        logger.debug("No QR-code detector result")
-
         # Compute distance to the board
         self.input_stream.get_distance_to_board()
 
@@ -202,7 +184,6 @@ class LabTable:
 
         # if all boarders were found change channel and start next stage
         if all_board_corners_found:
-
             # Use distance to set possible brick size
             logger.debug("Calculate possible brick size")
             self.shape_detector.calculate_possible_brick_dimensions(self.board.distance)
@@ -245,7 +226,6 @@ class LabTable:
         # Get already stored brick instances from server
         if self.program_stage.current_stage == ProgramStage.PLANNING \
                 and not self.added_stored_bricks_flag:
-
             self.tracker.sync_with_server_side_bricks()
 
             self.added_stored_bricks_flag = True

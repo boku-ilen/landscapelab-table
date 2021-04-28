@@ -7,4 +7,4 @@ pyzbar  # (https://pypi.org/project/pyzbar/)
 numpy
 shapely
 scipy
-websockets  # is not builtin by default
+websocket-client  # TODO: maybe also change to asyncio based websockets library

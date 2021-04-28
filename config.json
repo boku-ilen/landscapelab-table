@@ -33,7 +33,7 @@
     "qr_top_right": {
       "path": ["QR_Codes", "top_right.png"]
     },
-    "qr_size": 300,
+    "qr_size": 150,
 
 
     "outdated_brick": {
@@ -157,11 +157,17 @@
     "name": "shape_detection_output.avi"
   },
 
-  "server": {
+  "landscapelab": {
     "ip": "127.0.0.1",
     "port": 5004,
     "ssl_pem_file": null
     },
+
+  "qgis": {
+    "ip": "127.0.1.1",
+    "port": 5005,
+    "ssl_pem_file": null
+  },
 
   "resolution": {
     "width": 1280,
@@ -185,7 +191,6 @@
 
   "tracker_thresholds": {
     "min_distance": 6,
-
     "external_min_appeared": 6,
     "external_max_disappeared": 40,
     "internal_min_appeared": 3,
@@ -217,18 +222,6 @@
     "2" : "RECTANGLE_BRICK, RED_BRICK",
     "3" : "SQUARE_BRICK, BLUE_BRICK",
     "13" : "None, None"
-  },
-
-  "qgis_interaction": {
-    "qgis_ip": "127.0.0.1",
-    "local_ip": "127.0.0.1",
-    "qgis_read_port": 5005,
-    "table_read_port": 5006,
-    "udp_buffer_size": 1024,
-    "qgis_image_path": "/tmp/{}.png",
-    "update_keyword": "update:",
-    "render_keyword": "render:",
-    "exit_keyword": "exit"
   },
 
   "ui_settings": {

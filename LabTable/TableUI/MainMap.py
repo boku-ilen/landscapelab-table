@@ -1,10 +1,8 @@
-from typing import Dict, Tuple
-
 from LabTable.Model.Vector import Vector
 from .MapHandler import MapHandler
-from ..Configurator import Configurator, ConfigError
+from ..Configurator import Configurator
 from LabTable.Model.Extent import Extent
-from ..Communicator import Communicator
+from Communication.Communicator import Communicator
 
 
 # MainMap class

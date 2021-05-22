@@ -84,8 +84,8 @@ class LabTable:
         # also request the first rendered map section
         map_dict = {self.main_map.name: self.main_map, mini_map.name: mini_map}
         self.qgis_communicator = QGISCommunicator(self.config, map_dict)
-        self.main_map.request_render()
-        mini_map.request_render()
+        self.qgis_communicator.request_render(self.main_map)
+        self.qgis_communicator.request_render(mini_map)
 
         # link the progress_bar_update_function to the brick_update_callback so that it will be called whenever an asset
         # is added or removed from the server

@@ -1,9 +1,9 @@
 import logging
 
 from TableUI.MapHandler import MapHandler
-from ..Configurator import Configurator
-from ..Model.Extent import Extent
-from .Communicator import Communicator
+from LabTable.Configurator import Configurator
+from LabTable.Model.Extent import Extent
+from LabTable.Communication.Communicator import Communicator
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -31,9 +31,9 @@ class QGISCommunicator(Communicator):
     def __init__(self, config: Configurator, callbacks: dict):
 
         # initialize connection string and ssl configuration
-        self.ip = self.config.get("qgis", "ip")
-        self.port = self.config.get("qgis", "port")
-        self.ssl_pem_file = self.config.get("server", "ssl_pem_file")
+        self.ip = config.get("qgis", "ip")
+        self.port = config.get("qgis", "port")
+        self.ssl_pem_file = config.get("server", "ssl_pem_file")
 
         # call super
         super().__init__(config)

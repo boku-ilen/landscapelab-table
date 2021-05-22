@@ -4,7 +4,7 @@ import logging
 import cv2
 import os
 
-from ..Configurator import Configurator, ConfigError
+from LabTable.Configurator import Configurator, ConfigError
 
 # enable logger
 logger = logging.getLogger(__name__)

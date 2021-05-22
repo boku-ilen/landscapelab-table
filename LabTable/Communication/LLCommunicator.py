@@ -1,10 +1,11 @@
 import logging
 import json
 
-from .Communicator import Communicator
+from Configurator import Configurator
+from LabTable.Communication.Communicator import Communicator
 from LabTable.Model.Brick import Brick, BrickStatus
 from LabTable.Model.Extent import Extent
-from ExtentTracker import ExtentTracker
+from LabTable.ExtentTracker import ExtentTracker
 
 
 # Configure logging
@@ -53,11 +54,11 @@ GET_ENERGY_CONTRIBUTION = "/energy/contribution/"
 # the LL specific implementation part for the communication
 class LLCommunicator(Communicator):
 
-    def __init__(self, config):
+    def __init__(self, config: Configurator):
 
         # call super()
-        self.ip = self.config.get("landscapelab", "ip")
-        self.port = self.config.get("landscapelab", "port")
+        self.ip = config.get("landscapelab", "ip")
+        self.port = config.get("landscapelab", "port")
         super().__init__(config)
 
         self.extent_tracker = ExtentTracker.get_instance()

@@ -7,8 +7,8 @@ import websocket
 import ssl
 import json
 
-from Configurator import ConfigError
-from ExtentTracker import ExtentTracker
+from LabTable.Configurator import ConfigError
+from LabTable.ExtentTracker import ExtentTracker
 
 
 # Configure logging

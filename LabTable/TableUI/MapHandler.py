@@ -1,14 +1,13 @@
 import numpy as np
 import cv2 as cv
-import socket
 from functools import partial
 from typing import Tuple
 import logging
 
-from .ImageHandler import ImageHandler
-from ..Configurator import Configurator
+from LabTable.TableUI.ImageHandler import ImageHandler
+from LabTable.Configurator import Configurator
 from LabTable.Model.Extent import Extent
-from ..ExtentTracker import ExtentTracker
+from LabTable.ExtentTracker import ExtentTracker
 
 # Configure Logger
 logger = logging.getLogger(__name__)

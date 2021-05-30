@@ -1,3 +1,4 @@
+import numpy
 import numpy as np
 import cv2 as cv
 from functools import partial
@@ -65,12 +66,12 @@ class MapHandler:
 
     # reloads the viewport image
     def refresh(self, extent: Extent, buffer):
-        logger.info("refreshing map")
+        logger.debug("refreshing map")
 
         unused_slot = (self.current_image + 1) % 2
 
-        # FIXME: use cv.imdecode from a framebuffer
-        image = cv.imread(self.image_path.format(self.name), -1)
+        png_array = numpy.frombuffer(buffer, dtype=np.uint8)
+        image = cv.imdecode(png_array, cv.IMREAD_UNCHANGED)
         image = ImageHandler.ensure_alpha_channel(image)
 
         # put image on white background to eliminate issues with 4 channel image display

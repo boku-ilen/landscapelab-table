@@ -28,6 +28,9 @@ class Communicator(threading.Thread):
     _connection_instance = None
     _connection_open = False
     _message_stack = {}
+    ssl_pem_file = None
+    ip = None
+    port = None
 
     def __init__(self, config):
 
@@ -40,24 +43,18 @@ class Communicator(threading.Thread):
         self.brick_update_callback = lambda: None
         self._ssl_context = None
 
-        # initialize connection string and ssl configuration
-        # FIXME: we have to differenciate QGIS from LL
-        ip = self.config.get("server", "ip")
-        port = self.config.get("server", "port")
-        ssl_pem_file = self.config.get("server", "ssl_pem_file")
-
         # if ssl is configured load the pem file
         s = ""
-        if ssl_pem_file:
+        if self.ssl_pem_file:
             self._ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
             try:
-                self._ssl_context.load_verify_locations(ssl_pem_file)
+                self._ssl_context.load_verify_locations(self.ssl_pem_file)
                 s = "s"
             except FileNotFoundError:
-                logger.fatal("SSL file configured but not found: {}".format(ssl_pem_file))
-                raise ConfigError("SSL file configured but not found: {}".format(ssl_pem_file))
+                logger.fatal("SSL file configured but not found: {}".format(self.ssl_pem_file))
+                raise ConfigError("SSL file configured but not found: {}".format(self.ssl_pem_file))
 
-        self._uri = URL.format(s=s, host=ip, port=port)
+        self._uri = URL.format(s=s, host=self.ip, port=self.port)
         logger.info("configured remote URL to {}".format(self._uri))
 
         # start the listener thread
@@ -89,9 +86,11 @@ class Communicator(threading.Thread):
 
     def on_close(self, ws):
         self._connection_open = False
+        logger.debug("Connection to {} closed.".format(self._uri))
 
     def on_open(self, ws):
         self._connection_open = True
+        logger.debug("Connection to {} established".format(self._uri))
 
     def close(self):
         self._connection_instance.close()
@@ -113,11 +112,11 @@ class Communicator(threading.Thread):
             # add a message_id and register the answer callback to it
             message_id = uuid.uuid4().int
             message["message_id"] = str(message_id)
-            logger.debug("sending message: {}".format(message))
             self._message_stack[message_id] = callback
 
             # send the actual message and return
             self._connection_instance.send(json.dumps(message))
+            logger.debug("sent message: {}".format(message))
 
         else:
-            logger.error("Could not send message {} as there is no connection to the LandscapeLab!".format(message))
+            logger.error("Could not send message {} to {} as the connection is closed!".format(message, self._uri))

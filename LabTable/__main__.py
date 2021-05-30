@@ -81,11 +81,8 @@ class LabTable:
             setup_ui(ui_root, self.main_map, self.config, self.ll_communicator, self.callback_manager)
 
         # Initialize the qgis communication
-        # also request the first rendered map section
         map_dict = {self.main_map.name: self.main_map, mini_map.name: mini_map}
         self.qgis_communicator = QGISCommunicator(self.config, map_dict)
-        self.qgis_communicator.request_render(self.main_map)
-        self.qgis_communicator.request_render(mini_map)
 
         # link the progress_bar_update_function to the brick_update_callback so that it will be called whenever an asset
         # is added or removed from the server
@@ -101,6 +98,10 @@ class LabTable:
                                                self.config, self.board, self.program_stage, self.server_listener_thread)
         self.callback_manager.set_output_actions(self.output_stream)
         self.input_stream = TableInputStream.get_table_input_stream(self.config, self.board, usestream=self.used_stream)
+
+        # also request the first rendered map section
+        self.qgis_communicator.request_render(self.main_map)
+        self.qgis_communicator.request_render(mini_map)
 
         # initialize the brick detector
         self.shape_detector = ShapeDetector(self.config, self.output_stream)

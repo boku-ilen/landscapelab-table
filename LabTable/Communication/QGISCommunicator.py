@@ -1,3 +1,5 @@
+import base64
+
 import logging
 
 from TableUI.MapHandler import MapHandler
@@ -50,6 +52,10 @@ class QGISCommunicator(Communicator):
                             float(response["extent"]["x_max"]),
                             float(response["extent"]["y_max"]),
                             True)
+
+            # convert response to the bytebuffer
+            base64_bytes = response["image"].encode("ascii")
+            buffer = base64.standard_b64decode(base64_bytes)
 
             self.callbacks[response["target"]].refresh(extent, buffer)
 

@@ -50,6 +50,9 @@ class LabTable:
         self.config = Configurator()
         TableOutputStream.set_beamer_config_info(self.config)
 
+        # Initialize websocket communication class
+        self.ll_communicator = LLCommunicator(self.config)
+
         # create ui root element and callback manager
         ui_root = UIElement()
         self.callback_manager = CallbackManager(self.config)
@@ -65,13 +68,8 @@ class LabTable:
         self.board_detector = BoardDetector(self.config, self.config.get("qr_code", "threshold"))
         self.board = self.board_detector.board
 
-        # Initialize websocket communication class
-        # and load the settings from the LL
-        self.ll_communicator = LLCommunicator(self.config)
-        self.ll_communicator.get_labtable_settings()
-
         # Initialize the centroid tracker
-        self.tracker = Tracker(self.config, self.board, self.ll_communicator, ui_root)
+        self.tracker = Tracker(self.config, self.ll_communicator, ui_root)
         self.callback_manager.set_tracker_callbacks(self.tracker)
 
         # initialize map, map callbacks and ui
@@ -99,7 +97,7 @@ class LabTable:
         self.callback_manager.set_output_actions(self.output_stream)
         self.input_stream = TableInputStream.get_table_input_stream(self.config, self.board, usestream=self.used_stream)
 
-        # also request the first rendered map section
+        # request the first rendered map section  TODO: is this really already necessairy?
         self.qgis_communicator.request_render(self.main_map)
         self.qgis_communicator.request_render(mini_map)
 

@@ -64,12 +64,15 @@ class LLCommunicator(Communicator):
         self.extent_tracker = ExtentTracker.get_instance()
         self.brick_update_callback = lambda: None
 
+    def on_open(self, ws):
+        super().on_open(ws)
+        self.get_labtable_settings()
+
     # get the initial configuration settings related to the LabTable from the LL
     def get_labtable_settings(self):
 
         # store the settings we later got as answer in our configuration
         def settings_callback(response: dict):
-            logger.debug(response)
             for key in response:
                 group, entry = key.split("-")
                 self.config.set(group, entry, response[key])

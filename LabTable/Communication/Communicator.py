@@ -62,7 +62,7 @@ class Communicator(threading.Thread):
 
     def on_message(self, ws, message):
         json_message = json.loads(message)
-        logger.debug("received message: {}".format(json_message))
+        logger.debug("received message: {:.250}".format(message))
         message_id = int(json_message["message_id"])
         if json_message[ANSWER_STRING]:
             if message_id in self._message_stack:

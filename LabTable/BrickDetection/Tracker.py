@@ -26,7 +26,7 @@ class Tracker:
     external_min_appeared: int = None
     external_max_disappeared: int = None
 
-    def __init__(self, config, board, server_communicator, ui_root: UIElement):
+    def __init__(self, config, server_communicator, ui_root: UIElement):
         self.config = config
         self.extent_tracker = ExtentTracker.get_instance()
         self.server_communicator = server_communicator

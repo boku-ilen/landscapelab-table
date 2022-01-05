@@ -12,22 +12,24 @@ from LabTable.ExtentTracker import ExtentTracker
 logger = logging.getLogger(__name__)
 
 # remote communication protocol
+GET_ASSETS_MSG = {
+    "keyword": "GET_OBJECT_LAYER_DATA",
+    "layer_name": ""
+}
 CREATE_ASSET_MSG = {
-    "keyword": "FEATURE_CREATE",
-    "layer": "",
-    "projected_x": 0.0,
-    "projected_y": 0.0
+    "keyword": "CREATE_OBJECT",
+    "layer_name": "",
+    "position": [0.0, 0.0]
 }
 UPDATE_ASSET_MSG = {
-    "keyword": "FEATURE_UPDATE",
-    "layer": "",
+    "keyword": "SET_OBJECT_POSITION",
+    "layer_name": "",
     "object_id": 0,
-    "projected_x": 0.0,
-    "projected_y": 0.0
+    "position": [0.0, 0.0]
 }
 REMOVE_ASSET_MSG = {
-    "keyword": "FEATURE_REMOVE",
-    "layer": "",
+    "keyword": "REMOVE_OBJECT",
+    "layer_name": "",
     "object_id": 0
 }
 GET_SETTINGS_MSG = {
@@ -46,7 +48,6 @@ SET_EXTENT_MSG = {
     "max_y": 0.0
 }
 
-GET_INSTANCES = "/assetpos/get_all/"
 GET_ENERGY_TARGET = "/energy/target/"
 GET_ENERGY_CONTRIBUTION = "/energy/contribution/"
 
@@ -96,91 +97,92 @@ class LLCommunicator(Communicator):
 
             # If the asset creation was not possible, set brick outdated
             else:
-                logger.warning("could not remotely create brick {}".format(brick))
+                logger.warning(
+                    "could not remotely create brick {}".format(brick))
                 brick.status = BrickStatus.OUTDATED_BRICK
 
         logger.debug("creating a brick instance for {}".format(brick))
 
         # Compute geographical coordinates for bricks
-        Extent.calc_world_pos(brick, self.extent_tracker.board, self.extent_tracker.map_extent)
+        Extent.calc_world_pos(brick, self.extent_tracker.board,
+                              self.extent_tracker.map_extent)
 
         # Send request creating remote brick instance and save the response
         message = CREATE_ASSET_MSG.copy()
-        message["layer"] = brick.layer_id
-        message["projected_x"] = brick.map_pos_x
-        message["projected_y"] = brick.map_pos_y
+        message["layer_name"] = brick.layer_id
+        message["position"] = [brick.map_pos_x, brick.map_pos_y]
 
         self.send_message(message, create_callback)
 
     # Remove remote brick instance
     def remove_remote_brick_instance(self, brick_instance):
 
+        def remove_callback(response: dict):
+            if response.get(ANSWER_STRING) == SUCCESS_ANSWER:
+                # call brick update callback function to update progress bars etc.
+                self.brick_update_callback()
+            else:
+                logger.warning(
+                    "could not remove remote brick {}".format(brick_instance))
+
         message = REMOVE_ASSET_MSG.copy()
-        message["layer"] = brick_instance.layer
+        message["layer_name"] = brick_instance.layer
         message["object_id"] = brick_instance.object_id
 
         # Send a request to remove brick instance
-        response = self.send_message(message)
+        self.send_message(message, remove_callback)
 
-        if response.get(ANSWER_STRING) == SUCCESS_ANSWER:
+    def get_stored_brick_instances(self, layer_name, result_callback):
+        def get_instances_callback(response: dict):
+            stored_assets = response["objects"]
+            stored_instances_list = []
 
-            # call brick update callback function to update progress bars etc.
-            self.brick_update_callback()
+            if stored_assets is not None:
 
-        else:
-            logger.warning("could not remove remote brick {}".format(brick_instance))
+                # Save all instances with their properties as a list
+                for asset in stored_assets:
 
-    def get_stored_brick_instances(self, asset_id):
+                    # Create a brick instance
+                    stored_instance = Brick(None, None, None, None)
+
+                    # Get the map position of the player
+                    position = asset["position"]
+                    stored_instance.map_pos_x = position[0]
+                    stored_instance.map_pos_y = position[1]
+
+                    shape = None
+                    color = None
+                    try:
+                        # Map a shape and color using known asset_id
+                        shape_color = self.config.get(
+                            "stored_instances", str(asset["id"]))
+                        shape = shape_color.split(', ')[0]
+                        color = shape_color.split(', ')[1]
+                    except:
+                        logger.info("Mapping of color and shape for asset_id {} is not possible".format(
+                            str(asset["id"])))
+
+                    # Add missing properties
+                    stored_instance.shape = shape
+                    stored_instance.color = color
+                    stored_instance.layer_id = layer_name
+                    stored_instance.object_id = asset["id"]
+                    stored_instance.status = BrickStatus.EXTERNAL_BRICK
+
+                    # Calculate map position of a brick
+                    Extent.calc_local_pos(stored_instance, self.extent_tracker.board,
+                                          self.extent_tracker.map_extent)
+
+                    stored_instances_list.append(stored_instance)
+
+            result_callback(stored_instances_list)
 
         logger.debug("getting stored brick instances from the server...")
 
-        stored_instances_list = []
+        message = GET_ASSETS_MSG.copy()
+        message["layer_name"] = layer_name
 
-        stored_instances_msg = "{command}{asset_id}{json}".format(command=GET_INSTANCES, asset_id=str(asset_id))
-        stored_instances_response = self.send_message(stored_instances_msg)
-
-        # FIXME: rework protocol
-        # If status code is 200, save response text
-        bricks_instance_response_text = json.loads(stored_instances_response.text)
-        stored_assets = bricks_instance_response_text["assets"]
-
-        if stored_assets is not None:
-
-            # Save all instances with their properties as a list
-            for assetpos_id in stored_assets:
-
-                # Create a brick instance
-                stored_instance = Brick(None, None, None, None)
-
-                # Get the map position of the player
-                position = stored_assets[assetpos_id]["position"]
-                stored_instance.map_pos_x = position[0]
-                stored_instance.map_pos_y = position[1]
-
-                shape = None
-                color = None
-                try:
-                    # Map a shape and color using known asset_id
-                    shape_color = self.config.get("stored_instances", str(asset_id))
-                    shape = shape_color.split(', ')[0]
-                    color = shape_color.split(', ')[1]
-                except:
-                    logger.info("Mapping of color and shape for asset_id {} is not possible".format(str(asset_id)))
-
-                # Add missing properties
-                stored_instance.shape = shape
-                stored_instance.color = color
-                stored_instance.layer_id = asset_id
-                stored_instance.object_id = assetpos_id
-                stored_instance.status = BrickStatus.EXTERNAL_BRICK
-
-                # Calculate map position of a brick
-                Extent.calc_local_pos(stored_instance, self.extent_tracker.board,
-                                      self.extent_tracker.map_extent)
-
-                stored_instances_list.append(stored_instance)
-
-        return stored_instances_list
+        self.send_message(message, get_instances_callback)
 
     # initiates corner point update of the given main map extent
     # and informs the LandscapeLab
@@ -211,7 +213,8 @@ class LLCommunicator(Communicator):
         # check if request successful
         # FIXME: rework protocol
         if not self.check_status_code_200(contrib_return.status_code):
-            raise ConnectionError("Bad Request: {}".format(get_asset_contrib_msg))
+            raise ConnectionError(
+                "Bad Request: {}".format(get_asset_contrib_msg))
 
         # return energy contribution
         return json.loads(contrib_return.text)['total_energy_contribution']

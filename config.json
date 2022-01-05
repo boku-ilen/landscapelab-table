@@ -7,12 +7,6 @@
     "5": "be careful when renaming these keys, as it is easy to miss instances, where the program accesses these"
   },
 
-  "general": {
-    "mini_map_extent": null,
-    "NOTE2": "if mini_map_extent is null it will be calculated automatically, otherwise it can be overwritten using [center_x, center_y, zoom_width_in_m]",
-    "start_zoom": 20000
-  },
-
   "camera": {
     "implementation": "Realsense",
     "base_distance": 3.0,
@@ -33,93 +27,75 @@
     "qr_top_right": {
       "path": ["QR_Codes", "top_right.png"]
     },
-    "qr_size": 150,
-
 
     "outdated_brick": {
       "path": ["brick_overlays", "outdated.png"],
       "center": [32,32]
     },
-
     "unknown_brick": {
       "path": ["brick_overlays", "unknown.png"],
       "center": [32,32]
     },
-
     "windmill_brick": {
       "path":["brick_overlays", "wind_brick_indicator.png"],
       "size": [100,100],
       "center": [50,50]
     },
-
     "pv_brick": {
       "path": ["brick_overlays", "pv_brick_indicator.png"],
       "size": [100, 100],
       "center": [50, 50]
     },
-
     "internal_brick": {
       "path": ["brick_overlays", "internal_indicator.png"],
       "size": [20, 20],
       "center": [10, 10]
     },
-
     "windmill_icon": {
       "path":["brick_overlays", "symbol_wind.png"],
       "size": [50,50],
       "center": [25,25]
     },
-
     "pv_icon": {
       "path": ["brick_overlays", "symbol_pv.png"],
       "size": [50, 50],
       "center": [25, 25]
     },
-
     "yes_icon": {
       "path": ["brick_overlays", "symbol_yes.png"],
       "size": [50, 50],
       "center": [25, 25]
     },
-
     "no_icon": {
       "path": ["brick_overlays", "symbol_no.png"],
       "size": [50, 50],
       "center": [25, 25]
     },
-
     "player_teleport": {
       "path": ["brick_overlays", "symbol_player_teleport.png"],
       "size": [50, 50],
       "center": [25, 25]
     },
-
     "player_position": {
       "path": ["brick_overlays", "symbol_player_position.png"],
       "size": [50, 50],
       "center": [25, 25]
     },
-
     "button_left": {
       "path": ["button_icons", "left.png"]
     },
-
     "button_right": {
       "path": ["button_icons", "right.png"]
     },
-
     "button_up": {
       "path": ["button_icons", "up.png"]
     },
-
     "button_down": {
       "path": ["button_icons", "down.png"]
     },
-
     "button_zoom_in": {
       "path": ["button_icons", "zoom_in.png"]
     },
-
     "button_zoom_out": {
       "path": ["button_icons", "zoom_out.png"]
     },
@@ -130,8 +106,8 @@
 
   "brick_icon_mappings": {
     "NOTE1": "configure brick icons by specifying under which conditions they should be used",
-    "NOTE2": "if the brick is internal you it is differentiated between color and brick shape",
-    "NOTE3": "if the brick is external you it is differentiated between asset_id and if the brick is virtual or not",
+    "NOTE2": "if the brick is internal it is differentiated between color and brick shape",
+    "NOTE3": "if the brick is external it is differentiated between asset_id and if the brick is virtual or not",
     "NOTE4": "separate requirements with '.'",
     "NOTE5": "if a requirement is left empty the category will not be restricted",
     "NOTE6": "the first restriction-set that fits to a brick will be selected",
@@ -186,7 +162,8 @@
   },
 
   "qr_code": {
-    "threshold": 60
+    "threshold": 60,
+    "size": 500
   },
 
   "tracker_thresholds": {
@@ -271,18 +248,16 @@
   },
 
   "map_settings": {
-    "extent_width":[
-      NaN, NaN
-    ],
-    "extent_height":[
-      NaN, NaN
-    ],
+    "start_zoom": 20000,
+    "start_x": 0,
+    "start_y": 0,
     "coordinate_reference_system": "EPSG:3857",
     "extent_changed": false,
     "map_refreshed": true,
     "pan_distance": [0.5, 0.75, 0.85],
     "zoom_strength": [0.2, 0.5, 0.9],
     "map_zoom_limits": [1000, 100000],
+    "mini_map_extent": null,
     "mini_map_zoom_limits": [10000, 1000000]
   }
 }

@@ -67,7 +67,7 @@ class MiniMap(UIStructureBlock, MapHandler):
 
     # retrieves or calculates the perfect start extent for a given scenario and returns it
     def get_start_extent(self, config):
-        extent_arr = config.get("general", "mini_map_extent")
+        extent_arr = config.get("map_settings", "mini_map_extent")
         if extent_arr is not None:
             return Extent.around_center(Vector.from_array(extent_arr), extent_arr[2], self.size.y_per_x(), True)
         else:

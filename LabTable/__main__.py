@@ -141,10 +141,12 @@ class LabTable:
                         self.detect_corners(color_image)
 
                     # in this stage bricks have "yes"/"no" meaning
+                    # FIXME: this should be generalized by the game engine
                     elif self.program_stage.current_stage == ProgramStage.EVALUATION:
                         self.do_brick_detection(region_of_interest, color_image)
 
                     # in this stage bricks have assets meaning
+                    # FIXME: this should be generalized by the game engine
                     elif self.program_stage.current_stage == ProgramStage.PLANNING:
                         self.do_brick_detection(region_of_interest, color_image)
 

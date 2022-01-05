@@ -10,7 +10,6 @@ from Communication.Communicator import Communicator
 class MainMap(MapHandler):
 
     def __init__(self, config: Configurator, name, server: Communicator):
-
         self.config = config
         self.server = server
 
@@ -35,24 +34,13 @@ class MainMap(MapHandler):
 
     # retrieves starting location and defines an extent around this location
     def get_start_extent(self):
-
-        starting_location = self.get_start_location()
+        starting_location = Vector(self.config.get("map_settings", "start_x"),
+                                   self.config.get("map_settings", "start_y"))
 
         # extrude start location to start extent
-        zoom = self.config.get("general", "start_zoom")
+        zoom = self.config.get("map_settings", "start_zoom")
 
         return Extent.around_center(starting_location, zoom, 1)
-
-    # reads starting-location from scenario info or config
-    # FIXME: rework protocol (starting location should come from landscapelab)
-    def get_start_location(self) -> Vector:
-
-        # FIXME: this should come from the landscape lab
-        starting_location = Vector(0.0, 0.0)
-
-        # TODO: maybe overwrite starting location if the config-defined starting location exists
-
-        return starting_location
 
     # gets called whenever the map has been refreshed
     # updates extent on server

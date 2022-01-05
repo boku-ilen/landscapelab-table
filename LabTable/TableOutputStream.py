@@ -133,7 +133,7 @@ class TableOutputStream:
         image_handler = ImageHandler(config)
 
         # load qr code images
-        qr_size = self.config.get("resources", "qr_size")
+        qr_size = self.config.get("qr_code", "size")
         # TODO calc optimal size on draw instead of scaling down to fixed size
         self.qr_bottom_left = image_handler.load_image("qr_bottom_left", (qr_size, qr_size))
         self.qr_bottom_right = image_handler.load_image("qr_bottom_right", (qr_size, qr_size))

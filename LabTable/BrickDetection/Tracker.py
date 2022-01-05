@@ -34,10 +34,14 @@ class Tracker:
 
         # get ticker thresholds from config
         self.min_distance = config.get("tracker_thresholds", "min_distance")
-        self.external_min_appeared = config.get("tracker_thresholds", "external_min_appeared")
-        self.external_max_disappeared = config.get("tracker_thresholds", "external_max_disappeared")
-        self.internal_min_appeared = config.get("tracker_thresholds", "internal_min_appeared")
-        self.internal_max_disappeared = config.get("tracker_thresholds", "internal_max_disappeared")
+        self.external_min_appeared = config.get(
+            "tracker_thresholds", "external_min_appeared")
+        self.external_max_disappeared = config.get(
+            "tracker_thresholds", "external_max_disappeared")
+        self.internal_min_appeared = config.get(
+            "tracker_thresholds", "internal_min_appeared")
+        self.internal_max_disappeared = config.get(
+            "tracker_thresholds", "internal_max_disappeared")
         self.allowed_bricks = {
             ProgramStage.EVALUATION: [
                 (BrickColor.RED_BRICK, BrickShape.SQUARE_BRICK),
@@ -64,9 +68,13 @@ class Tracker:
         # get server side bricks
         asset_ids = self.config.get("stored_instances", "asset_ids")
         server_bricks = []
-        for asset_id in asset_ids:
-            server_bricks += self.server_communicator.get_stored_brick_instances(asset_id)
 
+        # FIXME: asset_ids are outdated, use Layer names instead
+        for asset_id in asset_ids:
+            self.server_communicator.get_stored_brick_instances(
+                asset_id, self.handle_received_server_bricks)
+
+    def handle_received_server_bricks(self, server_bricks):
         # handle bricks
         if server_bricks is not None:
 
@@ -152,7 +160,8 @@ class Tracker:
             if candidate not in self.confirmed_bricks:
 
                 # check if candidate is in minimum distance to any of confirmed bricks
-                neighbour_brick = self.check_min_distance(candidate, self.confirmed_bricks)
+                neighbour_brick = self.check_min_distance(
+                    candidate, self.confirmed_bricks)
                 if not neighbour_brick:
 
                     # create or add a tick if it's not yet confirmed
@@ -204,7 +213,8 @@ class Tracker:
 
                 # if the brick is associated with an asset also send a remove request to the server
                 if brick.status == BrickStatus.EXTERNAL_BRICK:
-                    self.server_communicator.remove_remote_brick_instance(brick)
+                    self.server_communicator.remove_remote_brick_instance(
+                        brick)
 
         # remove the disappeared elements from dicts
         for brick in bricks_to_remove:
@@ -221,7 +231,8 @@ class Tracker:
             if self.brick_on_ui(brick):
                 if brick.status == BrickStatus.EXTERNAL_BRICK:
                     Tracker.set_brick_outdated(brick)
-                    self.server_communicator.remove_remote_brick_instance(brick)
+                    self.server_communicator.remove_remote_brick_instance(
+                        brick)
             else:
                 if brick.status == BrickStatus.INTERNAL_BRICK:
                     Tracker.set_brick_outdated(brick)
@@ -258,7 +269,8 @@ class Tracker:
             if amount > target_appeared and candidate not in self.confirmed_bricks:
 
                 # if the brick is on top of a virtual brick, remove it and mark the brick as outdated
-                virtual_brick = self.check_min_distance(candidate, self.virtual_bricks)
+                virtual_brick = self.check_min_distance(
+                    candidate, self.virtual_bricks)
                 if virtual_brick and virtual_brick.asset_id != PLAYER_POSITION_ASSET_ID:
                     self.remove_external_virtual_brick(virtual_brick)
                     candidate.status = BrickStatus.OUTDATED_BRICK
@@ -270,7 +282,8 @@ class Tracker:
                         if self.check_brick_valid(candidate, program_stage):
                             candidate.status = BrickStatus.EXTERNAL_BRICK
                             # if the brick is associated with an asset also send a create request to the server
-                            self.server_communicator.create_remote_brick_instance(candidate)
+                            self.server_communicator.create_remote_brick_instance(
+                                candidate)
                         else:
                             candidate.status = BrickStatus.OUTDATED_BRICK
 
@@ -322,7 +335,8 @@ class Tracker:
             logger.info("recalculate virtual brick position")
             for brick in self.virtual_bricks:
                 if brick.status == BrickStatus.EXTERNAL_BRICK:
-                    Extent.calc_local_pos(brick, self.extent_tracker.board, self.extent_tracker.map_extent)
+                    Extent.calc_local_pos(
+                        brick, self.extent_tracker.board, self.extent_tracker.map_extent)
 
             logger.info("set bricks outdated because extent changed")
             self.invalidate_external_bricks()
@@ -337,7 +351,8 @@ class Tracker:
 
     def set_virtual_brick_at_global_pos_of(self, brick: Brick):
         virtual_brick = brick.clone()
-        Extent.calc_local_pos(virtual_brick, self.extent_tracker.board, self.extent_tracker.map_extent)
+        Extent.calc_local_pos(
+            virtual_brick, self.extent_tracker.board, self.extent_tracker.map_extent)
 
         self.virtual_bricks.append(virtual_brick)
         Tracker.BRICKS_REFRESHED = True
@@ -347,11 +362,13 @@ class Tracker:
         self.virtual_bricks.remove(brick)
 
     def brick_on_ui(self, brick):
-        brick_on_beamer = Extent.remap_brick(brick, self.extent_tracker.board, self.extent_tracker.beamer)
+        brick_on_beamer = Extent.remap_brick(
+            brick, self.extent_tracker.board, self.extent_tracker.beamer)
         return self.ui_root.brick_on_element(brick_on_beamer)
 
     def brick_would_land_on_ui(self, brick):
-        brick_on_beamer = Extent.remap_brick(brick, self.extent_tracker.board, self.extent_tracker.beamer)
+        brick_on_beamer = Extent.remap_brick(
+            brick, self.extent_tracker.board, self.extent_tracker.beamer)
         return self.ui_root.brick_would_land_on_element(brick_on_beamer)
 
     # sets all external bricks to outdated

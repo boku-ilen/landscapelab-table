@@ -81,12 +81,12 @@ class Communicator(threading.Thread):
             logger.warning("request {} was unsuccessful.".format(message_id))
 
     def on_error(self, ws, error):
-        logger.exception(error)
+        logger.error("error in communication with {}: {}".format(self._uri, error))
         self._connection_open = False
 
-    def on_close(self, ws):
+    def on_close(self, ws, close_code, close_msg):
         self._connection_open = False
-        logger.debug("Connection to {} closed.".format(self._uri))
+        logger.debug("Connection to {} closed: {} ({})".format(self._uri, close_msg, close_code))
 
     def on_open(self, ws):
         self._connection_open = True
@@ -100,9 +100,8 @@ class Communicator(threading.Thread):
     def run(self):
 
         # try to connect to server
-        self._connection_instance = websocket.WebSocketApp(self._uri, on_close=self.on_close,
-                                                           on_message=self.on_message, on_open=self.on_open,
-                                                           on_error=self.on_error)
+        self._connection_instance = websocket.WebSocketApp(self._uri, on_close=self.on_close, on_open=self.on_open,
+                                                           on_message=self.on_message, on_error=self.on_error)
         self._connection_instance.run_forever()
 
     # this sends an message to the server and returns the json answer

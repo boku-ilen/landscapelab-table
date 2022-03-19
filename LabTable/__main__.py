@@ -152,7 +152,7 @@ class LabTable:
 
             except Exception as e:
                 logger.error("closing because encountered a problem: {}".format(e))
-                logger.debug(e.__traceback__)
+                logger.exception(e)
 
         # close the websocket connection
         self.ll_communicator.close()

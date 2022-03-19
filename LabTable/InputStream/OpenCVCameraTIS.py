@@ -22,7 +22,8 @@ class OpenCVCameraTIS(TableInputStream):
         super().__init__(config, board, usestream)
 
     def get_frame(self):
-        ret, frame = self.camera.read()
+        frame = self.camera.read()
+        return None, frame[1]  # frame[0] should return True - TODO: check for this?
 
     def close(self):
         if self.camera.isOpened():

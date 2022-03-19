@@ -45,6 +45,10 @@ class TableInputStream:
     def get_frame(self):
         pass
 
+    @abstractmethod
+    def get_distance_to_board(self):
+        pass
+
     def is_initialized(self):
         return self.initialized
 

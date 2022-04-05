@@ -87,25 +87,28 @@ class LLCommunicator(Communicator):
 
         def create_callback(response: dict):
 
-            if response.get(ANSWER_STRING) is SUCCESS_ANSWER:
+            if "success" in response:
+                if response["success"]:
 
-                # Get assetpos_id in response
-                brick.object_id = response.get(ASSETPOS_ID_STRING)
+                    # set the remote asset id
+                    brick.object_id = response["id"]
 
-                # call brick update callback function to update progress bars etc.
-                self.brick_update_callback()
+                    # call brick update callback function to update progress bars etc.
+                    self.brick_update_callback()
 
-            # If the asset creation was not possible, set brick outdated
+                else:
+                    # TODO: which loglevel as not allowed to create a brick is a normal usecase
+                    logger.info("could not remotely create brick {}".format(brick))
+                    brick.status = BrickStatus.OUTDATED_BRICK
+
             else:
-                logger.warning(
-                    "could not remotely create brick {}".format(brick))
-                brick.status = BrickStatus.OUTDATED_BRICK
+                logger.warning("protocol error which creating brick {}".format(brick))
+                # TODO: should the brick status change?
 
         logger.debug("creating a brick instance for {}".format(brick))
 
         # Compute geographical coordinates for bricks
-        Extent.calc_world_pos(brick, self.extent_tracker.board,
-                              self.extent_tracker.map_extent)
+        Extent.calc_world_pos(brick, self.extent_tracker.board, self.extent_tracker.map_extent)
 
         # Send request creating remote brick instance and save the response
         message = CREATE_ASSET_MSG.copy()
@@ -118,12 +121,15 @@ class LLCommunicator(Communicator):
     def remove_remote_brick_instance(self, brick_instance):
 
         def remove_callback(response: dict):
-            if response.get(ANSWER_STRING) == SUCCESS_ANSWER:
-                # call brick update callback function to update progress bars etc.
-                self.brick_update_callback()
-            else:
-                logger.warning(
-                    "could not remove remote brick {}".format(brick_instance))
+
+            if "success" in response:
+                if response["success"]:
+
+                    # call brick update callback function to update progress bars etc.
+                    self.brick_update_callback()
+
+                else:
+                    logger.warning("could not remove remote brick {}".format(brick_instance))
 
         message = REMOVE_ASSET_MSG.copy()
         message["layer_name"] = brick_instance.layer
@@ -133,6 +139,7 @@ class LLCommunicator(Communicator):
         self.send_message(message, remove_callback)
 
     def get_stored_brick_instances(self, layer_name, result_callback):
+
         def get_instances_callback(response: dict):
             stored_assets = response["objects"]
             stored_instances_list = []

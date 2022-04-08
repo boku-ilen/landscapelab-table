@@ -30,6 +30,7 @@ class Configurator:
         try:
             with open(self._config_file) as config_file:
                 self.config_data = json.load(config_file)
+
         except Exception as e:
             logger.exception("Error opening config file: {}".format(e))
             raise ConfigError("Could not load config data from {}".format(self._config_file))
@@ -55,6 +56,7 @@ class Configurator:
         try:
             self.config_data[group][key] = value
             logger.debug("Overwriting config data {} -> {} with {}".format(group, key, value))
+
         except Exception as e:
             logger.error("Overwriting config data {} -> {} without success".format(group, key))
             logger.exception(e)

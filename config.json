@@ -10,7 +10,7 @@
   "camera": {
     "implementation": "Realsense",
     "base_distance": 3.0,
-    "opencv_device_nr": 6
+    "opencv_device_nr": 0
   },
 
   "resources": {
@@ -145,9 +145,16 @@
     "ssl_pem_file": null
   },
 
-  "resolution": {
+  "video_resolution": {
     "width": 1280,
     "height": 720
+  },
+
+  "screen_resolution": {
+    "width": NaN,
+    "height": NaN,
+    "pos_x": NaN,
+    "pos_y": NaN
   },
 
   "beamer_resolution": {
@@ -155,14 +162,13 @@
     "NOTE": ["screen id refers to the display the projector output should be started on",
       "if the id exceeds the currently attached screen count the screen with the highest id will be selected",
       "if the id is negative the projector output will be shown in a window instead of full-screen"],
-    "width": 1800,
-    "height": 1000,
+    "width": NaN,
+    "height": NaN,
     "pos_x": NaN,
     "pos_y": NaN
   },
 
   "qr_code": {
-    "threshold": 60,
     "size": 500
   },
 

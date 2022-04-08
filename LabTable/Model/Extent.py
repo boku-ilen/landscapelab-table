@@ -12,10 +12,6 @@ logger = logging.getLogger(__name__)
 # used for map extent calculations as well as UI calculations
 class Extent:
 
-    """
-    constructors
-    """
-
     # creates a new Extent based on all four edges
     def __init__(self, x_min, y_min, x_max, y_max, y_up_is_positive=False):
         self.x_min: float = x_min

@@ -48,7 +48,7 @@ class LabTable:
 
         # Initialize config manager
         self.config = Configurator()
-        TableOutputStream.set_beamer_config_info(self.config)
+        TableOutputStream.set_screen_config_info(self.config)
 
         # Initialize websocket communication class
         self.ll_communicator = LLCommunicator(self.config)
@@ -69,14 +69,14 @@ class LabTable:
         self.board = self.board_detector.board
 
         # Initialize the centroid tracker
-        self.tracker = Tracker(self.config, self.ll_communicator, ui_root)
+        self.tracker = Tracker(self.config, ui_root)
         self.callback_manager.set_tracker_callbacks(self.tracker)
 
         # initialize map, map callbacks and ui
-        self.main_map = MainMap(self.config, 'main_map', self.ll_communicator)
+        self.main_map = MainMap(self.config, 'main_map')
         self.callback_manager.set_map_callbacks(self.main_map)
-        mini_map, planning_ui, progress_bar_update_function = \
-            setup_ui(ui_root, self.main_map, self.config, self.ll_communicator, self.callback_manager)
+        mini_map, planning_ui, progress_bar_update_function = setup_ui(ui_root, self.main_map, self.config,
+                                                                       self.callback_manager)
 
         # Initialize the qgis communication
         map_dict = {self.main_map.name: self.main_map, mini_map.name: mini_map}
@@ -97,7 +97,7 @@ class LabTable:
         self.callback_manager.set_output_actions(self.output_stream)
         self.input_stream = TableInputStream.get_table_input_stream(self.config, self.board, usestream=self.used_stream)
 
-        # request the first rendered map section  TODO: is this really already necessairy?
+        # request the first rendered map section  TODO: is this really already necessary?
         self.qgis_communicator.request_render(self.main_map)
         self.qgis_communicator.request_render(mini_map)
 
@@ -112,8 +112,8 @@ class LabTable:
     def run(self):
 
         # Initialize ROI as a black RGB-image
-        region_of_interest = np.zeros((self.config.get("resolution", "height"),
-                                       self.config.get("resolution", "width"), CHANNELS_NUMBER), np.uint8)
+        region_of_interest = np.zeros((self.config.get("video_resolution", "height"),
+                                       self.config.get("video_resolution", "width"), CHANNELS_NUMBER), np.uint8)
 
         if self.input_stream and self.input_stream.is_initialized():
             logger.info("initialized input stream")
@@ -128,7 +128,6 @@ class LabTable:
 
                     # Add some additional information to the debug window
                     color_image_debug = color_image.copy()
-                    self.output_stream.add_debug_information(color_image_debug)
 
                     # always write the current frame to the board detection channel
                     self.output_stream.write_to_channel(TableOutputChannel.CHANNEL_BOARD_DETECTION, color_image_debug)
@@ -181,9 +180,9 @@ class LabTable:
         self.input_stream.get_distance_to_board()
 
         # Find position of board corners
-        all_board_corners_found = self.board_detector.detect_board(color_image)
+        all_board_corners_found = self.board_detector.detect_board(color_image, self.output_stream)
 
-        # if all boarders were found change channel and start next stage
+        # if all corners were found change channel and start next stage
         if all_board_corners_found:
             # Use distance to set possible brick size
             logger.debug("Calculate possible brick size")
@@ -192,9 +191,6 @@ class LabTable:
             logger.debug("Used threshold for qr-codes -> {}".format(self.board.threshold_qrcode))
             self.output_stream.set_active_channel(TableOutputChannel.CHANNEL_ROI)
             self.program_stage.next()
-
-        # use different thresholds for board detection
-        self.board_detector.adjust_threshold_qrcode()
 
     def do_brick_detection(self, region_of_interest, color_image):
         # If the board is detected take only the region

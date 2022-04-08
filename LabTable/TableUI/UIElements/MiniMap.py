@@ -1,3 +1,4 @@
+from Communication import QGISCommunicator
 from .UIStructureBlock import UIStructureBlock
 from ..MapHandler import MapHandler
 from ..ImageHandler import ImageHandler
@@ -144,10 +145,5 @@ class MiniMap(UIStructureBlock, MapHandler):
             c_map_extent.get_width(),
             c_map_extent.get_aspect_ratio()
         )
-        self.controlled_map.request_render(new_extent)
 
-
-
-
-
-
+        self.request_render(new_extent)

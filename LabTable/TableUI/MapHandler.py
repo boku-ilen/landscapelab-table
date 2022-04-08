@@ -5,6 +5,7 @@ from functools import partial
 from typing import Tuple
 import logging
 
+from Communication.QGISCommunicator import QGISCommunicator
 from LabTable.TableUI.ImageHandler import ImageHandler
 from LabTable.Configurator import Configurator
 from LabTable.Model.Extent import Extent
@@ -64,7 +65,7 @@ class MapHandler:
         self.zoom_in = partial(self.modify_extent, self.zoom_in_modifier, zoom_strength)
         self.zoom_out = partial(self.modify_extent, self.zoom_out_modifier, zoom_strength)
 
-    # reloads the viewport image
+    # reloads the viewport image - this gets called as a callback after a successful render request
     def refresh(self, extent: Extent, buffer):
         logger.debug("refreshing map")
 
@@ -137,8 +138,15 @@ class MapHandler:
                 self.zoom_in_modifier * (change_ratio * change)
             )
 
-        # request render
         self.request_render(next_extent)
+
+    # request render of a extent
+    @staticmethod
+    def request_render(extent):
+        if QGISCommunicator.get_instance():
+            QGISCommunicator.get_instance().request_render(extent)
+        else:
+            logger.warning("could not request the render of extent {}".format(extent))
 
     # returns current map image
     def get_map_image(self):

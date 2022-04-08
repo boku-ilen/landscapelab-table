@@ -9,15 +9,13 @@ from .ProgressBar import ProgressBar
 from ..CallbackManager import CallbackManager, MapActions, UiActions, TrackerActions
 from ..MainMap import MainMap
 from ...Configurator import Configurator
-from Communication.Communicator import Communicator
 from LabTable.Model.ProgramStage import ProgramStage
 from LabTable.Model.Extent import Vector
 
 
 # project specific function used to create the necessary UIElements and link them to their respective callback functions
-def setup_ui(root: UIElement, main_map: MainMap, config: Configurator, server: Communicator,
-             callback_manager: CallbackManager) \
-        -> Tuple[MiniMap, UIElement, Callable]:
+def setup_ui(root: UIElement, main_map: MainMap, config: Configurator, callback_manager: CallbackManager) -> \
+        Tuple[MiniMap, UIElement, Callable]:
 
     # create nav block
     nav_block = UIElement()
@@ -25,7 +23,7 @@ def setup_ui(root: UIElement, main_map: MainMap, config: Configurator, server: C
 
     # create detection mode ui
     brick_detection_ui = UIElement()
-    progress_bar_update_function = setup_detection_ui(brick_detection_ui, server, config, callback_manager)
+    progress_bar_update_function = setup_detection_ui(brick_detection_ui, config, callback_manager)
 
     # setup hierarchy
     root.add_child(nav_block)
@@ -34,10 +32,7 @@ def setup_ui(root: UIElement, main_map: MainMap, config: Configurator, server: C
     # setup ui callback functions
     callback_manager.set_ui_callbacks(navigation_block)
 
-    return \
-        mini_map,\
-        brick_detection_ui, \
-        progress_bar_update_function
+    return mini_map, brick_detection_ui, progress_bar_update_function
 
 
 # constant class used by the ui setup methods to easily access vector constants
@@ -83,13 +78,8 @@ def setup_nav_block_ui(nav_block_root, config, main_map, callback_manager) -> (M
         'confirm bricks',
         'button_confirm'
     )
-    mini_map = MiniMap(
-        config,
-        'mini_map',
-        Vector(10, 300) * c.scale_factor,
-        Vector(280, 280) * c.scale_factor,
-        main_map
-    )
+    mini_map = MiniMap(config, 'mini_map', Vector(10, 300) * c.scale_factor,
+                       Vector(280, 280) * c.scale_factor, main_map, None)  # FIXME: qgis circular dependency
     callback_manager.set_mini_map_callbacks(mini_map)
 
     # setup hierarchy
@@ -131,7 +121,8 @@ def setup_nav_block_ui(nav_block_root, config, main_map, callback_manager) -> (M
 
 
 # creates and sets up the ui for detection stage
-def setup_detection_ui(detection_ui_root, server, config, callback_manager):
+def setup_detection_ui(detection_ui_root, config, callback_manager):
+
     # get vector constants that will be used to position the ui elements
     c = Constants(config)
 

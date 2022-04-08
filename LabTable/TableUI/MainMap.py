@@ -1,17 +1,18 @@
+from Communication.LLCommunicator import LLCommunicator
 from LabTable.Model.Vector import Vector
 from .MapHandler import MapHandler
 from ..Configurator import Configurator
 from LabTable.Model.Extent import Extent
-from Communication.Communicator import Communicator
 
 
 # MainMap class
 # responsible for management of central map
 class MainMap(MapHandler):
 
-    def __init__(self, config: Configurator, name, server: Communicator):
+    def __init__(self, config: Configurator, name):
+
         self.config = config
-        self.server = server
+        self.landscape_lab = LLCommunicator.get_instance()
 
         # get desired screen resolution
         resolution_x = int(config.get("beamer_resolution", "width"))
@@ -20,13 +21,7 @@ class MainMap(MapHandler):
         # get zoom limits
         zoom_limits = config.get("map_settings", "map_zoom_limits")
 
-        super().__init__(
-            config,
-            name,
-            self.get_start_extent(),
-            zoom_limits,
-            (resolution_x, resolution_y)
-        )
+        super().__init__(config, name, self.get_start_extent(), zoom_limits, (resolution_x, resolution_y))
 
         # set new extent
         config.set("map_settings", "extent_width", [self.current_extent.x_min, self.current_extent.x_max])
@@ -45,4 +40,4 @@ class MainMap(MapHandler):
     # gets called whenever the map has been refreshed
     # updates extent on server
     def refresh_callback(self):
-        self.server.update_extent_info(self.current_extent)
+        self.landscape_lab.update_extent_info(self.current_extent)

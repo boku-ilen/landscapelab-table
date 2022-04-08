@@ -90,7 +90,7 @@ class ShapeDetector:
 
         self.config = config
         self.output_stream = output_stream
-        self.resolution_width = config.get("resolution", "width")
+        self.resolution_width = config.get("video_resolution", "width")
 
     # Check if the contour is a brick
     # TODO: remove frame if nothing to draw anymore

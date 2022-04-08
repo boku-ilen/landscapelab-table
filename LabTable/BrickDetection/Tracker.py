@@ -1,6 +1,7 @@
 import logging
 from typing import List
 
+from Communication.LLCommunicator import LLCommunicator
 from LabTable.Model.Brick import Brick, BrickStatus, BrickColor, BrickShape
 from ..TableUI.UIElements.UIElement import UIElement
 from LabTable.Model.ProgramStage import ProgramStage
@@ -17,7 +18,7 @@ class Tracker:
 
     BRICKS_REFRESHED = False
 
-    server_communicator = None
+    landscape_lab = None
     tracked_candidates = {}  # we hold candidates which are not confirmed yet for some ticks
     confirmed_bricks: List[Brick] = []
     virtual_bricks: List[Brick] = []
@@ -26,10 +27,11 @@ class Tracker:
     external_min_appeared: int = None
     external_max_disappeared: int = None
 
-    def __init__(self, config, server_communicator, ui_root: UIElement):
+    def __init__(self, config, ui_root: UIElement):
+
         self.config = config
         self.extent_tracker = ExtentTracker.get_instance()
-        self.server_communicator = server_communicator
+        self.landscape_lab = LLCommunicator.get_instance()
         self.ui_root = ui_root
 
         # get ticker thresholds from config
@@ -71,8 +73,7 @@ class Tracker:
 
         # FIXME: asset_ids are outdated, use Layer names instead
         for asset_id in asset_ids:
-            self.server_communicator.get_stored_brick_instances(
-                asset_id, self.handle_received_server_bricks)
+            self.landscape_lab.get_stored_brick_instances(asset_id, self.handle_received_server_bricks)
 
     def handle_received_server_bricks(self, server_bricks):
         # handle bricks
@@ -141,7 +142,7 @@ class Tracker:
 
         self.mark_external_bricks_outdated_if_map_updated()
 
-        # finally return the updated list of confirmed bricks
+        # finally, return the updated list of confirmed bricks
         return self.confirmed_bricks
 
     # iterates over all candidates and manages their tick counters
@@ -213,8 +214,7 @@ class Tracker:
 
                 # if the brick is associated with an asset also send a remove request to the server
                 if brick.status == BrickStatus.EXTERNAL_BRICK:
-                    self.server_communicator.remove_remote_brick_instance(
-                        brick)
+                    self.landscape_lab.remove_remote_brick_instance(brick)
 
         # remove the disappeared elements from dicts
         for brick in bricks_to_remove:
@@ -231,8 +231,7 @@ class Tracker:
             if self.brick_on_ui(brick):
                 if brick.status == BrickStatus.EXTERNAL_BRICK:
                     Tracker.set_brick_outdated(brick)
-                    self.server_communicator.remove_remote_brick_instance(
-                        brick)
+                    self.landscape_lab.remove_remote_brick_instance(brick)
             else:
                 if brick.status == BrickStatus.INTERNAL_BRICK:
                     Tracker.set_brick_outdated(brick)
@@ -269,9 +268,8 @@ class Tracker:
             if amount > target_appeared and candidate not in self.confirmed_bricks:
 
                 # if the brick is on top of a virtual brick, remove it and mark the brick as outdated
-                virtual_brick = self.check_min_distance(
-                    candidate, self.virtual_bricks)
-                if virtual_brick and virtual_brick.asset_id != PLAYER_POSITION_ASSET_ID:
+                virtual_brick = self.check_min_distance(candidate, self.virtual_bricks)
+                if virtual_brick and virtual_brick.layer_id != PLAYER_POSITION_ASSET_ID:
                     self.remove_external_virtual_brick(virtual_brick)
                     candidate.status = BrickStatus.OUTDATED_BRICK
 
@@ -282,8 +280,7 @@ class Tracker:
                         if self.check_brick_valid(candidate, program_stage):
                             candidate.status = BrickStatus.EXTERNAL_BRICK
                             # if the brick is associated with an asset also send a create request to the server
-                            self.server_communicator.create_remote_brick_instance(
-                                candidate)
+                            self.landscape_lab.create_remote_brick_instance(candidate)
                         else:
                             candidate.status = BrickStatus.OUTDATED_BRICK
 
@@ -302,10 +299,10 @@ class Tracker:
                 brick.status = BrickStatus.INTERNAL_BRICK
             else:
                 brick.status = BrickStatus.EXTERNAL_BRICK
-                self.server_communicator.create_remote_brick_instance(brick)
+                self.landscape_lab.create_remote_brick_instance(brick)
 
-    # Check if the brick lies within min distance to the any in the list
-    def check_min_distance(self, brick, bricks_list):
+    # Check if the brick lies within min distance to the any in the list, returns None if no neighbour was found
+    def check_min_distance(self, brick: Brick, bricks_list) -> [None, Brick]:
 
         neighbour_brick = None
 
@@ -358,7 +355,7 @@ class Tracker:
         Tracker.BRICKS_REFRESHED = True
 
     def remove_external_virtual_brick(self, brick: Brick):
-        self.server_communicator.remove_remote_brick_instance(brick)
+        self.landscape_lab.remove_remote_brick_instance(brick)
         self.virtual_bricks.remove(brick)
 
     def brick_on_ui(self, brick):

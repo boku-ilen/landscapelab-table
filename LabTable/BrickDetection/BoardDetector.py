@@ -5,10 +5,10 @@ import math
 from shapely import geometry
 import logging.config
 
+from TableOutputStream import TableOutputStream, TableOutputChannel
 from ..ExtentTracker import ExtentTracker
 from LabTable.Model.Extent import Extent
 from LabTable.Model.Board import Board
-
 
 # configure logging
 logger = logging.getLogger(__name__)
@@ -16,8 +16,8 @@ logger = logging.getLogger(__name__)
 # Objects in greater distance to the board than (1 +- CLIP) * x will be excluded from processing
 CLIP = 0.1
 
-# Number of frames for
-# computing background average
+# Number of frames for computing background average
+MIN_LOOP_NUMBER = 5
 MAX_LOOP_NUMBER = 30
 
 # accumulate weighted parameter
@@ -27,9 +27,7 @@ INPUT_WEIGHT = 0.5
 # with the THRESH_BINARY
 MAX_VALUE = 255
 
-# Number of frames for
-# changing threshold_qrcode
-# when detecting the board corners
+# Number of frames for changing threshold_qrcode when detecting the board corners
 MAX_FRAMES_NUMBER = 20
 
 # Adjusting threshold_qrcode step
@@ -40,7 +38,6 @@ MAX_THRESHOLD = 255
 # this class manages the extent to detect and reference the extent of
 # the board related to the video stream
 class BoardDetector:
-
     background = None
     last_color_image = None
 
@@ -61,8 +58,8 @@ class BoardDetector:
         self.code_found_flag = False
 
         # Get the resolution from config file
-        self.frame_width = self.config.get("resolution", "width")
-        self.frame_height = self.config.get("resolution", "height")
+        self.frame_width = self.config.get("video_resolution", "width")
+        self.frame_height = self.config.get("video_resolution", "height")
 
         self.current_loop = 0
 
@@ -192,28 +189,27 @@ class BoardDetector:
                 logger.debug("detected BR at {}".format(code.polygon))
 
     # Detect the board using four QR-Codes in the board corners
-    def detect_board(self, color_image):
+    def detect_board(self, color_image, output_stream: TableOutputStream):
 
         # Compute difference between background and the current frame
-        diff = self.subtract_background(color_image)
+        diff = cv2.absdiff(color_image, self.background.astype("uint8"))
+        diff = cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY)
+        ret_val, diff = cv2.threshold(diff, 0, MAX_VALUE, cv2.THRESH_OTSU)
 
         # Invert image
         looking_for_qr_code_image = 255 - diff
 
-        # Decode QR or Bar-Codes from both
-        # black-white and color image
+        # Decode QR or Bar-Codes from both black-white and color image
         decoded_codes = pyzbar.decode(looking_for_qr_code_image)
-        if not decoded_codes:
-            decoded_codes = pyzbar.decode(color_image)
 
-        # Mark found QR-codes on the color image
-        self.display_found_codes(color_image, decoded_codes)
+        # Mark found QR-codes on the color image and display it in the qr channel
+        looking_for_qr_code_image = cv2.cvtColor(looking_for_qr_code_image, cv2.COLOR_GRAY2BGR)
+        self.display_found_codes(looking_for_qr_code_image, decoded_codes)
+        output_stream.write_to_channel(TableOutputChannel.CHANNEL_QR_DETECTION, looking_for_qr_code_image)
 
         # Read codes which were decoded in this frame:
-        # save polygons in the array self.board_detector.all_codes_polygons_points
-        # and read metadata
+        # save polygons in the array self.board_detector.all_codes_polygons_points and read metadata
         self.read_qr_codes(decoded_codes)
-        # FIXME: end move
 
         top_left_corner = None
         top_right_corner = None
@@ -234,7 +230,7 @@ class BoardDetector:
                 self.code_found_flag = True
                 self.detect_corners_frames_number = 0
 
-            # Continue if all needed data is available
+        # Continue if all needed data is available
         if self.found_codes_number == 4:
             # Iterate through the array with four sets of points for polygons
             for points_idx in range(len(self.all_codes_polygons_points)):
@@ -246,7 +242,7 @@ class BoardDetector:
                 logger.debug("QR-code centroid found: {}".format(code_centroid))
 
                 # Compute the distance between the centroid and the first of corners
-                centroid_corner_distance = BoardDetector.calculate_distance\
+                centroid_corner_distance = BoardDetector.calculate_distance \
                     (self.all_codes_polygons_points[points_idx][0].x,
                      self.all_codes_polygons_points[points_idx][0].y,
                      code_polygon.centroid.x, code_polygon.centroid.y)
@@ -276,7 +272,7 @@ class BoardDetector:
                 bottom_right_corner is not None and bottom_left_corner is not None:
 
             self.board.corners = [top_left_corner, top_right_corner, bottom_right_corner, bottom_left_corner]
-            logger.debug("board_corners: {}".format(self.board.corners))
+            logger.info("all board corners found: {}".format(self.board.corners))
             all_board_corners_found = True
 
         return all_board_corners_found
@@ -355,7 +351,7 @@ class BoardDetector:
 
             # Draw the convex hull
             for j in range(0, n):
-                cv2.line(frame, hull[j], hull[(j + 1) % n], (255, 0, 0), 3)
+                cv2.line(frame, hull[j], hull[(j + 1) % n], (0, 255, 0), 3)
 
     # Compute region of interest (board area) from the color image
     def rectify_image(self, region_of_interest, color_image):
@@ -366,26 +362,10 @@ class BoardDetector:
 
             # Eliminate perspective transformations and show only the board
             rectified_image = self.rectify(color_image, self.board.corners)
-            # TODO: use clipped color image
-            # rectified_image =  self.board_detector.rectify(clipped_color_image, board_corners)
-
-            # Set ROI to black and add only the rectified board, where objects are searched
-            region_of_interest[0:self.frame_height, 0:self.frame_width] = [0, 0, 0]
             region_of_interest[0:self.board.height, 0:self.board.width] = rectified_image
 
-        return region_of_interest
-
-    # Returns difference between
-    # background and current frame
-    def subtract_background(self, color_image):
-
-        # Subtract background
-        diff = cv2.absdiff(color_image, self.background.astype("uint8"))
-        diff = cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY)
-        ret_val, diff = cv2.threshold(diff, self.board.threshold_qrcode, MAX_VALUE, cv2.THRESH_BINARY)
-
-        # Return difference between the current frame and background
-        return diff
+        # return the clipped board
+        return region_of_interest[0:self.board.height, 0:self.board.width]
 
     # saves the average image over a certain time period returns true if enough iterations were done
     def compute_background(self, color_image):
@@ -395,64 +375,17 @@ class BoardDetector:
             self.background = color_image.copy().astype("float")
             self.last_color_image = self.background
 
-        if self.current_loop < MAX_LOOP_NUMBER:  # FIXME: add an additional earlier break if no more change is detected
+        if self.current_loop < MAX_LOOP_NUMBER:
             # Update a running average
             cv2.accumulateWeighted(color_image, self.background, INPUT_WEIGHT)
             self.current_loop += 1
-            if self.last_color_image.all() == self.background.all():
-                logger.debug("found a stable white balance")
+
+            # finish white balance if no more change from the average can be detected
+            if (self.last_color_image.all() == self.background.all()) and (self.current_loop > MIN_LOOP_NUMBER):
+                logger.info("found a stable white balance after {} iterations".format(self.current_loop))
                 return True
         else:
-            logger.debug("maximum numbers of frames reached for a stable white balance")
+            logger.info("white balance reached maximum number of iterations ({})".format(MAX_LOOP_NUMBER))
             return True
 
         return False
-
-    # Adjust cyclically the threshold for finding qr-codes
-    # Example: 60 -> 76 -> 44 -> 90 -> 18 -> ...
-    def adjust_threshold_qrcode(self):
-
-        # store last treshold value
-        old_th = self.board.threshold_qrcode
-
-        # Count frames
-        self.detect_corners_frames_number += 1
-
-        # Every X frames change the threshold
-        if self.detect_corners_frames_number % MAX_FRAMES_NUMBER == 0:
-
-            # Count the number of threshold changes
-            loop = int(self.detect_corners_frames_number / MAX_FRAMES_NUMBER)
-
-            # Use the configured step to change the threshold
-            if loop * THRESHOLD_STEP < MAX_THRESHOLD:
-                step = THRESHOLD_STEP
-
-            # If the whole range checked and no qr-code found
-            # Start again with smaller steps
-            else:
-                step = int(THRESHOLD_STEP / 2)
-                self.detect_corners_frames_number = 0
-
-            # If at lest one qr-code found do smaller steps
-            if self.code_found_flag:
-                step = int(step / 4)
-
-            else:
-                step = step
-
-            # For odd loops changed the sign
-            if loop % 2 == 0:
-                loop *= -1
-
-            # Adjust the threshold
-            self.board.threshold_qrcode += loop * step
-
-            # Allow only threshold 0-255
-            if self.board.threshold_qrcode < 0:
-                self.board.threshold_qrcode += MAX_THRESHOLD
-            elif self.board.threshold_qrcode > MAX_THRESHOLD:
-                self.board.threshold_qrcode -= MAX_THRESHOLD
-
-        if old_th != self.board.threshold_qrcode:
-            logger.debug("changed qr-code treshold value to {}".format(self.board.threshold_qrcode))

@@ -33,8 +33,8 @@ class TableInputStream:
     def __init__(self, config, board, usestream):
 
         # Get the resolution from config file
-        self.width = config.get("resolution", "width")
-        self.height = config.get("resolution", "height")
+        self.width = config.get("video_resolution", "width")
+        self.height = config.get("video_resolution", "height")
 
         self.board = board
 

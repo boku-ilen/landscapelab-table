@@ -44,7 +44,7 @@ class RealsenseCameraTIS(TableInputStream):
             self.realsense_config.enable_stream(rs.stream.depth, self.width, self.height, rs.format.z16, 30)
             self.realsense_config.enable_stream(rs.stream.color, self.width, self.height, rs.format.bgr8, 30)
 
-            # Create alignment primitive with color as its target stream:
+        # Create alignment primitive with color as its target stream:
         self.alignment_stream = rs.align(rs.stream.color)
 
         # Start streaming
@@ -107,7 +107,7 @@ class RealsenseCameraTIS(TableInputStream):
         # is not correctly computed
         if board_distance:
             self.board.distance = board_distance
-        logger.debug("Distance to the board is: {}".format(self.board.distance))
+            logger.debug("Distance to the board is: {}".format(self.board.distance))
 
     def close(self):
         # Stop streaming

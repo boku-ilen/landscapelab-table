@@ -10,7 +10,6 @@ import json
 from LabTable.Configurator import ConfigError
 from LabTable.ExtentTracker import ExtentTracker
 
-
 # Configure logging
 logger = logging.getLogger(__name__)
 
@@ -28,6 +27,7 @@ class Communicator(threading.Thread):
     _connection_instance = None
     _connection_open = False
     _message_stack = {}
+    _instance = None
     ssl_pem_file = None
     ip = None
     port = None
@@ -59,6 +59,13 @@ class Communicator(threading.Thread):
 
         # start the listener thread
         self.start()
+
+        # store singleton reference
+        type(self)._instance = self
+
+    @classmethod
+    def get_instance(cls):
+        return cls._instance
 
     def on_message(self, ws, message):
         json_message = json.loads(message)

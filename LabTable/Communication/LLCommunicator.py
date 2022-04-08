@@ -48,9 +48,6 @@ SET_EXTENT_MSG = {
     "max_y": 0.0
 }
 
-GET_ENERGY_TARGET = "/energy/target/"
-GET_ENERGY_CONTRIBUTION = "/energy/contribution/"
-
 
 # the LL specific implementation part for the communication
 class LLCommunicator(Communicator):
@@ -118,7 +115,7 @@ class LLCommunicator(Communicator):
         self.send_message(message, create_callback)
 
     # Remove remote brick instance
-    def remove_remote_brick_instance(self, brick_instance):
+    def remove_remote_brick_instance(self, brick_instance: Brick):
 
         def remove_callback(response: dict):
 
@@ -132,7 +129,7 @@ class LLCommunicator(Communicator):
                     logger.warning("could not remove remote brick {}".format(brick_instance))
 
         message = REMOVE_ASSET_MSG.copy()
-        message["layer_name"] = brick_instance.layer
+        message["layer_name"] = brick_instance.layer_id
         message["object_id"] = brick_instance.object_id
 
         # Send a request to remove brick instance
@@ -161,8 +158,7 @@ class LLCommunicator(Communicator):
                     color = None
                     try:
                         # Map a shape and color using known asset_id
-                        shape_color = self.config.get(
-                            "stored_instances", str(asset["id"]))
+                        shape_color = self.config.get("stored_instances", str(asset["id"]))
                         shape = shape_color.split(', ')[0]
                         color = shape_color.split(', ')[1]
                     except:
@@ -177,9 +173,7 @@ class LLCommunicator(Communicator):
                     stored_instance.status = BrickStatus.EXTERNAL_BRICK
 
                     # Calculate map position of a brick
-                    Extent.calc_local_pos(stored_instance, self.extent_tracker.board,
-                                          self.extent_tracker.map_extent)
-
+                    Extent.calc_local_pos(stored_instance, self.extent_tracker.board, self.extent_tracker.map_extent)
                     stored_instances_list.append(stored_instance)
 
             result_callback(stored_instances_list)
@@ -196,6 +190,7 @@ class LLCommunicator(Communicator):
     def update_extent_info(self, extent: Extent):
 
         def extent_callback(response: dict):
+            # TODO: we might want to validate if the target successfully accepted the extent change
             pass
 
         message = SET_EXTENT_MSG.copy()

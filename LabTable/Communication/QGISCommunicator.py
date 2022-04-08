@@ -2,7 +2,6 @@ import base64
 
 import logging
 
-from TableUI.MapHandler import MapHandler
 from LabTable.Configurator import Configurator
 from LabTable.Model.Extent import Extent
 from LabTable.Communication.Communicator import Communicator
@@ -26,6 +25,8 @@ RENDER_REQUEST_MSG = {
 
 
 # handles the communication with the qgis plugin
+# TODO: we could later replace this communicator and the plugin by implementing a WCS client and get the
+# TODO: map directy from a headless QGIS Server which might have less overhead
 class QGISCommunicator(Communicator):
 
     callbacks: dict = None
@@ -43,7 +44,7 @@ class QGISCommunicator(Communicator):
         self.callbacks = callbacks
 
     # requests a new rendered map extent from qgis plugin
-    def request_render(self, map_handler: MapHandler, extent: Extent = None):
+    def request_render(self, map_handler, extent: Extent = None):
 
         def render_callback(response: dict):
 

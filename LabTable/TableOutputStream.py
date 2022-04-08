@@ -6,18 +6,18 @@ import logging
 from typing import List
 
 from LabTable.Model.ProgramStage import ProgramStage, CurrentProgramStage
-from .BrickDetection.Tracker import Tracker
-from .Configurator import Configurator
-from .TableUI.MainMap import MainMap
-from .TableUI.UIElements.UIElement import UIElement
+from LabTable.BrickDetection.Tracker import Tracker
+from LabTable.Configurator import Configurator
+from LabTable.TableUI.MainMap import MainMap
+from LabTable.TableUI.UIElements.UIElement import UIElement
 from LabTable.Model.Brick import Brick, BrickColor, BrickShape, BrickStatus
-from .TableUI.ImageHandler import ImageHandler
-from .TableUI.BrickIcon import ExternalBrickIcon, InternalBrickIcon
-from .TableUI.CallbackManager import CallbackManager
-from .ExtentTracker import ExtentTracker
+from LabTable.TableUI.ImageHandler import ImageHandler
+from LabTable.TableUI.BrickIcon import ExternalBrickIcon, InternalBrickIcon
+from LabTable.TableUI.CallbackManager import CallbackManager
+from LabTable.ExtentTracker import ExtentTracker
 from LabTable.Model.Extent import Extent
 from LabTable.Model.Board import Board
-from .SchedulerThread import SchedulerThread
+from LabTable.SchedulerThread import SchedulerThread
 
 # enable logger
 logger = logging.getLogger(__name__)
@@ -37,23 +37,26 @@ IDX_DRAW_ALL = -1
 RADIUS = 3
 
 # drawing debug information constants
-DEBUG_INFORMATION_FONT_SIZE = 0.8
+DEBUG_FONT_SIZE = 0.8
+DEBUG_FONT_THICKNESS = 2
 POSITION_X = 20
 POSITION_Y = 20
 LINE_HEIGHT = 20
 
+# FIXME: this has to be generalized
 PLAYER_POSITION_ASSET_ID = 13
 
 
 class TableOutputChannel(Enum):
 
     CHANNEL_BOARD_DETECTION = 1
+    CHANNEL_QR_DETECTION = 3
     CHANNEL_ROI = 2
 
     def next(self):
         value = self.value + 1
-        if value > 2:
-            value = 2
+        if value > 3:
+            value = 3
         return TableOutputChannel(value)
 
     def prev(self):
@@ -90,10 +93,17 @@ class TableOutputStream:
         self.server_thread = server_thread
 
         self.active_channel = TableOutputChannel.CHANNEL_BOARD_DETECTION
-        self.active_window = TableOutputStream.WINDOW_NAME_DEBUG  # TODO: implement window handling
+        self.active_window = TableOutputStream.WINDOW_NAME_DEBUG
+
+        # create a store of the last images of each channel
+        self.channel_images = {}
+        for channel in TableOutputChannel:
+            self.channel_images[channel.name] = np.empty((1, 1))
 
         # create debug window
-        cv2.namedWindow(TableOutputStream.WINDOW_NAME_DEBUG, cv2.WINDOW_AUTOSIZE)
+        cv2.namedWindow(TableOutputStream.WINDOW_NAME_DEBUG, cv2.WINDOW_NORMAL)
+        cv2.resizeWindow(TableOutputStream.WINDOW_NAME_DEBUG, config.get("screen_resolution", "width"),
+                         config.get("screen_resolution", "height"))
 
         # create beamer window
         beamer_id = self.config.get("beamer_resolution", "screen_id")
@@ -108,17 +118,15 @@ class TableOutputStream:
             cv2.setWindowProperty(TableOutputStream.WINDOW_NAME_BEAMER, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
         else:
             cv2.namedWindow(TableOutputStream.WINDOW_NAME_BEAMER, cv2.WINDOW_AUTOSIZE)
+
         cv2.setMouseCallback(TableOutputStream.WINDOW_NAME_BEAMER, self.beamer_mouse_callback)
 
         if video_output_name:
             # Define the codec and create VideoWriter object. The output is stored in .avi file.
             # Define the fps to be equal to 10. Also frame size is passed.
-            self.video_handler = cv2.VideoWriter(
-                video_output_name,
-                cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'),
-                10,
-                (config.get('resolution', 'width'), config.get('resolution', 'height'))
-            )
+            self.video_handler = cv2.VideoWriter(video_output_name, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'),
+                                                 10, (config.get('video_resolution', 'width'),
+                                                      config.get('video_resolution', 'height')))
         else:
             self.video_handler = None
 
@@ -158,11 +166,17 @@ class TableOutputStream:
 
     # fetches the correct monitor for the beamer output and writes it's data to the ConfigManager
     @staticmethod
-    def set_beamer_config_info(config):
+    def set_screen_config_info(config):
+
+        monitors = screeninfo.get_monitors()
+
+        config.set("screen_resolution", "width", monitors[0].width)
+        config.set("screen_resolution", "height", monitors[0].height)
+        config.set("screen_resolution", "pos_x", monitors[0].x - 1)
+        config.set("screen_resolution", "pos_y", monitors[0].y - 1)
+
         beamer_id = config.get("beamer_resolution", "screen_id")
         if beamer_id >= 0:
-            monitors = screeninfo.get_monitors()
-
             # if beamer-id out of bounds use last screen
             beamer_id = min(beamer_id, len(monitors) - 1)
 
@@ -182,9 +196,13 @@ class TableOutputStream:
 
     # write the frame into a window
     def write_to_channel(self, channel, frame):
-        # TODO: currently everything not written to the active channel is dropped
-        if channel == self.active_channel:
-            cv2.imshow(self.active_window, frame)
+
+        # display the channel name in the frame
+        cv2.putText(frame, channel.name, (POSITION_X, POSITION_Y), cv2.FONT_HERSHEY_DUPLEX, DEBUG_FONT_SIZE, GREEN,
+                    DEBUG_FONT_THICKNESS)
+
+        # store the last frame for later display
+        self.channel_images[channel.name] = frame
 
     # change the active channel, which is displayed in the window
     def set_active_channel(self, channel):
@@ -192,12 +210,12 @@ class TableOutputStream:
 
     # changes to the next channel
     def channel_up(self):
-        logger.info("changed active channel one up")
+        logger.debug("changed active channel one up")
         self.set_active_channel(self.active_channel.next())
 
     # changes to the previous channel
     def channel_down(self):
-        logger.info("changed active channel one down")
+        logger.debug("changed active channel one down")
         self.set_active_channel(self.active_channel.prev())
 
     # mark the candidate in given frame
@@ -223,23 +241,14 @@ class TableOutputStream:
         # Draw brick centroid points
         cv2.circle(frame, tracked_brick_position, RADIUS, GREEN, cv2.FILLED)
 
-    # Add some additional information to the debug window
-    def add_debug_information(self, frame):
-
-        text = "threshold: " + str(self.board.threshold_qrcode) \
-                         + "\nnumber of found qr-codes: " + str(self.board.found_codes_number)
-
-        # Add text line by line
-        for line_number, line in enumerate(text.split("\n")):
-            position_y = POSITION_Y + line_number * LINE_HEIGHT
-            cv2.putText(frame, line, (POSITION_X, position_y),
-                        cv2.FONT_HERSHEY_SIMPLEX, DEBUG_INFORMATION_FONT_SIZE, GREEN, FONT_THICKNESS)
-
-    # called every frame, updates the beamer image
-    # recognizes and handles button presses
+    # called every frame, updates the beamer image and recognizes and handles button presses
     def update(self, program_stage: CurrentProgramStage) -> bool:
+
         # update beamer image if necessary
         self.redraw_beamer_image(program_stage)
+
+        # redraw debug window
+        cv2.imshow(self.active_window, self.channel_images[self.active_channel.name])
 
         # check if key pressed
         key = cv2.waitKeyEx(1)
@@ -252,8 +261,8 @@ class TableOutputStream:
             return True
         return False
 
-    # redraws the beamer image if necessary
-    # applies different logic for each program_stage
+    # redraws the beamer image if necessary with the correct frame depending on the ProgramStage
+    # TODO: maybe make the image configurable via the GameEngine?
     def redraw_beamer_image(self, program_stage: CurrentProgramStage):
 
         if program_stage.current_stage == ProgramStage.WHITE_BALANCE:
@@ -262,12 +271,10 @@ class TableOutputStream:
         elif program_stage.current_stage == ProgramStage.FIND_CORNERS:
             self.draw_corner_qr_codes()
 
-        elif program_stage.current_stage == ProgramStage.EVALUATION \
-                or program_stage.current_stage == ProgramStage.PLANNING:
+        else:
             self.redraw_brick_detection()
 
-    # displays a white screen
-    # so that the board detector can more easily detect the qr-codes later
+    # displays a white screen so that the board detector can more easily detect the qr-codes later
     # called every frame when in ProgramStage WHITE_BALANCE
     def draw_white_frame(self):
         frame = np.ones([
@@ -278,8 +285,7 @@ class TableOutputStream:
         cv2.imshow(TableOutputStream.WINDOW_NAME_BEAMER, frame)
         self.last_frame = frame
 
-    # displays qr-codes in each corner
-    # so that the board detector can correctly identify the beamer projection edges
+    # displays qr-codes in each corner for the detection of the game board dimensions
     # called every frame when in ProgramStage FIND_CORNERS
     def draw_corner_qr_codes(self):
         frame = self.last_frame
@@ -301,14 +307,13 @@ class TableOutputStream:
         cv2.imshow(TableOutputStream.WINDOW_NAME_BEAMER, frame)
 
     # checks if the frame has updated and redraws it if this is the case
-    # called every frame when in ProgramStage EVALUATION or PLANNING
+    # called every frame when running the actual game
     def redraw_brick_detection(self):
         # check flags if any part of the frame has changed
         if self.config.get("map_settings", 'map_refreshed') \
                 or self.config.get("ui_settings", "ui_refreshed") \
                 or Tracker.BRICKS_REFRESHED \
                 or TableOutputStream.MOUSE_BRICKS_REFRESHED:
-
             # get map image from map handler
             frame = self.map_handler.get_map_image().copy()
 

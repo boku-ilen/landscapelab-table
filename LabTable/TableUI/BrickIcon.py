@@ -29,8 +29,9 @@ class ExternalBrickIcon(BrickIcon):
     # checks if the given brick matches the rules and should use this icon
     def matches(self, brick: Brick, virtual: bool):
 
-        if brick.layer_id == self.id_rule:
-            return virtual == self.virtual_rule or self.virtual_rule is None
+        # FIXME: configuration for this has to be rewritten
+        # if brick.layer_id == self.id_rule:
+        #    return virtual == self.virtual_rule or self.virtual_rule is None
 
         return False
 

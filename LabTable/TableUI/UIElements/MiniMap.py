@@ -1,4 +1,3 @@
-from Communication import QGISCommunicator
 from .UIStructureBlock import UIStructureBlock
 from ..MapHandler import MapHandler
 from ..ImageHandler import ImageHandler
@@ -109,14 +108,14 @@ class MiniMap(UIStructureBlock, MapHandler):
                 UIStructureBlock.rectangle(img, extent_indicator, self.extent_color, 1)
 
     # checks if a given brick lies on top of the block or any of it's children
-    # also initiates a teleport to the specified position
+    # also moves the main map to the specified position
     def brick_on_element(self, brick: Brick) -> bool:
 
         if self.visible:
             if self.pos_on_block(Vector.from_brick(brick)):
                 if brick.status == BrickStatus.CANDIDATE_BRICK or brick.status == BrickStatus.INTERNAL_BRICK:
                     if not self.pressed:
-                        self.initiate_teleport(brick)
+                        self.move_main_map(brick)
 
                     self.pressed_once = True
                     self.pressed = True
@@ -136,14 +135,12 @@ class MiniMap(UIStructureBlock, MapHandler):
 
     # calculates the new map extent for the controlled map based on the given brick position
     # and starts the render request
-    def initiate_teleport(self, brick: Brick):
+    def move_main_map(self, brick: Brick):
+
         map_brick = Extent.remap_brick(brick, self.get_global_area(), self.current_extent)
         c_map_extent = self.controlled_map.current_extent
 
-        new_extent = Extent.around_center(
-            Vector.from_brick(map_brick),
-            c_map_extent.get_width(),
-            c_map_extent.get_aspect_ratio()
-        )
+        new_extent = Extent.around_center(Vector.from_brick(map_brick), c_map_extent.get_width(),
+                                          c_map_extent.get_aspect_ratio())
 
         self.request_render(new_extent)

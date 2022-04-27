@@ -67,7 +67,8 @@ class MapHandler:
 
     # reloads the viewport image - this gets called as a callback after a successful render request
     def refresh(self, extent: Extent, buffer):
-        logger.debug("refreshing map")
+
+        logger.debug("refreshing map to extent {}".format(extent))
 
         unused_slot = (self.current_image + 1) % 2
 
@@ -83,6 +84,7 @@ class MapHandler:
         image[:, :, 3] = 255
 
         # assign image and set slot correctly
+        logger.debug("loading new image in slot {}".format(unused_slot))
         self.map_image[unused_slot] = image
         self.current_image = unused_slot
 
@@ -107,6 +109,7 @@ class MapHandler:
     # param brick gets ignored so that UIElements can call the function (could however be used to change strength of
     # modification depending on brick type)
     def modify_extent(self, extent_modifier, strength, brick):
+
         # get relevant current extent data
         width, height = self.current_extent.get_size().as_point()
         dims = np.array([width, height, width, height])
@@ -124,30 +127,27 @@ class MapHandler:
             change = diff / 2
             change_ratio = dims / width
 
-            next_extent.add_extent_modifier(
-                self.zoom_out_modifier * (change_ratio * change)
-            )
+            next_extent.add_extent_modifier(self.zoom_out_modifier * (change_ratio * change))
 
         # check if width is above max zoom
         diff = next_extent.get_width() - self.max_zoom
         if diff > 0:
             change = diff / 2
             change_ratio = dims / width
-
-            next_extent.add_extent_modifier(
-                self.zoom_in_modifier * (change_ratio * change)
-            )
+            next_extent.add_extent_modifier(self.zoom_in_modifier * (change_ratio * change))
 
         self.request_render(next_extent)
 
-    # request render of a extent
-    @staticmethod
-    def request_render(extent):
+    # request render of a extent to the qgis plugin
+    def request_render(self, extent):
+
+        logger.debug("requesting rendering of extent {}".format(extent))
         if QGISCommunicator.get_instance():
-            QGISCommunicator.get_instance().request_render(extent)
+            QGISCommunicator.get_instance().request_render(self, extent)
         else:
             logger.warning("could not request the render of extent {}".format(extent))
 
-    # returns current map image
+    # returns current map image from image buffer
     def get_map_image(self):
+        logger.debug("displaying image stored in slot {}".format(self.current_image))
         return self.map_image[self.current_image]

@@ -15,8 +15,10 @@ logger = logging.getLogger(__name__)
 
 # remote communication protocol
 URL = "ws{s}://{host}:{port}"  # this is a websocket (ssl) connection
-
 ANSWER_STRING = "success"
+
+# singleton map
+communicator_singletons = {}
 
 
 # the base class for websocket communication
@@ -27,7 +29,6 @@ class Communicator(threading.Thread):
     _connection_instance = None
     _connection_open = False
     _message_stack = {}
-    _instance = None
     ssl_pem_file = None
     ip = None
     port = None
@@ -61,12 +62,13 @@ class Communicator(threading.Thread):
         self.start()
 
         # store singleton reference
-        type(self)._instance = self
+        communicator_singletons[type(self).__name__] = self
 
     @classmethod
     def get_instance(cls):
-        return cls._instance
+        return communicator_singletons[cls.__name__]
 
+    # FIXME: add implementation for bidirectional communication
     def on_message(self, ws, message):
         json_message = json.loads(message)
         logger.debug("received message: {:.250}".format(message))

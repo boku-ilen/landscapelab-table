@@ -201,7 +201,8 @@ class Extent:
             x += new_extent.x_min
             y += new_extent.y_min
 
-        return Vector(x, y)
+            ret = Vector(x, y)
+            return ret
 
     #                  +----------------------------+
     #                  |                            |
@@ -221,11 +222,8 @@ class Extent:
             logger.warning("Could not remap the brick: {}".format(brick))
 
         else:
-            x, y = Extent.remap_point(
-                Vector(remapped_brick.centroid_x, remapped_brick.centroid_y),
-                old_extent,
-                new_extent
-            )
+            x, y = Extent.remap_point(Vector(remapped_brick.centroid_x, remapped_brick.centroid_y),
+                                      old_extent, new_extent)
 
             remapped_brick.centroid_x = x
             remapped_brick.centroid_y = y

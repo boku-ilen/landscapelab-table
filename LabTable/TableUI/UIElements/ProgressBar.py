@@ -32,14 +32,8 @@ class ProgressBar(UIStructureBlock):
             border_weight: float = None
     ):
 
-        super().__init__(
-            config,
-            position,
-            size,
-            color=background_color,
-            border_color=border_color,
-            border_weight=border_weight
-        )
+        super().__init__(config, position, size, color=background_color, border_color=border_color,
+                         border_weight=border_weight)
 
         self.config = config
 

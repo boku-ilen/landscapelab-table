@@ -15,21 +15,14 @@ logger = logging.getLogger(__name__)
 class ImageHandler:
 
     def __init__(self, config: Configurator):
-        self.config = config
 
-        self.resource_path = Configurator.reconstruct_path(
-            os.getcwd(),
-            self.config.get("resources", "relative_path")
-        )
+        self.config = config
+        self.resource_path = Configurator.reconstruct_path(os.getcwd(), self.config.get("resources", "relative_path"))
 
     # loads images stores them in a dictionary with additional info and returns this dictionary
-    def load_image(
-            self,
-            name: str,
-            size: Optional[Tuple[int, int]] = None,
-            relative_center: Optional[Tuple[float, float]] = None,
-            center: Optional[Tuple[int, int]] = None
-    ):
+    def load_image(self, name: str, size: Optional[Tuple[int, int]] = None,
+                   relative_center: Optional[Tuple[float, float]] = None, center: Optional[Tuple[int, int]] = None):
+
         image_dict = self.config.get("resources", name)
 
         # check that image has path

@@ -234,9 +234,9 @@ class TableOutputStream:
                     cv2.FONT_HERSHEY_SIMPLEX, FONT_SIZE, DARK_GRAY, FONT_THICKNESS)
 
         # Draw brick contour names
-        # FIXME: put other caption like id of the brick
-        cv2.putText(frame, tracked_brick.status.name, tracked_brick_position,
-                    cv2.FONT_HERSHEY_SIMPLEX, FONT_SIZE, DARK_GRAY, FONT_THICKNESS)
+        caption = "{} ({}, {})".format(tracked_brick.status.name, tracked_brick.centroid_x, tracked_brick.centroid_y)
+        cv2.putText(frame, caption, tracked_brick_position, cv2.FONT_HERSHEY_SIMPLEX, FONT_SIZE, DARK_GRAY,
+                    FONT_THICKNESS)
 
         # Draw brick centroid points
         cv2.circle(frame, tracked_brick_position, RADIUS, GREEN, cv2.FILLED)
@@ -309,11 +309,13 @@ class TableOutputStream:
     # checks if the frame has updated and redraws it if this is the case
     # called every frame when running the actual game
     def redraw_brick_detection(self):
+
         # check flags if any part of the frame has changed
         if self.config.get("map_settings", 'map_refreshed') \
                 or self.config.get("ui_settings", "ui_refreshed") \
                 or Tracker.BRICKS_REFRESHED \
                 or TableOutputStream.MOUSE_BRICKS_REFRESHED:
+
             # get map image from map handler
             frame = self.map_handler.get_map_image().copy()
 
@@ -408,8 +410,8 @@ class TableOutputStream:
     # parameters flags and param are necessary so that function can be registered as openCV mouse callback function
     def beamer_mouse_callback(self, event, x, y, flags, param):
 
-        if self.program_stage.current_stage == ProgramStage.EVALUATION \
-                or self.program_stage.current_stage == ProgramStage.PLANNING:
+        if self.program_stage.current_stage == ProgramStage.INTERNAL_MODE \
+                or self.program_stage.current_stage == ProgramStage.EXTERNAL_MODE:
 
             if event == cv2.EVENT_LBUTTONDOWN or event == cv2.EVENT_RBUTTONDOWN:
 

@@ -36,12 +36,15 @@ class Configurator:
             raise ConfigError("Could not load config data from {}".format(self._config_file))
 
     # Return searched json data
-    def get(self, group, key):
+    def get(self, group, key=None):
 
         value = ""  # FIXME:
 
         try:
-            value = self.config_data[group][key]
+            if not key:
+                value = self.config_data[group]
+            else:
+                value = self.config_data[group][key]
             logger.debug("Get config data: {} -> {} with {}".format(group, key, value))
         except Exception as e:
             logger.warning("Getting config data {} -> {} without success".format(group, key))

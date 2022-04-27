@@ -27,6 +27,7 @@ class BrickShape(Enum):
 # INTERNAL: used for buttons and controls
 # EXTERNAL: this has real geographical coordinates and an object_id
 # CANDIDATE: we not yet know if this is a real brick
+# OUTDATED: this brick does not exist in reality anymore
 class BrickStatus(Enum):
     INTERNAL_BRICK = 0
     EXTERNAL_BRICK = 1
@@ -38,13 +39,9 @@ class BrickStatus(Enum):
 class Brick:
 
     def __init__(self, centroid_x: int, centroid_y: int, shape: BrickShape, color: BrickColor):
-
         # the object_id which the brick has in the LandscapeLab. this needs to be
         # available if it is not a candidate and not internal
         self.object_id = None
-
-        # the identifier of the layer which is mapped from color and shape
-        self.layer_id = None
 
         # the x and y coordinates locally (in stream coordinates)
         # of the center of the detected shape
@@ -55,16 +52,22 @@ class Brick:
         self.color: BrickColor = color
         self.status: BrickStatus = BrickStatus.CANDIDATE_BRICK
 
+        # the x and y coordinates in projected coordinates
         # these values will ONLY be set if the brick status is EXTERNAL_BRICK
         self.map_pos_x: Optional[float] = None
         self.map_pos_y: Optional[float] = None
+
+        # some DEBUG information
+        self.average_detected_color = 0  # Hue
+        self.detected_area = 0.0  # square pixel
+        self.aspect_ratio = 0
+        self.rotated_bbox_lengths = None
 
     # returns an independent clone of this brick
     def clone(self):
         clone = Brick(self.centroid_x, self.centroid_y, self.shape, self.color)
         clone.status = self.status
         clone.object_id = self.object_id
-        clone.layer_id = self.layer_id
         clone.map_pos_x = self.map_pos_x
         clone.map_pos_y = self.map_pos_y
         return clone
@@ -82,5 +85,5 @@ class Brick:
         return hash((self.centroid_y, self.centroid_x, self.color, self.shape))
 
     def __str__(self):
-        return "Brick ({}, {}) [{}|{}|{}] {} {}".format(self.centroid_x, self.centroid_y, self.color,
-                                                        self.shape, self.status, self.object_id, self.layer_id)
+        return "Brick ({}, {}) [{}|{}|{}] {}".format(self.centroid_x, self.centroid_y, self.color,
+                                                     self.shape, self.status, self.object_id)

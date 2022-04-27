@@ -40,14 +40,7 @@ class Button(UIStructureBlock):
             border_weight = config.get("ui_settings", "button_border_weight")
 
         # call super init
-        super().__init__(
-            config,
-            position,
-            size,
-            color=color,
-            border_color=border_color,
-            border_weight=border_weight
-        )
+        super().__init__(config, position, size, color=color, border_color=border_color, border_weight=border_weight)
 
         # set visuals
         self.icon = None

@@ -44,7 +44,7 @@ class QGISCommunicator(Communicator):
         self.callbacks = callbacks
 
     # requests a new rendered map extent from qgis plugin
-    def request_render(self, map_handler, extent: Extent = None):
+    def request_render(self, map_handler: 'MapHandler', extent: Extent = None):
 
         def render_callback(response: dict):
 

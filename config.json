@@ -15,6 +15,7 @@
 
   "resources": {
     "relative_path": ["resources"],
+
     "qr_bottom_left": {
       "path": ["QR_Codes", "bottom_left.png"]
     },
@@ -27,7 +28,6 @@
     "qr_top_right": {
       "path": ["QR_Codes", "top_right.png"]
     },
-
     "outdated_brick": {
       "path": ["brick_overlays", "outdated.png"],
       "center": [32,32]
@@ -180,31 +180,11 @@
     "internal_max_disappeared": 10
   },
 
-  "SQUARE_BRICK": {
-    "RED_BRICK": 1,
-    "BLUE_BRICK": 3,
-    "GREEN_BRICK": 5,
-    "YELLOW_BRICK": 7
-  },
-
-  "RECTANGLE_BRICK": {
-    "RED_BRICK": 2,
-    "BLUE_BRICK": 4,
-    "GREEN_BRICK": 6,
-    "YELLOW_BRICK": 8
-  },
-
-  "EVALUATION_BRICKS": {
-    "BLUE_BRICK": 11,
-    "RED_BRICK": 12
-  },
-
-  "stored_instances": {
-    "asset_ids" : [1, 2, 3, 13],
-    "1" : "SQUARE_BRICK, RED_BRICK",
-    "2" : "RECTANGLE_BRICK, RED_BRICK",
-    "3" : "SQUARE_BRICK, BLUE_BRICK",
-    "13" : "None, None"
+  "brick_colors": {
+    "RED_BRICK": [[[0, 100, 50], [20, 255, 255]], [[160, 100, 50], [180, 255, 255]]],
+    "BLUE_BRICK": [[[80, 100, 50], [140, 255, 255]]],
+    "GREEN_BRICK": [[[40, 100, 50], [80, 255, 255]]],
+    "YELLOW_BRICK": [[[10, 100, 100], [20, 255, 200]]]
   },
 
   "ui_settings": {
@@ -245,7 +225,6 @@
 
     "CHANNEL_UP": "r",
     "CHANNEL_DOWN": "f",
-    "CHANGE_STAGE": "n",
     "CONFIRM_BRICKS": "x",
 
     "TOGGLE_NAV_BLOCK": "1",
@@ -255,8 +234,8 @@
 
   "map_settings": {
     "start_zoom": 20000,
-    "start_x": 0,
-    "start_y": 0,
+    "start_x": 1753811,
+    "start_y": 6177037,
     "coordinate_reference_system": "EPSG:3857",
     "extent_changed": false,
     "map_refreshed": true,

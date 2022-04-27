@@ -7,11 +7,13 @@
 
 import logging
 from builtins import staticmethod
-from typing import Optional
+from typing import Optional, Tuple
 
 import cv2
 import numpy as np
 import math
+
+from numpy import ndarray
 
 from LabTable.Model.Brick import Brick, BrickShape, BrickColor
 
@@ -46,34 +48,13 @@ HIST_SIZE = 181
 # H-value range (0 to 180)
 # S-value range (0 to 255)
 # V-value range (0 to 255)
-masks_configuration = {
-    # TODO: adjust yellow so skin will be excluded
-    #BrickColor.YELLOW_BRICK: [
-    #    (np.array([10, 100, 100]), np.array([20, 255, 200])),
-    #],
-    # TODO: adjust green so black will be excluded
-    #BrickColor.GREEN_BRICK: [
-    #    (np.array([40, 100, 50]), np.array([80, 255, 255])),
-    #],
-    BrickColor.BLUE_BRICK: [
-        (np.array([80, 100, 50]), np.array([140, 255, 255])),
-    ],
-    BrickColor.RED_BRICK: [
-        (np.array([0, 100, 50]), np.array([20, 255, 255])),
-        (np.array([160, 100, 50]), np.array([180, 255, 255])),
-    ]
-}
+
 # TODO: set in masks_configuration only hue and saturation/value separately, the same for all colors?
 MIN_SATURATION = 100
 MAX_SATURATION = 255
 
 
 class ShapeDetector:
-
-    # The centroid tracker instance
-    tracker = None
-
-    pipeline = None
 
     # Initialize possible brick sizes
     min_square_length = None
@@ -91,111 +72,105 @@ class ShapeDetector:
         self.config = config
         self.output_stream = output_stream
         self.resolution_width = config.get("video_resolution", "width")
+        self.masks_configuration = config.get("brick_colors")
 
     # Check if the contour is a brick
-    # TODO: remove frame if nothing to draw anymore
     def detect_brick(self, contour, frame) -> Optional[Brick]:
 
         # Initialize the contour name and approximate the contour
         # with Douglas-Peucker algorithm
-        contour_shape: BrickShape = BrickShape.UNKNOWN_SHAPE
-        detected_color: BrickColor = BrickColor.UNKNOWN_COLOR
         epsilon = 0.1 * cv2.arcLength(contour, True)
         approx = cv2.approxPolyDP(contour, epsilon, True)
 
         # Check if the contour has 4 vertices
         if len(approx) == 4:
 
-            # Compute contour moments, which include area,
-            # its centroid, and information about its orientation
-            moments_dict = cv2.moments(contour)
-
             # Compute the centroid of the contour
+            moments_dict = cv2.moments(contour)
             if moments_dict["m00"] != 0:
                 centroid_x = int((moments_dict["m10"] / moments_dict["m00"]))
                 centroid_y = int((moments_dict["m01"] / moments_dict["m00"]))
 
-                # TODO: test if algorithm works correctly
                 # Eliminate too small contours
-                if cv2.contourArea(contour) < self.min_square_area:
-                    logger.debug("Don't draw -> area too small")
-
-                # Eliminate too large contours
-                elif cv2.contourArea(contour) > self.max_rectangle_area:
-                    logger.debug("Don't draw -> area too large")
-
-                else:
+                area = cv2.contourArea(contour)
+                if self.min_square_area <= area <= self.max_rectangle_area:
 
                     # Check if contour is a rectangle or square
-                    contour_shape = self.check_if_square(approx)
+                    contour_shape, aspect_ratio, rotated_bbox_lengths = self.classify_shape(approx)
+                    if contour_shape is not BrickShape.UNKNOWN_SHAPE:
 
-                    if contour_shape is BrickShape.UNKNOWN_SHAPE:
-                        logger.debug("Don't draw -> unknown shape")
-                    else:
                         # Compute the bounding box of the contour
                         bbox = cv2.boundingRect(approx)
 
                         # Find the most frequent color (heu value)
                         # in the bounding box
-                        detected_color = self.find_most_frequent_hue(bbox, frame)
+                        detected_color, avg_hue = self.classify_color(bbox, frame)
 
                         # Eliminate wrong colors contours
-                        if detected_color == BrickColor.UNKNOWN_COLOR:
-                            logger.debug("Don't draw -> unknown color")
-                        else:
-                            logger.debug("Draw contour:\n Shape: {}\n Color: {}\n "
-                                         "Center coordinates: {}, {}\n Contour area: {}".
-                                         format(contour_shape, detected_color,
-                                                centroid_x, centroid_y, cv2.contourArea(contour)))
+                        if detected_color is not BrickColor.UNKNOWN_COLOR:
 
                             # return a Brick with the detected parameters
-                            return Brick(centroid_x, centroid_y, contour_shape, detected_color)
+                            brick = Brick(centroid_x, centroid_y, contour_shape, BrickColor[detected_color])
+                            brick.aspect_ratio = aspect_ratio
+                            brick.average_detected_color = detected_color
+                            brick.detected_area = area
+                            brick.rotated_bbox_lengths = rotated_bbox_lengths
+                            brick.average_detected_color = avg_hue
+
+                            # log debug information
+                            logger.debug("created brick {} with area {} and hue {}".format(brick, area, avg_hue))
+
+                            return brick
         return None
 
     # Check if the contour has a brick shape: square or rectangle
-    def check_if_square(self, rotated_bbox) -> BrickShape:
+    def classify_shape(self, rotated_bbox) -> Tuple[BrickShape, float, ndarray]:
 
+        brick_shape = BrickShape.UNKNOWN_SHAPE
+        aspect_ratio = 0
         rotated_bbox_lengths = self.calculate_rotated_bbox_lengths(rotated_bbox)
+        logger.debug("Rotated bbox size: {}".format(rotated_bbox_lengths))
 
         # Prevent division by zero
-        if int(rotated_bbox_lengths[1]) is 0:
-            return BrickShape.UNKNOWN_SHAPE
+        if int(rotated_bbox_lengths[1]) is not 0:
 
-        # Compute the aspect ratio of the two lengths
-        aspect_ratio = int(rotated_bbox_lengths[0]) / int(rotated_bbox_lengths[1])
+            # Compute the aspect ratio of the two lengths
+            aspect_ratio = int(rotated_bbox_lengths[0]) / int(rotated_bbox_lengths[1])
+            logger.debug("detected aspect ratio is {}".format(aspect_ratio))
 
-        # Check if aspect ratio is near 1:1
-        if MIN_SQ <= aspect_ratio <= MAX_SQ:
+            # Check if aspect ratio is near 1:1
+            if MIN_SQ <= aspect_ratio <= MAX_SQ:
 
-            # Check if sides of the square brick are not too short/long
-            if not (self.min_square_length < rotated_bbox_lengths[0] < self.max_square_length) \
-                    and (self.min_square_length < rotated_bbox_lengths[1] < self.max_square_length):
-                logger.debug("Wrong square sides lengths: {}".format(rotated_bbox_lengths))
-                return BrickShape.UNKNOWN_SHAPE
+                # Check if sides of the square brick are not too short/long
+                if not (self.min_square_length < rotated_bbox_lengths[0] < self.max_square_length) \
+                        and (self.min_square_length < rotated_bbox_lengths[1] < self.max_square_length):
+                    logger.debug("wrong square sides lengths")
 
-            logger.debug("Rotated bbox size: {}".format(rotated_bbox_lengths))
-            logger.debug("Square ratio: {}".format(aspect_ratio))
-            return BrickShape.SQUARE_BRICK
+                else:
+                    logger.debug("detected SQUARE brick contour")
+                    brick_shape = BrickShape.SQUARE_BRICK
 
-        # Check if aspect ratio is near 2:1
-        elif MIN_REC < aspect_ratio < MAX_REC:
+            # Check if aspect ratio is near 2:1
+            elif MIN_REC < aspect_ratio < MAX_REC:
 
-            # Check if sides of the rectangle brick are not too short/long
-            if not (self.min_rectangle_length < rotated_bbox_lengths[0] < self.max_rectangle_length) \
-                    and (self.min_rectangle_length < rotated_bbox_lengths[1] < self.max_rectangle_length):
-                logger.debug("Wrong rectangle sides lengths: {}".format(rotated_bbox_lengths))
-                return BrickShape.UNKNOWN_SHAPE
+                # Check if sides of the rectangle brick are not too short/long
+                if not (self.min_rectangle_length < rotated_bbox_lengths[0] < self.max_rectangle_length) \
+                        and (self.min_rectangle_length < rotated_bbox_lengths[1] < self.max_rectangle_length):
+                    logger.debug("wrong rectangle sides lengths")
 
-            logger.debug("Rotated bbox size: {}".format(rotated_bbox_lengths))
-            logger.debug("Rectangle ratio: {}".format(aspect_ratio))
-            return BrickShape.RECTANGLE_BRICK
+                else:
+                    logger.debug("detected RECTANGLE brick contour")
+                    brick_shape = BrickShape.RECTANGLE_BRICK
 
-        else:
-            return BrickShape.UNKNOWN_SHAPE
+            # finally reject shape
+            else:
+                logger.debug("could not classify shape because of aspect ratio")
+
+        return brick_shape, aspect_ratio, rotated_bbox_lengths
 
     # Compute two sides lengths of the contour, which have a common corner
     @staticmethod
-    def calculate_rotated_bbox_lengths(rotated_bbox):
+    def calculate_rotated_bbox_lengths(rotated_bbox) -> ndarray:
 
         # Initialize a list for sides lengths of the contour
         sides_lengths_list = []
@@ -229,24 +204,21 @@ class ShapeDetector:
 
         return contours
 
-    @staticmethod
-    def find_most_frequent_hue(bbox, frame):
+    # this is used to classify
+    def classify_color(self, bbox, frame):
 
         frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
         # Save dimensions of the bounding box
         (left_x, upper_y, width, height) = bbox
 
-        # Calculate a new bounding box
-        # which is 25% of the old one
-        # and is placed in its middle
+        # Calculate a new bounding box which is 25% of the old one and is placed in its middle
         new_width = int(width / 2)
         new_height = int(height / 2)
         new_left_x = left_x + int(new_width / 2)
         new_upper_y = upper_y + int(new_height / 2)
 
-        # Create a histogram with hue values of pixels
-        # which already have a correct saturation
+        # Create a histogram with hue values of pixels which already have a correct saturation
         hue_histogram = np.zeros(HIST_SIZE)
         max_frequency = 0
         most_frequent_hue_value = None
@@ -269,22 +241,20 @@ class ShapeDetector:
 
         if most_frequent_hue_value is not None:
             # Iterate through all configured color ranges
-            for mask_color, mask_config in masks_configuration.items():
+            for mask_color, mask_config in self.masks_configuration.items():
 
-                # Check if found hue values
-                # are in any of configured color ranges
+                # Check if found hue values are in any of configured color ranges
                 for entry in mask_config:
 
                     # TODO: currently only one of the most frequent hue values will be returned as a detected color
                     if entry[0][HUE] <= most_frequent_hue_value <= entry[1][HUE]:
                         detected_color = mask_color
 
-                        # Return an accepted
-                        # detected color name
-                        return detected_color
+                        # Return an accepted detected color name
+                        return detected_color, most_frequent_hue_value
 
         # Return if no configured color detected
-        return BrickColor.UNKNOWN_COLOR
+        return BrickColor.UNKNOWN_COLOR, most_frequent_hue_value
 
     @staticmethod
     def calculate_tangent(angle):

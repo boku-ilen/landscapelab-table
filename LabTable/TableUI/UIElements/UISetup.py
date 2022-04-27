@@ -1,6 +1,7 @@
 from typing import Tuple, List, Callable
 from functools import partial
 
+from Communication.LLCommunicator import LLCommunicator
 from .UIElement import UIElement, UIActionType
 from .Button import Button
 from .UIStructureBlock import UIStructureBlock
@@ -37,7 +38,9 @@ def setup_ui(root: UIElement, main_map: MainMap, config: Configurator, callback_
 
 # constant class used by the ui setup methods to easily access vector constants
 class Constants:
+
     def __init__(self, config):
+
         self.scale_factor = config.get("ui_settings", "scale_factor")
         self.button_size = Vector(50, 50) * self.scale_factor
 
@@ -59,6 +62,7 @@ class Constants:
 
 # creates and sets up the navigation block ui
 def setup_nav_block_ui(nav_block_root, config, main_map, callback_manager) -> (MainMap, UIStructureBlock):
+
     # get vector constants that will be used to position the ui elements
     c = Constants(config)
 
@@ -127,44 +131,26 @@ def setup_detection_ui(detection_ui_root, config, callback_manager):
     c = Constants(config)
 
     # create elements
-    progress_bar_wind = ProgressBar(
-        config,
-        c.bot_right_corner - c.x - c.y * 5,
-        c.x / 2 + c.y * 4.5,
-        False,
-        True,
-        [(255, 0, 0)]  # bgr
-    )
-    progress_bar_pv = ProgressBar(
-        config,
-        c.bot_right_corner - c.x * 2 - c.y * 5,
-        c.x / 2 + c.y * 4.5,
-        False,
-        True,
-        [(0, 0, 255)]  # bgr
-    )
+    progress_bars = []
+    targets = []  # LLCommunicator.get_instance().get_game_targets()  # FIXME: the source will change to ProgramStage
+    color_indexes = [[(255, 0, 0)], [(0, 0, 255)]]  # FIXME: load dynamically
+    for counter, target in targets:
+        progress_bar = ProgressBar(config, c.bot_right_corner - c.x * (counter + 1) - c.y * 5,
+                                   c.x / 2 + c.y * 4.5, False, True, color_indexes[counter])
 
-    # set progress calculation callbacks
-    # FIXME: generalize with game objects
-    # asset_type_id = config.get("server", "wind_id")
-    # progress_bar_wind.target = server.get_energy_target(asset_type_id)
-    # progress_bar_wind.progress_calculation = partial(server.get_energy_contrib, asset_type_id)
+        progress_bar.target = target.value  # FIXME
+        progress_bar.progress_calculation = partial(LLCommunicator.get_instance().get_layer_info, target.layer)
 
-    # asset_type_id = config.get("server", "pv_id")
-    # progress_bar_pv.target = server.get_energy_target(asset_type_id)
-    # progress_bar_pv.progress_calculation = partial(server.get_energy_contrib, asset_type_id)
-
-    # setup hierarchy
-    detection_ui_root.add_child(progress_bar_wind)
-    detection_ui_root.add_child(progress_bar_pv)
+        detection_ui_root.add_child(progress_bar)
+        progress_bars.append(progress_bar)
 
     # make detection root invisible
     detection_ui_root.set_visible(False)
-    callback_manager.stage_change_actions[ProgramStage.PLANNING].set_callback(
-        lambda brick: detection_ui_root.set_visible(True)
-    )
+    # FIXME: change program mode will work differently
+    callback_manager.stage_change_actions[ProgramStage.INTERNAL_MODE].set_callback(
+        lambda brick: detection_ui_root.set_visible(True))
 
-    return partial(update_progress_bars, [progress_bar_wind, progress_bar_pv])
+    return partial(update_progress_bars, progress_bars)
 
 
 # calls the update function on all progress bars that were passed in

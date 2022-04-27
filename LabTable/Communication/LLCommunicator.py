@@ -1,5 +1,4 @@
 import logging
-import json
 
 from Configurator import Configurator
 from LabTable.Communication.Communicator import Communicator
@@ -13,39 +12,48 @@ logger = logging.getLogger(__name__)
 
 # remote communication protocol
 GET_ASSETS_MSG = {
-    "keyword": "GET_OBJECT_LAYER_DATA",
-    "layer_name": ""
+    "keyword": "GET_OBJECT_LAYER_DATA",  # FIXME: do we need this? could be provided during ProgramStage update?
 }
-CREATE_ASSET_MSG = {
+CREATE_OBJECT_MSG = {
     "keyword": "CREATE_OBJECT",
-    "layer_name": "",
-    "position": [0.0, 0.0]
+    "position": [0.0, 0.0],
+    "brick_color": None,
+    "brick_shape": None
 }
-UPDATE_ASSET_MSG = {
-    "keyword": "SET_OBJECT_POSITION",
-    "layer_name": "",
+UPDATE_OBJECT_MSG = {
+    "keyword": "SET_OBJECT_POSITION",  # FIXME: could other parameters be changed by the LabTable?
     "object_id": 0,
     "position": [0.0, 0.0]
 }
-REMOVE_ASSET_MSG = {
+REMOVE_OBJECT_MSG = {
     "keyword": "REMOVE_OBJECT",
-    "layer_name": "",
     "object_id": 0
 }
-GET_SETTINGS_MSG = {
-    "keyword": "GET_SETTINGS"
+OBJECT_ANSWER_MSG = {  # FIXME: do we need more parameters? or do we transfer the serialized Brick-Object?
+    "keyword": "OBJECT_ANSWER",
+    "success": False,
+    "object_id": 0
 }
-TELEPORT_TO_MSG = {
-    "keyword": "TELEPORT_TO",
-    "projected_x": 0.0,
-    "projected_y": 0.0
+HANDSHAKE_MSG = {
+    "keyword": "HANDSHAKE",
+    "detected_brick_shapes": [],  # FIXME: or is it necessary to provide the combination of shape and color?
+    "detected_brick_colors": []
 }
-SET_EXTENT_MSG = {
+UPDATE_GAMESTAGE_MSG = {
+    "keyword": "CHANGE_GAMESTAGE",
+    "used_brick_types": [],
+}
+SET_EXTENT_MSG = {  # this is sent on change to the LL
     "keyword": "TABLE_EXTENT",
     "min_x": 0.0,
     "min_y": 0.0,
     "max_x": 0.0,
     "max_y": 0.0
+}
+PLAYER_POSITION_MSG = {  # this is received on change from LL
+    "keyword": "PLAYER_POS",
+    "projected_x": 0.0,
+    "projected_y": 0.0
 }
 
 
@@ -75,7 +83,7 @@ class LLCommunicator(Communicator):
                 group, entry = key.split("-")
                 self.config.set(group, entry, response[key])
 
-        message = GET_SETTINGS_MSG
+        message = HANDSHAKE_MSG
         # TODO: maybe fetch information about own system and send it to the LL
         self.send_message(message, settings_callback)
 
@@ -108,8 +116,8 @@ class LLCommunicator(Communicator):
         Extent.calc_world_pos(brick, self.extent_tracker.board, self.extent_tracker.map_extent)
 
         # Send request creating remote brick instance and save the response
-        message = CREATE_ASSET_MSG.copy()
-        message["layer_name"] = brick.layer_id
+        message = CREATE_OBJECT_MSG.copy()
+        # TODO: send the brick type
         message["position"] = [brick.map_pos_x, brick.map_pos_y]
 
         self.send_message(message, create_callback)
@@ -128,14 +136,13 @@ class LLCommunicator(Communicator):
                 else:
                     logger.warning("could not remove remote brick {}".format(brick_instance))
 
-        message = REMOVE_ASSET_MSG.copy()
-        message["layer_name"] = brick_instance.layer_id
+        message = REMOVE_OBJECT_MSG.copy()
         message["object_id"] = brick_instance.object_id
 
         # Send a request to remove brick instance
         self.send_message(message, remove_callback)
 
-    def get_stored_brick_instances(self, layer_name, result_callback):
+    def get_stored_brick_instances(self, result_callback):
 
         def get_instances_callback(response: dict):
             stored_assets = response["objects"]
@@ -168,7 +175,6 @@ class LLCommunicator(Communicator):
                     # Add missing properties
                     stored_instance.shape = shape
                     stored_instance.color = color
-                    stored_instance.layer_id = layer_name
                     stored_instance.object_id = asset["id"]
                     stored_instance.status = BrickStatus.EXTERNAL_BRICK
 
@@ -181,8 +187,6 @@ class LLCommunicator(Communicator):
         logger.debug("getting stored brick instances from the server...")
 
         message = GET_ASSETS_MSG.copy()
-        message["layer_name"] = layer_name
-
         self.send_message(message, get_instances_callback)
 
     # initiates corner point update of the given main map extent
@@ -201,39 +205,7 @@ class LLCommunicator(Communicator):
 
         self.send_message(message, extent_callback)
 
-    # checks how much energy a given asset type contributes
-    # FIXME: this has to be generalized to work with various game objects
-    def get_energy_contrib(self, asset_type_id):
-
-        # create msg
-        get_asset_contrib_msg = '{command}{scenario_id}/{asset_type_id}.json'.format(
-            command=GET_ENERGY_CONTRIBUTION, scenario_id=self.scenario_id, asset_type_id=asset_type_id)
-
-        # send msg
-        contrib_return = self.send_message(get_asset_contrib_msg)
-
-        # check if request successful
-        # FIXME: rework protocol
-        if not self.check_status_code_200(contrib_return.status_code):
-            raise ConnectionError(
-                "Bad Request: {}".format(get_asset_contrib_msg))
-
-        # return energy contribution
-        return json.loads(contrib_return.text)['total_energy_contribution']
-
-    # check how much energy a given asset type should contribute
-    # FIXME: this has to be generalized to work with various game objects
-    def get_energy_target(self, asset_type_id):
-
-        # create msg
-        get_asset_target_msg = '{command}{scenario_id}/{asset_type_id}.json'.format(
-            command=GET_ENERGY_TARGET, scenario_id=self.scenario_id, asset_type_id=asset_type_id)
-
-        # send msg
-        target_return = self.send_message(get_asset_target_msg)
-
-        # check if request successful
-        # FIXME: rework protocol
-
-        # return energy target
-        # return json.loads(target_return.text)['energy_target']
+    # FIXME: this is only a protype
+    # update the player position on the display where the landscapelab player(s) are positioned
+    def update_player_position(self, player_id, pos_x, pos_y, pos_z, dir_x, dir_y, dir_z):
+        pass

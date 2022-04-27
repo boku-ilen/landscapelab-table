@@ -27,13 +27,6 @@ INPUT_WEIGHT = 0.5
 # with the THRESH_BINARY
 MAX_VALUE = 255
 
-# Number of frames for changing threshold_qrcode when detecting the board corners
-MAX_FRAMES_NUMBER = 20
-
-# Adjusting threshold_qrcode step
-THRESHOLD_STEP = 16
-MAX_THRESHOLD = 255
-
 
 # this class manages the extent to detect and reference the extent of
 # the board related to the video stream
@@ -41,16 +34,12 @@ class BoardDetector:
     background = None
     last_color_image = None
 
-    def __init__(self, config, threshold_qrcode):
+    def __init__(self, config):
 
         self.config = config
 
         # Initialize the board
         self.board = Board()
-
-        # Threshold for finding QR-Codes
-        # To change the threshold use an optional parameter
-        self.board.threshold_qrcode = threshold_qrcode
 
         # Array with all polygons of QR-Codes for board corners
         self.all_codes_polygons_points = [None, None, None, None]

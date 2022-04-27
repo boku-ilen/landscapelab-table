@@ -7,7 +7,7 @@ from .UIElements.UIElement import UIElement
 from .MainMap import MainMap
 from .UIElements.MiniMap import MiniMap
 from ..BrickDetection.Tracker import Tracker
-from LabTable.Model.ProgramStage import CurrentProgramStage, ProgramStage
+from LabTable.Model.ProgramStage import ProgramStage
 from ..Configurator import Configurator, ConfigError
 
 logger = logging.getLogger(__name__)
@@ -46,10 +46,6 @@ class TrackerActions(Enum):
     CONFIRM_BRICKS = 0
 
 
-class ProgramActions(Enum):
-    CHANGE_STAGE = 0
-
-
 class UiActions(Enum):
     TOGGLE_NAV_BLOCK = 0
     SET_NAV_BLOCK_VISIBLE = 1
@@ -74,14 +70,12 @@ class CallbackManager:
         self.mini_map_actions: NamedCallbacks = CallbackManager.define_action_set(MiniMapActions)
         self.output_actions: NamedCallbacks = CallbackManager.define_action_set(OutputActions)
         self.tracker_actions: NamedCallbacks = CallbackManager.define_action_set(TrackerActions)
-        self.program_actions: NamedCallbacks = CallbackManager.define_action_set(ProgramActions)
         self.ui_actions: NamedCallbacks = CallbackManager.define_action_set(UiActions)
 
         # create action map from action lists
         self.action_map: MappedCallbacks = CallbackManager.find_button_mapping(
-            [self.map_actions, self.mini_map_actions, self.output_actions, self.tracker_actions, self.program_actions, self.ui_actions],
-            config
-        )
+            [self.map_actions, self.mini_map_actions, self.output_actions, self.tracker_actions, self.ui_actions],
+            config)
 
     @staticmethod
     # creates UICallback objects for every action of a given enum class
@@ -145,11 +139,6 @@ class CallbackManager:
     def set_tracker_callbacks(self, tracker: Tracker):
         self.tracker_actions[TrackerActions.CONFIRM_BRICKS].callback = \
             lambda bricks: tracker.invalidate_external_bricks()
-
-    # defines all general program callback functions
-    def set_program_actions(self, current_stage: CurrentProgramStage):
-        self.program_actions[ProgramActions.CHANGE_STAGE].callback = \
-            lambda brick: current_stage.only_switch_if_eval()
 
     # defines all output callback functions
     def set_output_actions(self, output):

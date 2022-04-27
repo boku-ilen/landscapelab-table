@@ -58,14 +58,13 @@ class LabTable:
         self.callback_manager = CallbackManager(self.config)
 
         self.program_stage = CurrentProgramStage(self.callback_manager.stage_change_actions)
-        self.callback_manager.set_program_actions(self.program_stage)
 
         # Initialize parameter manager and parse arguments
         self.parser = ParameterManager(self.config)
         self.used_stream = self.parser.used_stream
 
         # Initialize board detection
-        self.board_detector = BoardDetector(self.config, self.config.get("qr_code", "threshold"))
+        self.board_detector = BoardDetector(self.config)
         self.board = self.board_detector.board
 
         # Initialize the centroid tracker
@@ -97,7 +96,8 @@ class LabTable:
         self.callback_manager.set_output_actions(self.output_stream)
         self.input_stream = TableInputStream.get_table_input_stream(self.config, self.board, usestream=self.used_stream)
 
-        # request the first rendered map section  TODO: is this really already necessary?
+        # request the first rendered map section
+        # TODO: if these requests fail there is no extent defined which causes problems later
         self.qgis_communicator.request_render(self.main_map)
         self.qgis_communicator.request_render(mini_map)
 
@@ -134,19 +134,31 @@ class LabTable:
 
                     # call different functions depending on program state
                     if self.program_stage.current_stage == ProgramStage.WHITE_BALANCE:
-                        self.white_balance(color_image)
 
+                        # calculate the average white image
+                        if self.board_detector.compute_background(color_image):
+                            # switch to next stage if finished
+                            self.program_stage.next()
+
+                    # detect the corners by finding the qr-codes
                     elif self.program_stage.current_stage == ProgramStage.FIND_CORNERS:
-                        self.detect_corners(color_image)
 
-                    # in this stage bricks have "yes"/"no" meaning
-                    # FIXME: this should be generalized by the game engine
-                    elif self.program_stage.current_stage == ProgramStage.EVALUATION:
-                        self.do_brick_detection(region_of_interest, color_image)
+                        # Compute distance to the board
+                        self.input_stream.get_distance_to_board()
 
-                    # in this stage bricks have assets meaning
-                    # FIXME: this should be generalized by the game engine
-                    elif self.program_stage.current_stage == ProgramStage.PLANNING:
+                        # Find position of board corners
+                        all_board_corners_found = self.board_detector.detect_board(color_image, self.output_stream)
+
+                        # if all corners were found change channel and start next stage
+                        if all_board_corners_found:
+                            # Use distance to set possible brick size
+                            self.shape_detector.calculate_possible_brick_dimensions(self.board.distance)
+
+                            self.output_stream.set_active_channel(TableOutputChannel.CHANNEL_ROI)
+                            self.program_stage.next()
+
+                    # do the general brick detection (for internal or external ProgramStage)
+                    else:
                         self.do_brick_detection(region_of_interest, color_image)
 
             except Exception as e:
@@ -164,33 +176,6 @@ class LabTable:
         # make sure the stream ends correctly
         if self.input_stream:
             self.input_stream.close()
-
-    def white_balance(self, color_image):
-
-        # when finished start next stage with command below
-        if self.board_detector.compute_background(color_image):
-            # switch to next stage if finished
-            self.program_stage.next()
-
-    # Detect the board using qr-codes polygon data saved in the array
-    # -> self.board_detector.all_codes_polygons_points
-    def detect_corners(self, color_image):
-
-        # Compute distance to the board
-        self.input_stream.get_distance_to_board()
-
-        # Find position of board corners
-        all_board_corners_found = self.board_detector.detect_board(color_image, self.output_stream)
-
-        # if all corners were found change channel and start next stage
-        if all_board_corners_found:
-            # Use distance to set possible brick size
-            logger.debug("Calculate possible brick size")
-            self.shape_detector.calculate_possible_brick_dimensions(self.board.distance)
-
-            logger.debug("Used threshold for qr-codes -> {}".format(self.board.threshold_qrcode))
-            self.output_stream.set_active_channel(TableOutputChannel.CHANNEL_ROI)
-            self.program_stage.next()
 
     def do_brick_detection(self, region_of_interest, color_image):
         # If the board is detected take only the region
@@ -219,12 +204,10 @@ class LabTable:
                 # mark potential brick contours
                 TableOutputStream.mark_candidates(region_of_interest_debug, contour)
 
-        # TODO (future releases) implement this as stage transition callback in ProgramStage
+        # TODO implement this as stage transition callback in ProgramStage
         # Get already stored brick instances from server
-        if self.program_stage.current_stage == ProgramStage.PLANNING \
-                and not self.added_stored_bricks_flag:
-            self.tracker.sync_with_server_side_bricks()
-
+        if self.program_stage.current_stage == ProgramStage.EXTERNAL_MODE and not self.added_stored_bricks_flag:
+            self.tracker.sync_with_global_bricks()
             self.added_stored_bricks_flag = True
 
         # Compute tracked bricks dictionary using the centroid tracker and set of properties

@@ -10,10 +10,11 @@ logger = logging.getLogger(__name__)
 
 # FIXME: Program Stages will be triggered and retrieved in the future by the GameEngine within the LandscapeLab Client
 class ProgramStage(Enum):
+
     WHITE_BALANCE = 1
     FIND_CORNERS = 2
-    EVALUATION = 3
-    PLANNING = 4
+    INTERNAL_MODE = 3  # brick detection without rules (disconnected, debug, ..)
+    EXTERNAL_MODE = 4  # we are playing a game
 
     def next_stage(self):
         value = self.value + 1
@@ -39,9 +40,3 @@ class CurrentProgramStage:
         # call callback function if there is one
         if self.current_stage in self.callbacks:
             self.callbacks[self.current_stage].call(None)
-
-    # only switches to the next stage if the current stage is evaluation
-    # FIXME: generalize via game engine
-    def only_switch_if_eval(self):
-        if self.current_stage == ProgramStage.EVALUATION:
-            self.next()

@@ -38,14 +38,15 @@ class SchedulerThread(threading.Thread):
 
             logger.debug("starting routine server request")
 
-            # check if in correct program stage
-            if self.get_program_stage() is ProgramStage.PLANNING:
+            # check if we are in an external program stage
+            if self.get_program_stage() is ProgramStage.EXTERNAL_MODE:
                 self.lock.acquire()
 
                 # sync bricks and the player with server
-                self.tracker.sync_with_server_side_bricks()
+                self.tracker.sync_with_global_bricks()
 
                 # get update progress bars to reflect new energy output
+                # FIXME: check if something is changed first
                 self.progress_bar_update_function()
 
                 self.lock.release()

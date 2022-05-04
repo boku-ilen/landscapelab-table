@@ -16,10 +16,10 @@ SEND_REC_CREATE_OBJECT_MSG = {
     "position_x": 0.0,
     "position_y": 0.0,
     "token": {
-        "shape": None,
-        "color": None
+        "shape": "",
+        "color": ""
     },
-    "object_id": None,  # optional: only sent by LL (REC)
+    "object_id": 0,  # optional: only sent by LL (REC)
     "data": []  # optional for later (provide additional information)
 }
 SEND_REC_UPDATE_OBJECT_MSG = {
@@ -45,15 +45,23 @@ SEND_HANDSHAKE_MSG = {
 REC_GAMESTATE_INFO_MSG = {  # Received after the first handshake and if the gamestate changes
     "keyword": "GAMESTATE_INFO",
     "used_tokens": [{
-        "shape": None,
-        "color": None,
-        "icon_svg": None,
+        "shape": "",
+        "color": "",
+        "icon_svg": "",  # the svg as ascii string
         "disappear_after_seconds": 0.0
     }],
     "scores": [{
         "score_id": 0,
         "name": None,  # optional caption
         "target_value": 0.0
+    }],
+    "existing_tokens": [{
+        "object_id": 0,
+        "position_x": 0.0,
+        "position_y": 0.0,
+        "shape": "",
+        "color": "",
+        "data": []  # optional
     }],
     "start_position_x": 0.0,
     "start_position_y": 0.0,

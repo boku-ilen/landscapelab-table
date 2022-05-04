@@ -10,17 +10,23 @@ from LabTable.ExtentTracker import ExtentTracker
 # Configure logging
 logger = logging.getLogger(__name__)
 
-# remote communication protocol
+# remote communication protocol from/to the LL
 SEND_REC_CREATE_OBJECT_MSG = {
     "keyword": "NEW_TOKEN",
-    "position": [0.0, 0.0],
-    "brick_color": None,
-    "brick_shape": None
+    "position_x": 0.0,
+    "position_y": 0.0,
+    "token": {
+        "shape": None,
+        "color": None
+    },
+    "object_id": None,  # optional: only sent by LL (REC)
+    "data": []  # optional for later (provide additional information)
 }
 SEND_REC_UPDATE_OBJECT_MSG = {
     "keyword": "SET_TOKEN_POSITION",
     "object_id": 0,
-    "position": [0.0, 0.0]
+    "position_x": 0.0,
+    "position_y": 0.0
 }
 SEND_REC_REMOVE_OBJECT_MSG = {
     "keyword": "REMOVE_TOKEN",
@@ -29,23 +35,35 @@ SEND_REC_REMOVE_OBJECT_MSG = {
 REC_OBJECT_ANSWER_MSG = {  # Answer to create, update, remove
     "keyword": "TOKEN_ANSWER",
     "success": False,
-    "object_id": 0
+    "object_id": 0,
+    "data": []  # optional for later (provide additional information)
 }
 SEND_HANDSHAKE_MSG = {
     "keyword": "TABLE_HANDSHAKE",
-    "detected_brick_shape_color_pairs": []  # [[shape, color], ...]
+    "provided_tokens": []  # array of token (see above) [{ "shape": .., "color": ...}, ...]
 }
 REC_GAMESTATE_INFO_MSG = {  # Received after the first handshake and if the gamestate changes
     "keyword": "GAMESTATE_INFO",
-    "used_bricks": [],  # [[shape, color, icon_svg, disappear_after_seconds], ...]
-    "scores": [],  # [[id, max_value], ...]
-    "start_position": [0.0, 0.0],
-    "start_extent": [0.0, 0.0],  # FIXME: or zoom level?
-    "projection": ""  # EPSG Code (optional, default is Austria Lambert)
+    "used_tokens": [{
+        "shape": None,
+        "color": None,
+        "icon_svg": None,
+        "disappear_after_seconds": 0.0
+    }],
+    "scores": [{
+        "score_id": 0,
+        "name": None,  # optional caption
+        "target_value": 0.0
+    }],
+    "start_position_x": 0.0,
+    "start_position_y": 0.0,
+    "start_extent_x": 0.0,  # height
+    "start_extent_y": 0.0,  # width
+    "projection_epsg": 0  # EPSG Code (optional, default is Austria Lambert)
 }
 REC_UPDATE_SCORE_MSG = {
     "score_id": 0,
-    "value": 0
+    "value": 0.0
 }
 SEND_SET_EXTENT_MSG = {  # this is sent on change to the LL
     "keyword": "TABLE_EXTENT",

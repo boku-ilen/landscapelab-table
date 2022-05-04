@@ -12,29 +12,28 @@ logger = logging.getLogger(__name__)
 
 # remote communication protocol
 SEND_REC_CREATE_OBJECT_MSG = {
-    "keyword": "CREATE_OBJECT",
+    "keyword": "NEW_TOKEN",
     "position": [0.0, 0.0],
     "brick_color": None,
     "brick_shape": None
 }
 SEND_REC_UPDATE_OBJECT_MSG = {
-    "keyword": "SET_OBJECT_POSITION",
+    "keyword": "SET_TOKEN_POSITION",
     "object_id": 0,
     "position": [0.0, 0.0]
 }
 SEND_REC_REMOVE_OBJECT_MSG = {
-    "keyword": "REMOVE_OBJECT",
+    "keyword": "REMOVE_TOKEN",
     "object_id": 0
 }
 REC_OBJECT_ANSWER_MSG = {  # Answer to create, update, remove
-    "keyword": "OBJECT_ANSWER",
+    "keyword": "TOKEN_ANSWER",
     "success": False,
     "object_id": 0
 }
 SEND_HANDSHAKE_MSG = {
-    "keyword": "HANDSHAKE",
-    "detected_brick_shape_color_pairs": [],  # [[shape, color], ...]
-    "detected_brick_colors": []
+    "keyword": "TABLE_HANDSHAKE",
+    "detected_brick_shape_color_pairs": []  # [[shape, color], ...]
 }
 REC_GAMESTATE_INFO_MSG = {  # Received after the first handshake and if the gamestate changes
     "keyword": "GAMESTATE_INFO",

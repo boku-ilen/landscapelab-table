@@ -1,7 +1,8 @@
-from typing import Optional, Callable, List, Tuple
+from typing import List, Tuple
 import logging
 import cv2
 
+from Model.Score import Score
 from .UIStructureBlock import UIStructureBlock
 from ...Configurator import Configurator
 from LabTable.Model.Vector import Vector, Point
@@ -14,23 +15,12 @@ OFFSET = 20
 
 
 # ProgressBar class
-# rectangular progress bare used to visualize progress of certain tasks
-# update can be requested with calculate_progress() if the callable progress_calculation has been defined
-# progress can also be updated manually via update_progress(...)
+# rectangular progress bar used to visualize progress of "score" game objects
 class ProgressBar(UIStructureBlock):
 
-    def __init__(
-            self,
-            config: Configurator,
-            position: Vector,
-            size: Vector,
-            horizontal: bool,
-            flipped: bool,
-            bar_color: List[Tuple[int, int, int]] = None,
-            background_color: List = None,
-            border_color: List = None,
-            border_weight: float = None
-    ):
+    def __init__(self, config: Configurator, position: Vector, size: Vector, horizontal: bool, flipped: bool,
+                 score: Score, bar_color: List[Tuple[int, int, int]] = None, background_color: List = None,
+                 border_color: List = None, border_weight: float = None):
 
         super().__init__(config, position, size, color=background_color, border_color=border_color,
                          border_weight=border_weight)
@@ -38,7 +28,6 @@ class ProgressBar(UIStructureBlock):
         self.config = config
 
         default_bar_color = config.get("ui_settings", "progress_bar_color")
-
         if bar_color is None:
             self.bar_color = [(color[2], color[1], color[0]) for color in default_bar_color]
         else:
@@ -48,16 +37,7 @@ class ProgressBar(UIStructureBlock):
         self.flipped: bool = flipped
         self.wrap_around = False
 
-        self.target = 1
-        self.progress: float = 0
-        self.progress_calculation: Optional[Callable[[], float]] = None
-
-    # updates the progress
-    # param new_progress: value between 0 and 1
-    def update_progress(self, new_progress):
-        self.progress = min(new_progress, 1)
-        self.config.set("ui_settings", "ui_refreshed", True)
-        # TODO find better solution for flag
+        self.score: Score = score
 
     # draws this element + all child elements to the given image
     def draw(self, img):
@@ -75,7 +55,7 @@ class ProgressBar(UIStructureBlock):
             self.draw_background(img, bar_background, True)
 
             # if bar should wrap around modify progress
-            progress = self.progress
+            progress = self.score.percentage
             if self.wrap_around:
                 progress = progress % 1
 
@@ -104,20 +84,13 @@ class ProgressBar(UIStructureBlock):
     # (if the bar exceeds 100% and wrap_around is True it wraps around with a new color)
     def get_bar_colors(self) -> Tuple[List, List]:
         if self.wrap_around:
-            bar_color_id = max(int(self.progress), 0)
+            bar_color_id = max(int(self.score.percentage), 0)
             bar_color = self.bar_color[bar_color_id % len(self.bar_color)]
             bar_background = self.bar_color[(bar_color_id - 1) % len(self.bar_color)]
 
             return bar_color, bar_background
         else:
             return self.bar_color[0], self.color
-
-    # used to refresh the progress bar
-    def calculate_progress(self):
-        if self.progress_calculation:
-            self.update_progress(self.progress_calculation() / self.target)
-        else:
-            raise TypeError("No progress calculation was defined.")
 
     # show a green circle if the progress is achieved
     @staticmethod

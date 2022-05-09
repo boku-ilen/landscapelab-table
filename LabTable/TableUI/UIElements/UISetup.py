@@ -15,7 +15,7 @@ from LabTable.Model.Extent import Vector
 
 
 # project specific function used to create the necessary UIElements and link them to their respective callback functions
-def setup_ui(root: UIElement, main_map: MainMap, config: Configurator, callback_manager: CallbackManager) -> \
+def setupb_ui(root: UIElement, main_map: MainMap, config: Configurator, callback_manager: CallbackManager) -> \
         Tuple[MiniMap, UIElement, Callable]:
 
     # create nav block
@@ -132,15 +132,11 @@ def setup_detection_ui(detection_ui_root, config, callback_manager):
 
     # create elements
     progress_bars = []
-    targets = []  # LLCommunicator.get_instance().get_game_targets()  # FIXME: the source will change to ProgramStage
+    scores = []  # FIXME: get the score(s) from the LLCommunicator from the Gamestage
     color_indexes = [[(255, 0, 0)], [(0, 0, 255)]]  # FIXME: load dynamically
-    for counter, target in targets:
+    for counter, score in scores:
         progress_bar = ProgressBar(config, c.bot_right_corner - c.x * (counter + 1) - c.y * 5,
-                                   c.x / 2 + c.y * 4.5, False, True, color_indexes[counter])
-
-        progress_bar.target = target.value  # FIXME
-        progress_bar.progress_calculation = partial(LLCommunicator.get_instance().get_layer_info, target.layer)
-
+                                   c.x / 2 + c.y * 4.5, False, True, score, color_indexes[counter])
         detection_ui_root.add_child(progress_bar)
         progress_bars.append(progress_bar)
 

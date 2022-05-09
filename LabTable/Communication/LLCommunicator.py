@@ -1,8 +1,9 @@
 import logging
+import socket
 
 from Configurator import Configurator
 from LabTable.Communication.Communicator import Communicator
-from LabTable.Model.Brick import Brick, BrickStatus
+from LabTable.Model.Brick import Brick, BrickStatus, BrickShape
 from LabTable.Model.Extent import Extent
 from LabTable.ExtentTracker import ExtentTracker
 
@@ -34,12 +35,13 @@ SEND_REC_REMOVE_OBJECT_MSG = {
 }
 REC_OBJECT_ANSWER_MSG = {  # Answer to create, update, remove
     "keyword": "TOKEN_ANSWER",
-    "success": False,
+    "placement_allowed": False,  # in case of create or update
     "object_id": 0,
     "data": []  # optional for later (provide additional information)
 }
 SEND_HANDSHAKE_MSG = {
     "keyword": "TABLE_HANDSHAKE",
+    "hostname": "",  # TODO: maybe provide other configuration
     "provided_tokens": []  # array of token (see above) [{ "shape": .., "color": ...}, ...]
 }
 REC_GAMESTATE_INFO_MSG = {  # Received after the first handshake and if the gamestate changes
@@ -100,30 +102,37 @@ class LLCommunicator(Communicator):
         self.extent_tracker = ExtentTracker.get_instance()
         self.brick_update_callback = lambda: None
 
+        self.provided_tokens = []
+        for color in config.get("brick_colors"):
+            for shape in BrickShape:
+                if shape.value > 0:
+                    self.provided_tokens.append({"color": color, "shape": shape.name})
+
     def on_open(self, ws):
         super().on_open(ws)
-        self.get_labtable_settings()
+        self.initialize_handshake()
 
     # get the initial configuration settings related to the LabTable from the LL
-    def get_labtable_settings(self):
+    def initialize_handshake(self):
 
         # store the settings we later got as answer in our configuration
-        def settings_callback(response: dict):
-            for key in response:
-                group, entry = key.split("-")
-                self.config.set(group, entry, response[key])
+        def handshake_callback(response: dict):
+            # FIXME: hand-off to received changed gamestate
+            pass
 
-        message = SEND_HANDSHAKE_MSG
-        # TODO: maybe fetch information about own system and send it to the LL
-        self.send_message(message, settings_callback)
+        message = SEND_HANDSHAKE_MSG.copy()
+        message["hostname"] = socket.gethostname()
+        message["provided_tokens"] = self.provided_tokens
+
+        self.send_message(message, handshake_callback)
 
     # Create remote brick instance
     def create_remote_brick_instance(self, brick: Brick):
 
         def create_callback(response: dict):
 
-            if "success" in response:
-                if response["success"]:
+            if "placement_allowed" in response:
+                if response["placement_allowed"]:
 
                     # set the remote asset id
                     brick.object_id = response["id"]
@@ -132,8 +141,7 @@ class LLCommunicator(Communicator):
                     self.brick_update_callback()
 
                 else:
-                    # TODO: which loglevel as not allowed to create a brick is a normal usecase
-                    logger.info("could not remotely create brick {}".format(brick))
+                    logger.debug("could not remotely create brick {}".format(brick))
                     brick.status = BrickStatus.OUTDATED_BRICK
 
             else:
@@ -157,14 +165,8 @@ class LLCommunicator(Communicator):
 
         def remove_callback(response: dict):
 
-            if "success" in response:
-                if response["success"]:
-
-                    # call brick update callback function to update progress bars etc.
-                    self.brick_update_callback()
-
-                else:
-                    logger.warning("could not remove remote brick {}".format(brick_instance))
+            # call brick update callback function to update progress bars etc.
+            self.brick_update_callback()
 
         message = SEND_REC_REMOVE_OBJECT_MSG.copy()
         message["object_id"] = brick_instance.object_id

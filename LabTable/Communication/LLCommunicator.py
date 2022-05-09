@@ -55,6 +55,7 @@ REC_GAMESTATE_INFO_MSG = {  # Received after the first handshake and if the game
     "scores": [{
         "score_id": 0,
         "name": None,  # optional caption
+        "initial_value": 0.0,
         "target_value": 0.0
     }],
     "existing_tokens": [{

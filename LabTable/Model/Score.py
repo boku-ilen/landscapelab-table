@@ -23,3 +23,7 @@ class Score:
     def remove_value(self, value: float):
         self.value -= value
         self.calculate_percentage()
+
+    def set_value(self, value: float):
+        self.value = value
+        self.calculate_percentage()

@@ -2,7 +2,6 @@ from typing import List, Tuple
 import logging
 import cv2
 
-from Model.Score import Score
 from .UIStructureBlock import UIStructureBlock
 from ...Configurator import Configurator
 from LabTable.Model.Vector import Vector, Point
@@ -19,7 +18,7 @@ OFFSET = 20
 class ProgressBar(UIStructureBlock):
 
     def __init__(self, config: Configurator, position: Vector, size: Vector, horizontal: bool, flipped: bool,
-                 score: Score, bar_color: List[Tuple[int, int, int]] = None, background_color: List = None,
+                 score: 'Score', bar_color: List[Tuple[int, int, int]] = None, background_color: List = None,
                  border_color: List = None, border_weight: float = None):
 
         super().__init__(config, position, size, color=background_color, border_color=border_color,

@@ -1,7 +1,6 @@
 from typing import Tuple, List, Callable
 from functools import partial
 
-from Communication.LLCommunicator import LLCommunicator
 from .UIElement import UIElement, UIActionType
 from .Button import Button
 from .UIStructureBlock import UIStructureBlock
@@ -15,7 +14,7 @@ from LabTable.Model.Extent import Vector
 
 
 # project specific function used to create the necessary UIElements and link them to their respective callback functions
-def setupb_ui(root: UIElement, main_map: MainMap, config: Configurator, callback_manager: CallbackManager) -> \
+def setup_ui(root: UIElement, main_map: MainMap, config: Configurator, callback_manager: CallbackManager) -> \
         Tuple[MiniMap, UIElement, Callable]:
 
     # create nav block

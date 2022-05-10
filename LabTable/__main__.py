@@ -16,7 +16,6 @@ from .TableUI.UIElements.UIElement import UIElement
 from .BrickDetection.Tracker import Tracker
 from .Configurator import Configurator
 from .ParameterManager import ParameterManager
-from .SchedulerThread import SchedulerThread
 
 # configure logging
 logger = logging.getLogger(__name__)
@@ -88,9 +87,9 @@ class LabTable:
 
         # Initialize and start the data syncronization thread
         # TODO: is this still necessairy or can we rely on the on_change protocol?
-        self.server_listener_thread = SchedulerThread(self.config, self.ll_communicator, self.tracker,
-                                                      self.get_program_stage, progress_bar_update_function)
-        self.server_listener_thread.start()
+        # self.server_listener_thread = SchedulerThread(self.config, self.ll_communicator, self.tracker,
+        #                                               self.get_program_stage, progress_bar_update_function)
+        # self.server_listener_thread.start()
 
         # initialize the input and output stream
         self.output_stream = TableOutputStream(self.main_map, ui_root, self.callback_manager, self.tracker,

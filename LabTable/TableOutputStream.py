@@ -43,9 +43,6 @@ POSITION_X = 20
 POSITION_Y = 20
 LINE_HEIGHT = 20
 
-# FIXME: this has to be generalized
-PLAYER_POSITION_ASSET_ID = 13
-
 
 class TableOutputChannel(Enum):
 
@@ -428,7 +425,7 @@ class TableOutputStream:
                 # check for nearby virtual bricks
                 virtual_brick = self.tracker.check_min_distance(mouse_brick, self.tracker.virtual_bricks)
 
-                if virtual_brick and virtual_brick.layer_id != PLAYER_POSITION_ASSET_ID:
+                if virtual_brick:
                     # if mouse brick is on top of other virtual brick, remove that brick
                     self.tracker.remove_external_virtual_brick(virtual_brick)
                 else:

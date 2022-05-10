@@ -29,6 +29,7 @@ class Communicator(threading.Thread):
     _connection_instance = None
     _connection_open = False
     _message_stack = {}
+    keyword_callbacks = {}
     ssl_pem_file = None
     ip = None
     port = None
@@ -41,7 +42,7 @@ class Communicator(threading.Thread):
 
         self.config = config
         self.extent_tracker = ExtentTracker.get_instance()
-        self.brick_update_callback = lambda: None
+        # self.brick_update_callback = lambda: None
         self._ssl_context = None
 
         # if ssl is configured load the pem file
@@ -68,13 +69,12 @@ class Communicator(threading.Thread):
     def get_instance(cls):
         return communicator_singletons[cls.__name__]
 
-    # FIXME: add implementation for bidirectional communication
     def on_message(self, ws, message):
         json_message = json.loads(message)
         logger.debug("received message: {:.250}".format(message))
         message_id = int(json_message["message_id"])
-        if json_message[ANSWER_STRING]:
-            if message_id in self._message_stack:
+        if message_id in self._message_stack:
+            if json_message[ANSWER_STRING]:
                 callback = self._message_stack[message_id]
                 del json_message["message_id"]
                 del json_message[ANSWER_STRING]
@@ -84,10 +84,13 @@ class Communicator(threading.Thread):
                 else:
                     logger.warning("could not find associated callback to message: {}".format(message_id))
             else:
-                logger.warning("received unknown answer in message: {}".format(message))
-                logger.debug(self._message_stack)
+                logger.warning("request {} was unsuccessful.".format(message_id))
         else:
-            logger.warning("request {} was unsuccessful.".format(message_id))
+            keyword = json_message["keyword"]
+            if keyword in self.keyword_callbacks:
+                callback = self.keyword_callbacks[keyword]
+                if callback:
+                    callback(message_id, json_message)
 
     def on_error(self, ws, error):
         logger.error("error in communication with {}: {}".format(self._uri, error))

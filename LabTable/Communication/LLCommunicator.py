@@ -73,8 +73,9 @@ REC_GAMESTATE_INFO_MSG = {  # Received after the first handshake and if the game
     "projection_epsg": 0  # EPSG Code (optional, default is Austria Lambert)
 }
 REC_UPDATE_SCORE_MSG = {
+    "keyword": "SCORE_UPDATE",
     "score_id": 0,
-    "value": 0.0
+    "value": 0.0  # FIXME: is this an absolute value or do we add/subtract from the existing value?
 }
 SEND_SET_EXTENT_MSG = {  # this is sent on change to the LL
     "keyword": "TABLE_EXTENT",
@@ -103,6 +104,16 @@ class LLCommunicator(Communicator):
         self.extent_tracker = ExtentTracker.get_instance()
         self.brick_update_callback = lambda: None
 
+        # set the callback functions for the received messages from the LL
+        self.keyword_callbacks = {
+            SEND_REC_CREATE_OBJECT_MSG["keyword"]: self.create_local_brick,
+            SEND_REC_UPDATE_OBJECT_MSG["keyword"]: self.update_local_brick,
+            SEND_REC_REMOVE_OBJECT_MSG["keyword"]: self.remove_local_brick,
+            REC_GAMESTATE_INFO_MSG["keyword"]: self.game_mode_change,
+            REC_UPDATE_SCORE_MSG["keyword"]: self.update_local_score,
+            REC_PLAYER_POSITION_MSG["keyword"]: self.update_player_position
+        }
+
         self.provided_tokens = []
         for color in config.get("brick_colors"):
             for shape in BrickShape:
@@ -118,8 +129,7 @@ class LLCommunicator(Communicator):
 
         # store the settings we later got as answer in our configuration
         def handshake_callback(response: dict):
-            # FIXME: hand-off to received changed gamestate
-            pass
+            self.process_gamemode_change(response)
 
         message = SEND_HANDSHAKE_MSG.copy()
         message["hostname"] = socket.gethostname()
@@ -175,57 +185,7 @@ class LLCommunicator(Communicator):
         # Send a request to remove brick instance
         self.send_message(message, remove_callback)
 
-    def get_stored_brick_instances(self, result_callback):
-
-        # FIXME: Can probably be removed
-
-        def get_instances_callback(response: dict):
-            stored_assets = response["objects"]
-            stored_instances_list = []
-
-            if stored_assets is not None:
-
-                # Save all instances with their properties as a list
-                for asset in stored_assets:
-
-                    # Create a brick instance
-                    stored_instance = Brick(None, None, None, None)
-
-                    # Get the map position of the player
-                    position = asset["position"]
-                    stored_instance.map_pos_x = position[0]
-                    stored_instance.map_pos_y = position[1]
-
-                    shape = None
-                    color = None
-                    try:
-                        # Map a shape and color using known asset_id
-                        shape_color = self.config.get("stored_instances", str(asset["id"]))
-                        shape = shape_color.split(', ')[0]
-                        color = shape_color.split(', ')[1]
-                    except:
-                        logger.info("Mapping of color and shape for asset_id {} is not possible".format(
-                            str(asset["id"])))
-
-                    # Add missing properties
-                    stored_instance.shape = shape
-                    stored_instance.color = color
-                    stored_instance.object_id = asset["id"]
-                    stored_instance.status = BrickStatus.EXTERNAL_BRICK
-
-                    # Calculate map position of a brick
-                    Extent.calc_local_pos(stored_instance, self.extent_tracker.board, self.extent_tracker.map_extent)
-                    stored_instances_list.append(stored_instance)
-
-            result_callback(stored_instances_list)
-
-        logger.debug("getting stored brick instances from the server...")
-
-        message = GET_ASSETS_MSG.copy()
-        self.send_message(message, get_instances_callback)
-
-    # initiates corner point update of the given main map extent
-    # and informs the LandscapeLab
+    # initiates corner point update of the given main map extent and informs the LandscapeLab
     def update_extent_info(self, extent: Extent):
 
         def extent_callback(response: dict):
@@ -242,5 +202,22 @@ class LLCommunicator(Communicator):
 
     # FIXME: this is only a protype
     # update the player position on the display where the landscapelab player(s) are positioned
-    def update_player_position(self, player_id, pos_x, pos_y, pos_z, dir_x, dir_y, dir_z):
+    def update_player_position(self, message_id, message: dict):
+        pass
+
+    def game_mode_change(self, message_id, response: dict):
+        pass
+
+    def create_local_brick(self, message_id, response: dict):
+        stored_instance.status = BrickStatus.EXTERNAL_BRICK
+        Extent.calc_local_pos(stored_instance, self.extent_tracker.board, self.extent_tracker.map_extent)
+        pass
+
+    def update_local_brick(self, message_id, response: dict):
+        pass
+
+    def remove_local_brick(self, message_id, response: dict):
+        pass
+
+    def update_local_score(self, message_id, response: dict):
         pass

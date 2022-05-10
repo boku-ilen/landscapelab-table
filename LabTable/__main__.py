@@ -69,6 +69,7 @@ class LabTable:
 
         # Initialize the centroid tracker
         self.tracker = Tracker(self.config, ui_root)
+        self.ll_communicator.tracker = self.tracker
         self.callback_manager.set_tracker_callbacks(self.tracker)
 
         # initialize map, map callbacks and ui
@@ -86,6 +87,7 @@ class LabTable:
         self.ll_communicator.brick_update_callback = progress_bar_update_function
 
         # Initialize and start the data syncronization thread
+        # TODO: is this still necessairy or can we rely on the on_change protocol?
         self.server_listener_thread = SchedulerThread(self.config, self.ll_communicator, self.tracker,
                                                       self.get_program_stage, progress_bar_update_function)
         self.server_listener_thread.start()

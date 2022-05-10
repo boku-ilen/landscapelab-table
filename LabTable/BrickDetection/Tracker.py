@@ -55,49 +55,16 @@ class Tracker:
         # Initialize a flag for changes in the map extent
         self.extent_changed = False
 
-    # syncs all currently known bricks with the currently known bricks list on the server
-    def sync_with_global_bricks(self):
+    # for externally remove tracked bricks
+    def remove_external_brick(self, object_id):
+        for brick in self.virtual_bricks:
+            if brick.object_id == object_id:
+                self.virtual_bricks.remove(brick)
 
-        # get bricks from the landscapelab
-        object_ids = self.config.get("stored_instances", "asset_ids")
-        
-        for object_id in object_ids:
-            self.landscape_lab.get_stored_brick_instances(object_id, self.handle_received_global_bricks)
-
-    def handle_received_global_bricks(self, global_bricks):
-
-        # handle bricks
-        if global_bricks is not None:
-
-            # get list of all currently known brick IDs
-            v_brick_ids = [b.layer_id for b in self.virtual_bricks]
-            c_brick_ids = [b.layer_id for b in self.confirmed_bricks]
-            g_brick_ids = [b.layer_id for b in global_bricks]
-
-            for brick in global_bricks:
-
-                # add server brick to virtual bricks if it's ID is unknown
-                if brick.layer_id not in v_brick_ids and brick.layer_id not in c_brick_ids:
-                    self.virtual_bricks.append(brick)
-
-            for v_brick in self.virtual_bricks:
-
-                # remove all virtual bricks that have been removed externally
-                if v_brick.status == BrickStatus.EXTERNAL_BRICK and v_brick.layer_id not in g_brick_ids:
-                    self.virtual_bricks.remove(v_brick)
-                    logger.info("removed externally removed virtual brick")
-
-            # TODO BELOW IS AN OPTIONAL FEATURE THAT REINTRODUCES CONFIRMED BRICKS WHICH HAVE BEEN FALSELY REMOVED FROM
-            #  THE SERVER. FROM MY TESTING IT SEEMS LIKE IT DOES NOT EXACTLY DO WHAT IT IS SUPPOSED TO DO.
-            #  (probably because the fetched brick list does not include special bricks like the player teleport brick)
-            #  IT NEEDS FURTHER TESTING AND I DEEM IT TOO RISKY AND INSIGNIFICANT TO BE INCLUDED IN THE WORKSHOPS
-            # re-register all confirmed bricks that have disappeared from the server list
-            """
-            for c_brick in self.confirmed_bricks:
-                if c_brick.status == Status.EXTERNAL_BRICK and c_brick.asset_id not in g_brick_ids:
-                    self.server_communicator.create_brick_instance(c_brick)
-                    logger.info("re-registered missing brick in server: {}".format(c_brick))
-            """
+    # for externally add a tracked brick
+    def add_external_brick(self, brick: Brick):
+        # TODO: maybe add security checks to not add the same brick twice etc?
+        self.virtual_bricks.append(brick)
 
     # called once a frame while in ProgramStage EVALUATION or PLANNING
     # keeps track of bricks and returns a list of all currently confirmed bricks

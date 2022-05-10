@@ -1,6 +1,7 @@
 import logging
 import socket
 
+from BrickDetection.Tracker import Tracker
 from Configurator import Configurator
 from LabTable.Communication.Communicator import Communicator
 from LabTable.Model.Brick import Brick, BrickStatus, BrickShape
@@ -16,10 +17,8 @@ SEND_REC_CREATE_OBJECT_MSG = {
     "keyword": "NEW_TOKEN",
     "position_x": 0.0,
     "position_y": 0.0,
-    "token": {
-        "shape": "",
-        "color": ""
-    },
+    "shape": "",
+    "color": "",
     "object_id": 0,  # optional: only sent by LL (REC)
     "data": []  # optional for later (provide additional information)
 }
@@ -94,6 +93,8 @@ REC_PLAYER_POSITION_MSG = {  # this is received on change from LL
 # the LL specific implementation part for the communication
 class LLCommunicator(Communicator):
 
+    tracker: Tracker = None
+
     def __init__(self, config: Configurator):
 
         # call super()
@@ -129,7 +130,7 @@ class LLCommunicator(Communicator):
 
         # store the settings we later got as answer in our configuration
         def handshake_callback(response: dict):
-            self.process_gamemode_change(response)
+            self.game_mode_change(response)
 
         message = SEND_HANDSHAKE_MSG.copy()
         message["hostname"] = socket.gethostname()
@@ -209,15 +210,26 @@ class LLCommunicator(Communicator):
         pass
 
     def create_local_brick(self, message_id, response: dict):
-        stored_instance.status = BrickStatus.EXTERNAL_BRICK
-        Extent.calc_local_pos(stored_instance, self.extent_tracker.board, self.extent_tracker.map_extent)
-        pass
 
+        shape = response["shape"]
+        color = response["color"]
+        new_brick = Brick(0, 0, shape, color)  # centroid will be calculated later
+        new_brick.status = BrickStatus.EXTERNAL_BRICK
+        new_brick.object_id = response["object_id"]
+        new_brick.map_pos_x = response["position_x"]
+        new_brick.map_pos_y = response["position_y"]
+
+        # TODO: move this to the tracker?
+        Extent.calc_local_pos(new_brick, self.extent_tracker.board, self.extent_tracker.map_extent)
+        self.tracker.add_external_brick(new_brick)
+
+    # FIXME: this is not used yet anyhow
     def update_local_brick(self, message_id, response: dict):
         pass
 
     def remove_local_brick(self, message_id, response: dict):
-        pass
+        object_id = response["object_id"]
+        self.tracker.remove_external_brick(object_id)
 
     def update_local_score(self, message_id, response: dict):
         pass

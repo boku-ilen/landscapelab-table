@@ -1,7 +1,6 @@
 import logging
 import socket
 
-from BrickDetection.Tracker import Tracker
 from Configurator import Configurator
 from LabTable.Communication.Communicator import Communicator
 from LabTable.Model.Brick import Brick, BrickStatus, BrickShape
@@ -10,6 +9,8 @@ from LabTable.ExtentTracker import ExtentTracker
 
 
 # Configure logging
+from TableUI.UIElements.UIElement import UIElement
+
 logger = logging.getLogger(__name__)
 
 # remote communication protocol from/to the LL
@@ -93,7 +94,8 @@ REC_PLAYER_POSITION_MSG = {  # this is received on change from LL
 # the LL specific implementation part for the communication
 class LLCommunicator(Communicator):
 
-    tracker: Tracker = None
+    tracker = None
+    ui_root: UIElement = None
 
     def __init__(self, config: Configurator):
 
@@ -103,7 +105,6 @@ class LLCommunicator(Communicator):
         super().__init__(config)
 
         self.extent_tracker = ExtentTracker.get_instance()
-        self.brick_update_callback = lambda: None
 
         # set the callback functions for the received messages from the LL
         self.keyword_callbacks = {
@@ -149,9 +150,6 @@ class LLCommunicator(Communicator):
                     # set the remote asset id
                     brick.object_id = response["id"]
 
-                    # call brick update callback function to update progress bars etc.
-                    self.brick_update_callback()
-
                 else:
                     logger.debug("could not remotely create brick {}".format(brick))
                     brick.status = BrickStatus.OUTDATED_BRICK
@@ -176,9 +174,8 @@ class LLCommunicator(Communicator):
     def remove_remote_brick_instance(self, brick_instance: Brick):
 
         def remove_callback(response: dict):
-
-            # call brick update callback function to update progress bars etc.
-            self.brick_update_callback()
+            pass
+            # TODO: the LL might want to prevent to delete a brick
 
         message = SEND_REC_REMOVE_OBJECT_MSG.copy()
         message["object_id"] = brick_instance.object_id
@@ -201,7 +198,6 @@ class LLCommunicator(Communicator):
 
         self.send_message(message, extent_callback)
 
-    # FIXME: this is only a protype
     # update the player position on the display where the landscapelab player(s) are positioned
     def update_player_position(self, message_id, message: dict):
         pass

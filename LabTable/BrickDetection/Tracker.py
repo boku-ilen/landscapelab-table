@@ -2,7 +2,7 @@ import logging
 from typing import List
 
 from Communication.LLCommunicator import LLCommunicator
-from LabTable.Model.Brick import Brick, BrickStatus, BrickColor, BrickShape
+from LabTable.Model.Brick import Brick, BrickStatus, BrickShape
 from ..TableUI.UIElements.UIElement import UIElement
 from LabTable.Model.ProgramStage import ProgramStage
 from ..ExtentTracker import ExtentTracker

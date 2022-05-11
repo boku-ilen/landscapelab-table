@@ -1,12 +1,11 @@
-from TableUI.UIElements.ProgressBar import ProgressBar
-
-
 class Score:
 
-    def __init__(self, progress_bar: ProgressBar, target: float, initial_value: float = 0.0):
+    def __init__(self, identifier: int, progress_bar, target: float, initial_value: float = 0.0, name: str = ""):
 
         self.progress_bar = progress_bar
 
+        self.identifier: int = identifier
+        self.name: str = name
         self.value: float = initial_value
         self.target: float = target
         self.percentage: float = 0.0

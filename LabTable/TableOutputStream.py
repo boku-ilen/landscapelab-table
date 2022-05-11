@@ -79,7 +79,6 @@ class TableOutputStream:
                  config: Configurator,
                  board: Board,
                  program_stage: CurrentProgramStage,
-                 server_thread: SchedulerThread,
                  video_output_name=None):
 
         self.config = config
@@ -87,7 +86,6 @@ class TableOutputStream:
         self.extent_tracker = ExtentTracker.get_instance()
         self.board = board
         self.program_stage = program_stage
-        self.server_thread = server_thread
 
         self.active_channel = TableOutputChannel.CHANNEL_BOARD_DETECTION
         self.active_window = TableOutputStream.WINDOW_NAME_DEBUG
@@ -396,7 +394,6 @@ class TableOutputStream:
 
     # closing the outputstream if it is defined
     def close(self):
-        self.server_thread.ticker.set()
         logger.info("closing table output stream")
         logging.shutdown()
         cv2.destroyAllWindows()

@@ -69,6 +69,7 @@ class LabTable:
         # Initialize the centroid tracker
         self.tracker = Tracker(self.config, ui_root)
         self.ll_communicator.tracker = self.tracker
+        self.ll_communicator.ui_root = ui_root
         self.callback_manager.set_tracker_callbacks(self.tracker)
 
         # initialize map, map callbacks and ui
@@ -93,7 +94,7 @@ class LabTable:
 
         # initialize the input and output stream
         self.output_stream = TableOutputStream(self.main_map, ui_root, self.callback_manager, self.tracker,
-                                               self.config, self.board, self.program_stage, self.server_listener_thread)
+                                               self.config, self.board, self.program_stage)
         self.callback_manager.set_output_actions(self.output_stream)
         self.input_stream = TableInputStream.get_table_input_stream(self.config, self.board, usestream=self.used_stream)
 

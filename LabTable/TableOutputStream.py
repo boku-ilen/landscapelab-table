@@ -17,7 +17,6 @@ from LabTable.TableUI.CallbackManager import CallbackManager
 from LabTable.ExtentTracker import ExtentTracker
 from LabTable.Model.Extent import Extent
 from LabTable.Model.Board import Board
-from LabTable.SchedulerThread import SchedulerThread
 
 # enable logger
 logger = logging.getLogger(__name__)

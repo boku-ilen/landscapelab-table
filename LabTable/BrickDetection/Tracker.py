@@ -2,9 +2,9 @@ import logging
 from typing import List
 
 from LabTable.Model.Brick import Brick, BrickStatus, BrickShape
-from ..TableUI.UIElements.UIElement import UIElement
+from LabTable.TableUI.UIElements.UIElement import UIElement
 from LabTable.Model.ProgramStage import ProgramStage
-from ..ExtentTracker import ExtentTracker
+from LabTable.ExtentTracker import ExtentTracker
 from LabTable.Model.Extent import Extent
 
 # configure logging

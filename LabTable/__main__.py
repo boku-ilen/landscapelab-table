@@ -2,7 +2,7 @@ import json
 import logging.config
 import numpy as np
 
-from Communication.LLCommunicator import LLCommunicator
+from .Communication.LLCommunicator import LLCommunicator
 from .Communication.QGISCommunicator import QGISCommunicator
 from .Model.ProgramStage import ProgramStage, CurrentProgramStage
 from .BrickDetection.BoardDetector import BoardDetector

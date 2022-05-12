@@ -5,8 +5,8 @@ import math
 from shapely import geometry
 import logging.config
 
-from TableOutputStream import TableOutputStream, TableOutputChannel
-from ..ExtentTracker import ExtentTracker
+from LabTable.TableOutputStream import TableOutputStream, TableOutputChannel
+from LabTable.ExtentTracker import ExtentTracker
 from LabTable.Model.Extent import Extent
 from LabTable.Model.Board import Board
 

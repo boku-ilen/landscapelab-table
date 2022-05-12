@@ -1,7 +1,7 @@
 import logging
 import socket
 
-from Configurator import Configurator
+from LabTable.Configurator import Configurator
 from LabTable.Communication.Communicator import Communicator
 from LabTable.Model.Brick import Brick, BrickStatus, BrickShape
 from LabTable.Model.Extent import Extent

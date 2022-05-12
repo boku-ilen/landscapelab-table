@@ -3,7 +3,7 @@ from ..UIElements.UIStructureBlock import UIStructureBlock
 from ..UICallback import UICallback
 from LabTable.Model.Brick import Brick, BrickStatus
 from ..ImageHandler import ImageHandler
-from ...Configurator import Configurator
+from LabTable.Configurator import Configurator
 from LabTable.Model.Vector import Vector
 from typing import Dict, List
 
@@ -16,18 +16,9 @@ logger = logging.getLogger(__name__)
 # a rectangular or circular button that calls specified functions once a brick enters/leaves the button
 class Button(UIStructureBlock):
 
-    def __init__(
-            self,
-            config: Configurator,
-            position: Vector,
-            size: Vector,
-            name: str = '',
-            icon_name: str = None,
-            color: List = None,
-            active_color: List = None,
-            border_color: List = None,
-            border_weight: float = None
-    ):
+    def __init__(self, config: Configurator, position: Vector, size: Vector, name: str = '', icon_name: str = None,
+                 color: List = None, active_color: List = None, border_color: List = None,
+                 border_weight: float = None):
 
         # overwrite none values with defaults
         if color is None:

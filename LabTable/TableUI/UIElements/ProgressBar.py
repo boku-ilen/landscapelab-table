@@ -2,8 +2,9 @@ from typing import List, Tuple
 import logging
 import cv2
 
+from Model.Score import Score
 from .UIStructureBlock import UIStructureBlock
-from ...Configurator import Configurator
+from LabTable.Configurator import Configurator
 from LabTable.Model.Vector import Vector, Point
 
 # Configure logger
@@ -18,7 +19,7 @@ OFFSET = 20
 class ProgressBar(UIStructureBlock):
 
     def __init__(self, config: Configurator, position: Vector, size: Vector, horizontal: bool, flipped: bool,
-                 score: 'Score', bar_color: List[Tuple[int, int, int]] = None, background_color: List = None,
+                 score: Score, bar_color: List[Tuple[int, int, int]] = None, background_color: List = None,
                  border_color: List = None, border_weight: float = None):
 
         super().__init__(config, position, size, color=background_color, border_color=border_color,
@@ -81,7 +82,7 @@ class ProgressBar(UIStructureBlock):
 
     # returns the color pf the bar as well as the chosen background
     # (if the bar exceeds 100% and wrap_around is True it wraps around with a new color)
-    def get_bar_colors(self) -> Tuple[List, List]:
+    def get_bar_colors(self) -> Tuple[Tuple, Tuple]:
         if self.wrap_around:
             bar_color_id = max(int(self.score.percentage), 0)
             bar_color = self.bar_color[bar_color_id % len(self.bar_color)]

@@ -2,7 +2,7 @@ from LabTable.Model.Extent import Extent
 from LabTable.Model.Vector import Vector
 from LabTable.Model.Brick import Brick
 from ..UIElements.UIElement import UIElement
-from ...Configurator import Configurator
+from LabTable.Configurator import Configurator
 from typing import List
 import cv2 as cv
 
@@ -10,15 +10,9 @@ import cv2 as cv
 # UI element used for hierarchical structuring of other ui elements
 class UIStructureBlock(UIElement):
 
-    def __init__(
-            self,
-            config: Configurator,
-            position: Vector,
-            size: Vector,
-            color: List = None,
-            border_color: List = None,
-            border_weight: float = None
-    ):
+    def __init__(self, config: Configurator, position: Vector, size: Vector, color: List = None,
+                 border_color: List = None, border_weight: float = None):
+
         super().__init__()
 
         # overwrite none values with defaults

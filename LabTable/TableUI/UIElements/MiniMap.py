@@ -3,8 +3,8 @@ from ..MapHandler import MapHandler
 from ..ImageHandler import ImageHandler
 from LabTable.Model.Brick import Brick, BrickStatus
 from LabTable.Model.Extent import Extent, Vector
-from ...ExtentTracker import ExtentTracker
-from ...Configurator import Configurator
+from LabTable.ExtentTracker import ExtentTracker
+from LabTable.Configurator import Configurator
 
 from typing import List
 import logging

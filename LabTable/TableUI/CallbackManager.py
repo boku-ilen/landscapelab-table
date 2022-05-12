@@ -2,13 +2,13 @@ from typing import Dict, Tuple, List, Type
 from enum import Enum
 import logging
 
-from ..TableUI.UICallback import UICallback
+from LabTable.TableUI.UICallback import UICallback
 from .UIElements.UIElement import UIElement
 from .MainMap import MainMap
 from .UIElements.MiniMap import MiniMap
-from ..BrickDetection.Tracker import Tracker
+from LabTable.BrickDetection.Tracker import Tracker
 from LabTable.Model.ProgramStage import ProgramStage
-from ..Configurator import Configurator, ConfigError
+from LabTable.Configurator import Configurator, ConfigError
 
 logger = logging.getLogger(__name__)
 

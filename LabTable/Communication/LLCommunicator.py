@@ -9,6 +9,9 @@ from LabTable.ExtentTracker import ExtentTracker
 
 
 # Configure logging
+from Model.Score import Score
+from TableUI.UIElements import UISetup
+from TableUI.UIElements.ProgressBar import ProgressBar
 from TableUI.UIElements.UIElement import UIElement
 
 logger = logging.getLogger(__name__)
@@ -41,7 +44,7 @@ REC_OBJECT_ANSWER_MSG = {  # Answer to create, update, remove
 }
 SEND_HANDSHAKE_MSG = {
     "keyword": "TABLE_HANDSHAKE",
-    "hostname": "",  # TODO: maybe provide other configuration
+    "hostname": "",  # TODO: maybe provide other configuration too
     "provided_tokens": []  # array of token (see above) [{ "shape": .., "color": ...}, ...]
 }
 REC_GAMESTATE_INFO_MSG = {  # Received after the first handshake and if the gamestate changes
@@ -95,7 +98,7 @@ REC_PLAYER_POSITION_MSG = {  # this is received on change from LL
 class LLCommunicator(Communicator):
 
     tracker = None
-    ui_root: UIElement = None
+    progressbars_ui: UIElement = None
 
     def __init__(self, config: Configurator):
 
@@ -203,7 +206,36 @@ class LLCommunicator(Communicator):
         pass
 
     def game_mode_change(self, message_id, response: dict):
-        pass
+
+        epsg = response["projection_epsg"]
+        start_position = (response["start_position_x"], response["start_position_y"])
+        # FIXME: we might have to recalculate this to a zoomlevel
+        start_extent = (response["start_extent_x"], response["start_extent_y"])
+
+        # TODO: setup the new map
+
+        # FIXME: set the used token types in tracker (not yet implemented)
+
+        # add new tokens
+        # FIXME: we do need to delete the old ones from the tracker?
+        for token in response["existing_tokens"]:
+            self.create_local_brick(message_id, token)
+
+        # create the scores for the new game mode
+        scores = []
+        for score_dict in response["scores"]:
+            identifier = score_dict["identifier"]
+            initial_value = score_dict["initial_value"]
+            target_value = score_dict["target_value"]
+            name = ""
+            if score_dict["name"]:
+                name = score_dict["name"]
+            score = Score(identifier, target_value, initial_value, name)
+            scores.append(score)
+
+        UISetup.add_progressbars_to_ui(self.progressbars_ui, self.config, scores)
+
+        # FIXME: set the game mode to EXTERNAL and do not accept remote inputs while INTERNAL
 
     def create_local_brick(self, message_id, response: dict):
 
@@ -228,4 +260,12 @@ class LLCommunicator(Communicator):
         self.tracker.remove_external_brick(object_id)
 
     def update_local_score(self, message_id, response: dict):
-        pass
+
+        score_id = response["score_id"]
+        value = response["value"]
+
+        # FIXME: this logic should move somewhere where the UI is managed
+        for progress_bar in self.progressbars_ui.get_by_type(ProgressBar):
+            if progress_bar.score:
+                if progress_bar.score.identifier == score_id:
+                    progress_bar.score.set_value(value)

@@ -1,5 +1,4 @@
-from typing import Tuple, List, Callable
-from functools import partial
+from typing import Tuple
 
 from .UIElement import UIElement, UIActionType
 from .Button import Button
@@ -8,31 +7,29 @@ from .MiniMap import MiniMap
 from .ProgressBar import ProgressBar
 from ..CallbackManager import CallbackManager, MapActions, UiActions, TrackerActions
 from ..MainMap import MainMap
-from ...Configurator import Configurator
-from LabTable.Model.ProgramStage import ProgramStage
+from LabTable.Configurator import Configurator
 from LabTable.Model.Extent import Vector
 
 
 # project specific function used to create the necessary UIElements and link them to their respective callback functions
 def setup_ui(root: UIElement, main_map: MainMap, config: Configurator, callback_manager: CallbackManager) -> \
-        Tuple[MiniMap, UIElement, Callable]:
+        Tuple[MiniMap, UIElement]:
 
     # create nav block
     nav_block = UIElement()
     mini_map, navigation_block = setup_nav_block_ui(nav_block, config, main_map, callback_manager)
 
     # create detection mode ui
-    brick_detection_ui = UIElement()
-    progress_bar_update_function = setup_detection_ui(brick_detection_ui, config, callback_manager)
+    progressbar_ui = UIElement()
 
     # setup hierarchy
     root.add_child(nav_block)
-    root.add_child(brick_detection_ui)
+    root.add_child(progressbar_ui)
 
     # setup ui callback functions
     callback_manager.set_ui_callbacks(navigation_block)
 
-    return mini_map, brick_detection_ui, progress_bar_update_function
+    return mini_map, progressbar_ui
 
 
 # constant class used by the ui setup methods to easily access vector constants
@@ -81,8 +78,8 @@ def setup_nav_block_ui(nav_block_root, config, main_map, callback_manager) -> (M
         'confirm bricks',
         'button_confirm'
     )
-    mini_map = MiniMap(config, 'mini_map', Vector(10, 300) * c.scale_factor,
-                       Vector(280, 280) * c.scale_factor, main_map, None)  # FIXME: qgis circular dependency
+    mini_map = MiniMap(config, 'mini_map', Vector(10, 300) * c.scale_factor, Vector(280, 280) * c.scale_factor,
+                       main_map, None)
     callback_manager.set_mini_map_callbacks(mini_map)
 
     # setup hierarchy
@@ -124,31 +121,15 @@ def setup_nav_block_ui(nav_block_root, config, main_map, callback_manager) -> (M
 
 
 # creates and sets up the ui for detection stage
-def setup_detection_ui(detection_ui_root, config, callback_manager):
+def add_progressbars_to_ui(progressbars_ui_root, config, scores):
 
     # get vector constants that will be used to position the ui elements
     c = Constants(config)
 
     # create elements
-    progress_bars = []
-    scores = []  # FIXME: get the score(s) from the LLCommunicator from the Gamestage
     color_indexes = [[(255, 0, 0)], [(0, 0, 255)]]  # FIXME: load dynamically
     for counter, score in scores:
         progress_bar = ProgressBar(config, c.bot_right_corner - c.x * (counter + 1) - c.y * 5,
                                    c.x / 2 + c.y * 4.5, False, True, score, color_indexes[counter])
-        detection_ui_root.add_child(progress_bar)
-        progress_bars.append(progress_bar)
-
-    # make detection root invisible
-    detection_ui_root.set_visible(False)
-    # FIXME: change program mode will work differently
-    callback_manager.stage_change_actions[ProgramStage.INTERNAL_MODE].set_callback(
-        lambda brick: detection_ui_root.set_visible(True))
-
-    return partial(update_progress_bars, progress_bars)
-
-
-# calls the update function on all progress bars that were passed in
-def update_progress_bars(progress_bars: List[ProgressBar]):
-    for bar in progress_bars:
-        bar.calculate_progress()
+        score.progress_bar = progress_bar
+        progressbars_ui_root.add_child(progress_bar)

@@ -67,30 +67,19 @@ class LabTable:
         self.board = self.board_detector.board
 
         # Initialize the centroid tracker
-        self.tracker = Tracker(self.config, ui_root)
+        self.tracker = Tracker(self.config, ui_root, self.ll_communicator)
         self.ll_communicator.tracker = self.tracker
         self.ll_communicator.ui_root = ui_root
         self.callback_manager.set_tracker_callbacks(self.tracker)
 
         # initialize map, map callbacks and ui
-        self.main_map = MainMap(self.config, 'main_map')
+        self.main_map = MainMap(self.config, 'main_map', self.ll_communicator)
         self.callback_manager.set_map_callbacks(self.main_map)
-        mini_map, planning_ui, progress_bar_update_function = setup_ui(ui_root, self.main_map, self.config,
-                                                                       self.callback_manager)
+        mini_map, planning_ui = setup_ui(ui_root, self.main_map, self.config, self.callback_manager)
 
         # Initialize the qgis communication
         map_dict = {self.main_map.name: self.main_map, mini_map.name: mini_map}
         self.qgis_communicator = QGISCommunicator(self.config, map_dict)
-
-        # link the progress_bar_update_function to the brick_update_callback so that it will be called whenever an asset
-        # is added or removed from the server
-        self.ll_communicator.brick_update_callback = progress_bar_update_function
-
-        # Initialize and start the data syncronization thread
-        # TODO: is this still necessairy or can we rely on the on_change protocol?
-        # self.server_listener_thread = SchedulerThread(self.config, self.ll_communicator, self.tracker,
-        #                                               self.get_program_stage, progress_bar_update_function)
-        # self.server_listener_thread.start()
 
         # initialize the input and output stream
         self.output_stream = TableOutputStream(self.main_map, ui_root, self.callback_manager, self.tracker,

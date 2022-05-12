@@ -1,7 +1,6 @@
 import logging
 from typing import List
 
-from Communication.LLCommunicator import LLCommunicator
 from LabTable.Model.Brick import Brick, BrickStatus, BrickShape
 from ..TableUI.UIElements.UIElement import UIElement
 from LabTable.Model.ProgramStage import ProgramStage
@@ -25,11 +24,11 @@ class Tracker:
     external_min_appeared: int = None
     external_max_disappeared: int = None
 
-    def __init__(self, config, ui_root: UIElement):
+    def __init__(self, config, ui_root: UIElement, ll_communicator):
 
         self.config = config
         self.extent_tracker = ExtentTracker.get_instance()
-        self.landscape_lab = LLCommunicator.get_instance()
+        self.landscape_lab = ll_communicator
         self.ui_root = ui_root
 
         # get ticker thresholds from config

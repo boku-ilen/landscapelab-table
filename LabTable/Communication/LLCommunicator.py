@@ -9,10 +9,10 @@ from LabTable.ExtentTracker import ExtentTracker
 
 
 # Configure logging
-from Model.Score import Score
-from TableUI.UIElements import UISetup
-from TableUI.UIElements.ProgressBar import ProgressBar
-from TableUI.UIElements.UIElement import UIElement
+from LabTable.Model.Score import Score
+from LabTable.TableUI.UIElements import UISetup
+from LabTable.TableUI.UIElements.ProgressBar import ProgressBar
+from LabTable.TableUI.UIElements.UIElement import UIElement
 
 logger = logging.getLogger(__name__)
 

@@ -2,7 +2,7 @@ from typing import List, Tuple
 import logging
 import cv2
 
-from Model.Score import Score
+from LabTable.Model.Score import Score
 from .UIStructureBlock import UIStructureBlock
 from LabTable.Configurator import Configurator
 from LabTable.Model.Vector import Vector, Point

@@ -5,7 +5,7 @@ from functools import partial
 from typing import Tuple
 import logging
 
-from Communication.QGISCommunicator import QGISCommunicator
+from LabTable.Communication.QGISCommunicator import QGISCommunicator
 from LabTable.TableUI.ImageHandler import ImageHandler
 from LabTable.Configurator import Configurator
 from LabTable.Model.Extent import Extent

@@ -1,8 +1,8 @@
 class Score:
 
-    def __init__(self, identifier: int, progress_bar, target: float, initial_value: float = 0.0, name: str = ""):
+    def __init__(self, identifier: int, target: float, initial_value: float = 0.0, name: str = ""):
 
-        self.progress_bar = progress_bar
+        self.progress_bar = None
 
         self.identifier: int = identifier
         self.name: str = name

@@ -62,6 +62,16 @@ class UIElement:
     def set_position(self, pos: Vector):
         self.position = pos
 
+    # recursively return all elements of given type
+    def get_by_type(self, my_type) -> List:
+        ret = []
+        for child in self.children:
+            ret.append(child.get_by_type(my_type))
+            if type(child) == my_type:
+                ret.append(child)
+
+        return ret
+
 
 # used for buttons etc
 class UIActionType(Enum):

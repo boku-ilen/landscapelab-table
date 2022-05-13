@@ -224,13 +224,13 @@ class LLCommunicator(Communicator):
         # create the scores for the new game mode
         scores = []
         for score_dict in response["scores"]:
-            identifier = score_dict["identifier"]
+            score_id = score_dict["score_id"]
             initial_value = score_dict["initial_value"]
             target_value = score_dict["target_value"]
             name = ""
             if score_dict["name"]:
                 name = score_dict["name"]
-            score = Score(identifier, target_value, initial_value, name)
+            score = Score(score_id, target_value, initial_value, name)
             scores.append(score)
 
         UISetup.add_progressbars_to_ui(self.progressbars_ui, self.config, scores)
@@ -267,5 +267,5 @@ class LLCommunicator(Communicator):
         # FIXME: this logic should move somewhere where the UI is managed
         for progress_bar in self.progressbars_ui.get_by_type(ProgressBar):
             if progress_bar.score:
-                if progress_bar.score.identifier == score_id:
+                if progress_bar.score.score_id == score_id:
                     progress_bar.score.set_value(value)

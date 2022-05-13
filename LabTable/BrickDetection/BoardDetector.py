@@ -357,6 +357,8 @@ class BoardDetector:
         return region_of_interest[0:self.board.height, 0:self.board.width]
 
     # saves the average image over a certain time period returns true if enough iterations were done
+    # FIXME: as the background currently is only used for qr-code detection we might try it without it
+    # FIXME: or integrate the qr-code check in the iterative background generation
     def compute_background(self, color_image):
 
         # Save background

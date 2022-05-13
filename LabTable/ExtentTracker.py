@@ -20,7 +20,3 @@ class ExtentTracker(object):
         if not cls.__instance:
             cls.__instance = ExtentTracker()
         return cls.__instance
-
-
-
-

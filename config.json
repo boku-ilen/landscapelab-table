@@ -236,7 +236,7 @@
     "start_zoom": 20000,
     "start_x": 1753811,
     "start_y": 6177037,
-    "coordinate_reference_system": "EPSG:3857",
+    "coordinate_reference_system": "EPSG:31287",
     "extent_changed": false,
     "map_refreshed": true,
     "pan_distance": [0.5, 0.75, 0.85],

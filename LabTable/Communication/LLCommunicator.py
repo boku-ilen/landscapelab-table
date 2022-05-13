@@ -219,7 +219,7 @@ class LLCommunicator(Communicator):
         # add new tokens
         # FIXME: we do need to delete the old ones from the tracker?
         for token in response["existing_tokens"]:
-            self.create_local_brick(message_id, token)
+            self.create_local_brick(token)
 
         # create the scores for the new game mode
         scores = []

@@ -28,18 +28,9 @@ logger = logging.getLogger(__name__)
 # there already is a brick on it, and it ignores the new input.
 class MiniMap(UIStructureBlock, MapHandler):
 
-    def __init__(
-            self,
-            config: Configurator,
-            name: str,
-            position: Vector,
-            size: Vector,
-            controlled_map: MapHandler,
-            color: List = None,
-            extent_color: List = None,
-            border_color: List = None,
-            border_weight: float = None
-    ):
+    def __init__(self, config: Configurator, name: str, position: Vector, size: Vector, controlled_map: MapHandler,
+                 color: List = None, extent_color: List = None, border_color: List = None,
+                 border_weight: float = None):
 
         self.controlled_map = controlled_map
         self.extent_tracker = ExtentTracker.get_instance()
@@ -48,8 +39,8 @@ class MiniMap(UIStructureBlock, MapHandler):
         zoom_limits = config.get("map_settings", "mini_map_zoom_limits")
 
         # call super initializers
-        UIStructureBlock.__init__(self, config, position, size,
-                                  color=color, border_color=border_color, border_weight=border_weight)
+        UIStructureBlock.__init__(self, config, position, size, color=color, border_color=border_color,
+                                  border_weight=border_weight)
         MapHandler.__init__(self, config, name, self.get_start_extent(config), zoom_limits, size.as_point())
 
         if extent_color is None:
@@ -99,11 +90,7 @@ class MiniMap(UIStructureBlock, MapHandler):
 
             if self.current_extent.overlapping(self.controlled_map.current_extent):
                 extent_indicator = self.current_extent.cut_extent_on_borders(self.controlled_map.current_extent)
-                extent_indicator = Extent.remap_extent(
-                    extent_indicator,
-                    self.current_extent,
-                    self.get_global_area()
-                )
+                extent_indicator = Extent.remap_extent(extent_indicator, self.current_extent, self.get_global_area())
 
                 UIStructureBlock.rectangle(img, extent_indicator, self.extent_color, 1)
 
@@ -143,4 +130,4 @@ class MiniMap(UIStructureBlock, MapHandler):
         new_extent = Extent.around_center(Vector.from_brick(map_brick), c_map_extent.get_width(),
                                           c_map_extent.get_aspect_ratio())
 
-        self.request_render(new_extent)
+        self.controlled_map.request_render(new_extent)

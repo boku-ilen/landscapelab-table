@@ -42,7 +42,6 @@ class Communicator(threading.Thread):
 
         self.config = config
         self.extent_tracker = ExtentTracker.get_instance()
-        # self.brick_update_callback = lambda: None
         self._ssl_context = None
 
         # if ssl is configured load the pem file
@@ -74,7 +73,8 @@ class Communicator(threading.Thread):
         logger.debug("received message: {:.250}".format(message))
         message_id = int(json_message["message_id"])
         if message_id in self._message_stack:
-            if json_message[ANSWER_STRING]:
+            if ANSWER_STRING in json_message:
+                # FIXME: check for a success in answer?
                 callback = self._message_stack[message_id]
                 del json_message["message_id"]
                 del json_message[ANSWER_STRING]
@@ -90,7 +90,8 @@ class Communicator(threading.Thread):
             if keyword in self.keyword_callbacks:
                 callback = self.keyword_callbacks[keyword]
                 if callback:
-                    callback(message_id, json_message)
+                    # TODO: we might add the message_id to the callback to be able to create an answer
+                    callback(json_message)
 
     def on_error(self, ws, error):
         logger.error("error in communication with {}: {}".format(self._uri, error))

@@ -202,10 +202,10 @@ class LLCommunicator(Communicator):
         self.send_message(message, extent_callback)
 
     # update the player position on the display where the landscapelab player(s) are positioned
-    def update_player_position(self, message_id, message: dict):
+    def update_player_position(self, message: dict):
         pass
 
-    def game_mode_change(self, message_id, response: dict):
+    def game_mode_change(self, response: dict):
 
         epsg = response["projection_epsg"]
         start_position = (response["start_position_x"], response["start_position_y"])
@@ -237,7 +237,7 @@ class LLCommunicator(Communicator):
 
         # FIXME: set the game mode to EXTERNAL and do not accept remote inputs while INTERNAL
 
-    def create_local_brick(self, message_id, response: dict):
+    def create_local_brick(self, response: dict):
 
         shape = response["shape"]
         color = response["color"]
@@ -252,14 +252,14 @@ class LLCommunicator(Communicator):
         self.tracker.add_external_brick(new_brick)
 
     # FIXME: this is not used yet anyhow
-    def update_local_brick(self, message_id, response: dict):
+    def update_local_brick(self, response: dict):
         pass
 
-    def remove_local_brick(self, message_id, response: dict):
+    def remove_local_brick(self, response: dict):
         object_id = response["object_id"]
         self.tracker.remove_external_brick(object_id)
 
-    def update_local_score(self, message_id, response: dict):
+    def update_local_score(self, response: dict):
 
         score_id = response["score_id"]
         value = response["value"]

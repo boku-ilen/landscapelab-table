@@ -28,10 +28,8 @@ class MapHandler:
         self.extent_tracker = ExtentTracker.get_instance()
         self.min_zoom, self.max_zoom = zoom_limits
 
-        # set resolution and extent
+        # set resolution
         self.resolution_x, self.resolution_y = resolution
-        extent.fit_to_ratio(self.resolution_y / self.resolution_x)
-        self.current_extent: Extent = extent
 
         # initialize two black images
         self.map_image = [
@@ -40,7 +38,10 @@ class MapHandler:
         ]
         self.current_image = 0
 
+        # crs is initialized with a local configuration but overwritten once a connection with the LL is established
         self.crs = config.get("map_settings", "coordinate_reference_system")
+        extent.fit_to_ratio(self.resolution_y / self.resolution_x)
+        self.current_extent: Extent = extent
 
         # set extent modifiers
         pan_up_modifier = np.array([0, 1, 0, 1])
@@ -64,6 +65,13 @@ class MapHandler:
         self.pan_right = partial(self.modify_extent, pan_right_modifier, pan_distance)
         self.zoom_in = partial(self.modify_extent, self.zoom_in_modifier, zoom_strength)
         self.zoom_out = partial(self.modify_extent, self.zoom_out_modifier, zoom_strength)
+
+    # with these settings the map can be reset and display a different game mode
+    def initialize_map(self, crs, extent):
+        self.crs = crs
+        extent.fit_to_ratio(self.resolution_y / self.resolution_x)
+        self.current_extent = extent
+        self.request_render(self.current_extent)
 
     # reloads the viewport image - this gets called as a callback after a successful render request
     def refresh(self, extent: Extent, buffer):

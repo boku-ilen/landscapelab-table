@@ -151,6 +151,7 @@ class LLCommunicator(Communicator):
                 if response["placement_allowed"]:
 
                     # set the remote asset id
+                    #FIXME: does this reference to the brick instance work?
                     brick.object_id = response["id"]
 
                 else:

@@ -95,10 +95,6 @@ class LabTable:
         # initialize the brick detector
         self.shape_detector = ShapeDetector(self.config, self.output_stream)
 
-        # Flag which says whether the bricks
-        # stored at the server are already marked as virtual
-        self.added_stored_bricks_flag = False
-
     # Run bricks detection and tracking code
     def run(self):
 
@@ -194,12 +190,6 @@ class LabTable:
 
                 # mark potential brick contours
                 TableOutputStream.mark_candidates(region_of_interest_debug, contour)
-
-        # TODO implement this as stage transition callback in ProgramStage
-        # Get already stored brick instances from server
-        if self.program_stage.current_stage == ProgramStage.EXTERNAL_MODE and not self.added_stored_bricks_flag:
-            self.tracker.sync_with_global_bricks()
-            self.added_stored_bricks_flag = True
 
         # Compute tracked bricks dictionary using the centroid tracker and set of properties
         # Mark stored bricks virtual

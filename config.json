@@ -105,12 +105,6 @@
   },
 
   "brick_icon_mappings": {
-    "NOTE1": "configure brick icons by specifying under which conditions they should be used",
-    "NOTE2": "if the brick is internal it is differentiated between color and brick shape",
-    "NOTE3": "if the brick is external it is differentiated between asset_id and if the brick is virtual or not",
-    "NOTE4": "separate requirements with '.'",
-    "NOTE5": "if a requirement is left empty the category will not be restricted",
-    "NOTE6": "the first restriction-set that fits to a brick will be selected",
 
     "internal_bricks": {
       ".": "internal_brick"

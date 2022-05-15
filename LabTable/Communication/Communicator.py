@@ -98,6 +98,7 @@ class Communicator(threading.Thread):
         self._connection_open = False
 
     def on_close(self, ws, close_code, close_msg):
+        # FIXME: we might want to set to INTERNAL ProgramStage within LLCommunicator
         self._connection_open = False
         logger.debug("Connection to {} closed: {} ({})".format(self._uri, close_msg, close_code))
 

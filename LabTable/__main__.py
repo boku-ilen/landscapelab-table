@@ -49,9 +49,6 @@ class LabTable:
         self.config = Configurator()
         TableOutputStream.set_screen_config_info(self.config)
 
-        # Initialize websocket communication class
-        self.ll_communicator = LLCommunicator(self.config)
-
         # create ui root element and callback manager
         ui_root = UIElement()
         self.callback_manager = CallbackManager(self.config)
@@ -65,6 +62,9 @@ class LabTable:
         # Initialize board detection
         self.board_detector = BoardDetector(self.config)
         self.board = self.board_detector.board
+
+        # Initialize websocket communication class
+        self.ll_communicator = LLCommunicator(self.config, self.program_stage)
 
         # Initialize the centroid tracker
         self.tracker = Tracker(self.config, ui_root, self.ll_communicator)

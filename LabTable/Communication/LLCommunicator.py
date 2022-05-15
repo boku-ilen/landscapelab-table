@@ -13,6 +13,7 @@ from LabTable.Model.Score import Score
 from LabTable.TableUI.UIElements import UISetup
 from LabTable.TableUI.UIElements.ProgressBar import ProgressBar
 from LabTable.TableUI.UIElements.UIElement import UIElement
+from Model.ProgramStage import CurrentProgramStage
 from Model.Vector import Vector
 from TableUI.MainMap import MainMap
 from TableUI.UIElements.MiniMap import MiniMap
@@ -105,7 +106,7 @@ class LLCommunicator(Communicator):
     main_map: MainMap = None
     mini_map: MiniMap = None
 
-    def __init__(self, config: Configurator):
+    def __init__(self, config: Configurator, program_stage: CurrentProgramStage):
 
         # call super()
         self.ip = config.get("landscapelab", "ip")
@@ -113,6 +114,7 @@ class LLCommunicator(Communicator):
         super().__init__(config)
 
         self.extent_tracker = ExtentTracker.get_instance()
+        self.program_stage = program_stage
 
         # set the callback functions for the received messages from the LL
         self.keyword_callbacks = {
@@ -157,7 +159,7 @@ class LLCommunicator(Communicator):
 
                     # set the remote asset id
                     #FIXME: does this reference to the brick instance work?
-                    brick.object_id = response["id"]
+                    brick.object_id = int(response["id"])
 
                 else:
                     logger.debug("could not remotely create brick {}".format(brick))
@@ -214,7 +216,7 @@ class LLCommunicator(Communicator):
     # this initializes a new game mode
     def game_mode_change(self, response: dict):
 
-        epsg = response["projection_epsg"]
+        epsg = int(response["projection_epsg"])
         start_position = Vector(float(response["start_position_x"]), float(response["start_position_y"]))
         width = float(response["start_extent_x"])
         height = float(response["start_extent_y"])
@@ -231,7 +233,7 @@ class LLCommunicator(Communicator):
             color = token["color"]
             allowed_bricks.append((color, shape))
             token["icon_svg"]
-            token["disappear_after_seconds"]
+            float(token["disappear_after_seconds"])
         self.tracker.change_game_mode(allowed_bricks)
 
         # add new tokens
@@ -241,9 +243,9 @@ class LLCommunicator(Communicator):
         # create the scores for the new game mode
         scores = []
         for score_dict in response["scores"]:
-            score_id = score_dict["score_id"]
-            initial_value = score_dict["initial_value"]
-            target_value = score_dict["target_value"]
+            score_id = int(score_dict["score_id"])
+            initial_value = float(score_dict["initial_value"])
+            target_value = float(score_dict["target_value"])
             name = ""
             if score_dict["name"]:
                 name = score_dict["name"]
@@ -251,32 +253,33 @@ class LLCommunicator(Communicator):
             scores.append(score)
         UISetup.add_progressbars_to_ui(self.progressbars_ui, self.config, scores)
 
-        # FIXME: set the game mode to EXTERNAL and do not accept remote inputs while INTERNAL
+        # finally set to EXTERNAL ProgramStage
+        self.program_stage.next()
 
     def create_local_brick(self, response: dict):
         shape = response["shape"]
         color = response["color"]
         new_brick = Brick(0, 0, shape, color)  # centroid will be calculated later
         new_brick.status = BrickStatus.EXTERNAL_BRICK
-        new_brick.object_id = response["object_id"]
-        new_brick.map_pos_x = response["position_x"]
-        new_brick.map_pos_y = response["position_y"]
+        new_brick.object_id = int(response["object_id"])
+        new_brick.map_pos_x = float(response["position_x"])
+        new_brick.map_pos_y = float(response["position_y"])
         self.tracker.add_external_brick(new_brick)
 
     def update_local_brick(self, response: dict):
-        object_id = response["object_id"]
-        position_x = response["position_x"]
-        position_y = response["position_y"]
+        object_id = int(response["object_id"])
+        position_x = float(response["position_x"])
+        position_y = float(response["position_y"])
         self.tracker.update_external_brick(object_id, position_x, position_y)
 
     def remove_local_brick(self, response: dict):
-        object_id = response["object_id"]
+        object_id = int(response["object_id"])
         self.tracker.remove_external_brick(object_id)
 
     def update_local_score(self, response: dict):
 
-        score_id = response["score_id"]
-        value = response["value"]
+        score_id = int(response["score_id"])
+        value = float(response["value"])
 
         # FIXME: this logic should move somewhere where the UI is managed
         for progress_bar in self.progressbars_ui.get_by_type(ProgressBar):

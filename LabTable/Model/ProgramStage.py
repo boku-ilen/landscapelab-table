@@ -8,7 +8,6 @@ from typing import Dict
 logger = logging.getLogger(__name__)
 
 
-# FIXME: Program Stages will be triggered and retrieved in the future by the GameEngine within the LandscapeLab Client
 class ProgramStage(Enum):
 
     WHITE_BALANCE = 1
@@ -20,6 +19,12 @@ class ProgramStage(Enum):
         value = self.value + 1
         if value > 4:
             value = 4
+        return ProgramStage(value)
+
+    def prev_stage(self):
+        value = self.value - 1
+        if value < 1:
+            value = 1
         return ProgramStage(value)
 
 
@@ -35,6 +40,14 @@ class CurrentProgramStage:
 
     def next(self):
         self.current_stage = self.current_stage.next_stage()
+        logger.info("entering program stage: {}".format(self.current_stage))
+
+        # call callback function if there is one
+        if self.current_stage in self.callbacks:
+            self.callbacks[self.current_stage].call(None)
+
+    def prev(self):
+        self.current_stage = self.current_stage.prev_stage()
         logger.info("entering program stage: {}".format(self.current_stage))
 
         # call callback function if there is one

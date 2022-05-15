@@ -215,10 +215,10 @@ class LLCommunicator(Communicator):
 
         # TODO: setup the new map
 
-        # FIXME: set the used token types in tracker (not yet implemented)
+        # reset the tracker and feed him the allowed brick combinations
+        self.tracker.change_game_mode(allowed_bricks)
 
         # add new tokens
-        # FIXME: we do need to delete the old ones from the tracker?
         for token in response["existing_tokens"]:
             self.create_local_brick(token)
 
@@ -233,13 +233,11 @@ class LLCommunicator(Communicator):
                 name = score_dict["name"]
             score = Score(score_id, target_value, initial_value, name)
             scores.append(score)
-
         UISetup.add_progressbars_to_ui(self.progressbars_ui, self.config, scores)
 
         # FIXME: set the game mode to EXTERNAL and do not accept remote inputs while INTERNAL
 
     def create_local_brick(self, response: dict):
-
         shape = response["shape"]
         color = response["color"]
         new_brick = Brick(0, 0, shape, color)  # centroid will be calculated later
@@ -247,14 +245,13 @@ class LLCommunicator(Communicator):
         new_brick.object_id = response["object_id"]
         new_brick.map_pos_x = response["position_x"]
         new_brick.map_pos_y = response["position_y"]
-
-        # TODO: move this to the tracker?
-        Extent.calc_local_pos(new_brick, self.extent_tracker.board, self.extent_tracker.map_extent)
         self.tracker.add_external_brick(new_brick)
 
-    # FIXME: this is not used yet anyhow
     def update_local_brick(self, response: dict):
-        pass
+        object_id = response["object_id"]
+        position_x = response["position_x"]
+        position_y = response["position_y"]
+        self.tracker.update_external_brick(object_id, position_x, position_y)
 
     def remove_local_brick(self, response: dict):
         object_id = response["object_id"]

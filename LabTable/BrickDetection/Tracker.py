@@ -50,6 +50,14 @@ class Tracker:
         # Initialize a flag for changes in the map extent
         self.extent_changed = False
 
+    # re-initialize the tracker after the game mode changed
+    def change_game_mode(self, allowed_bricks):
+        self.allowed_bricks = allowed_bricks
+        self.tracked_disappeared.clear()
+        self.virtual_bricks.clear()
+        self.confirmed_bricks.clear()
+        self.tracked_candidates.clear()
+
     # for externally remove tracked bricks
     def remove_external_brick(self, object_id):
         for brick in self.virtual_bricks:
@@ -59,6 +67,7 @@ class Tracker:
     # for externally add a tracked brick
     def add_external_brick(self, brick: Brick):
         # TODO: maybe add security checks to not add the same brick twice etc?
+        Extent.calc_local_pos(brick, self.extent_tracker.board, self.extent_tracker.map_extent)
         self.virtual_bricks.append(brick)
 
     # called once a frame while in ProgramStage EVALUATION or PLANNING

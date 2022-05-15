@@ -43,13 +43,7 @@ class Extent:
         center_x, center_y = center
         height = width * y_per_x
 
-        return Extent.from_rectangle(
-            center_x - width / 2,
-            center_y - height / 2,
-            width,
-            height,
-            y_up_is_positive
-        )
+        return Extent.from_rectangle(center_x - width / 2, center_y - height / 2, width, height, y_up_is_positive)
 
     """
     non-modifying methods

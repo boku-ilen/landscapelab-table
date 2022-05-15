@@ -71,13 +71,9 @@ def setup_nav_block_ui(nav_block_root, config, main_map, callback_manager) -> (M
     pan_right_button = Button(config, c.cross_offset + c.y + c.x * 2, c.button_size, 'pan right', 'button_right')
     zoom_in_button = Button(config, c.zoom_offset, c.button_size, 'zoom in', 'button_zoom_in')
     zoom_out_button = Button(config, c.zoom_offset + c.y * 2, c.button_size, 'zoom out', 'button_zoom_out')
-    confirm_button = Button(
-        config,
+    confirm_button = Button(config,
         c.zoom_offset ** c.X - c.nav_block_pos ** c.Y,  # align with zoom block on x axis, and toggle button on y axis
-        c.button_size,
-        'confirm bricks',
-        'button_confirm'
-    )
+        c.button_size, 'confirm bricks', 'button_confirm')
     mini_map = MiniMap(config, 'mini_map', Vector(10, 300) * c.scale_factor, Vector(280, 280) * c.scale_factor,
                        main_map, None)
     callback_manager.set_mini_map_callbacks(mini_map)

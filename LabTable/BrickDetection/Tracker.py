@@ -33,14 +33,10 @@ class Tracker:
 
         # get ticker thresholds from config
         self.min_distance = config.get("tracker_thresholds", "min_distance")
-        self.external_min_appeared = config.get(
-            "tracker_thresholds", "external_min_appeared")
-        self.external_max_disappeared = config.get(
-            "tracker_thresholds", "external_max_disappeared")
-        self.internal_min_appeared = config.get(
-            "tracker_thresholds", "internal_min_appeared")
-        self.internal_max_disappeared = config.get(
-            "tracker_thresholds", "internal_max_disappeared")
+        self.external_min_appeared = config.get("tracker_thresholds", "external_min_appeared")
+        self.external_max_disappeared = config.get("tracker_thresholds", "external_max_disappeared")
+        self.internal_min_appeared = config.get("tracker_thresholds", "internal_min_appeared")
+        self.internal_max_disappeared = config.get("tracker_thresholds", "internal_max_disappeared")
 
         # we initialize it with all available configurations
         # as soon as an external game mode is choosen it should change accordingly
@@ -245,7 +241,6 @@ class Tracker:
                 brick.status = BrickStatus.INTERNAL_BRICK
             else:
                 brick.status = BrickStatus.EXTERNAL_BRICK
-                # FIXME: distinguish action based on brick configuration (eg teleport)
                 self.landscape_lab.create_remote_brick_instance(brick)
 
     # Check if the brick lies within min distance to the any in the list, returns None if no neighbour was found

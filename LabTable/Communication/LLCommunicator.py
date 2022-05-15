@@ -13,6 +13,9 @@ from LabTable.Model.Score import Score
 from LabTable.TableUI.UIElements import UISetup
 from LabTable.TableUI.UIElements.ProgressBar import ProgressBar
 from LabTable.TableUI.UIElements.UIElement import UIElement
+from Model.Vector import Vector
+from TableUI.MainMap import MainMap
+from TableUI.UIElements.MiniMap import MiniMap
 
 logger = logging.getLogger(__name__)
 
@@ -78,7 +81,7 @@ REC_GAMESTATE_INFO_MSG = {  # Received after the first handshake and if the game
 REC_UPDATE_SCORE_MSG = {
     "keyword": "SCORE_UPDATE",
     "score_id": 0,
-    "value": 0.0  # FIXME: is this an absolute value or do we add/subtract from the existing value?
+    "value": 0.0  # as new, absolute value
 }
 SEND_SET_EXTENT_MSG = {  # this is sent on change to the LL
     "keyword": "TABLE_EXTENT",
@@ -99,6 +102,8 @@ class LLCommunicator(Communicator):
 
     tracker = None
     progressbars_ui: UIElement = None
+    main_map: MainMap = None
+    mini_map: MiniMap = None
 
     def __init__(self, config: Configurator):
 
@@ -206,16 +211,27 @@ class LLCommunicator(Communicator):
     def update_player_position(self, message: dict):
         pass
 
+    # this initializes a new game mode
     def game_mode_change(self, response: dict):
 
         epsg = response["projection_epsg"]
-        start_position = (response["start_position_x"], response["start_position_y"])
-        # FIXME: we might have to recalculate this to a zoomlevel
-        start_extent = (response["start_extent_x"], response["start_extent_y"])
+        start_position = Vector(float(response["start_position_x"]), float(response["start_position_y"]))
+        width = float(response["start_extent_x"])
+        height = float(response["start_extent_y"])
+        start_extent = Extent.around_center(start_position, width, height/width)
 
-        # TODO: setup the new map
+        # change the maps
+        self.mini_map.initialize_map(epsg, start_extent)  # TODO: minimap has other extent
+        self.main_map.initialize_map(epsg, start_extent)
 
         # reset the tracker and feed him the allowed brick combinations
+        allowed_bricks = []
+        for token in response["used_tokens"]:
+            shape = token["shape"]
+            color = token["color"]
+            allowed_bricks.append((color, shape))
+            token["icon_svg"]
+            token["disappear_after_seconds"]
         self.tracker.change_game_mode(allowed_bricks)
 
         # add new tokens

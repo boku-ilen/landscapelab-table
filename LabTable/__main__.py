@@ -76,6 +76,8 @@ class LabTable:
         self.main_map = MainMap(self.config, 'main_map', self.ll_communicator)
         self.callback_manager.set_map_callbacks(self.main_map)
         mini_map, planning_ui = setup_ui(ui_root, self.main_map, self.config, self.callback_manager)
+        self.ll_communicator.mini_map = mini_map
+        self.ll_communicator.main_map = self.main_map
 
         # Initialize the qgis communication
         map_dict = {self.main_map.name: self.main_map, mini_map.name: mini_map}

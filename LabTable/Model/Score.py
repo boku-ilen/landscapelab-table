@@ -13,7 +13,10 @@ class Score:
 
     # TODO: are there other score calculations?
     def calculate_percentage(self):
-        self.percentage = (self.value / self.target)
+        if self.target != 0.0:
+            self.percentage = (self.value / self.target)
+        else:
+            self.percentage = 0.0
 
     def set_value(self, value: float):
         self.value = value

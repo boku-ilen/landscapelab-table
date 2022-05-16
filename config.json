@@ -104,25 +104,6 @@
     }
   },
 
-  "brick_icon_mappings": {
-
-    "internal_bricks": {
-      ".": "internal_brick"
-  },
-    "external_bricks": {
-      "1.real": "pv_brick",
-      "1.virtual": "pv_icon",
-      "2.real": "pv_brick",
-      "2.virtual": "pv_icon",
-      "3.real": "windmill_brick",
-      "3.virtual": "windmill_icon",
-      "4.": "player_teleport",
-      "13.": "player_position",
-      "11.": "yes_icon",
-      "12.": "no_icon"
-    }
-  },
-
   "video_output": {
     "name": "shape_detection_output.avi"
   },

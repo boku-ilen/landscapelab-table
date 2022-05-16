@@ -124,7 +124,7 @@ def add_progressbars_to_ui(progressbars_ui_root, config, scores):
 
     # create elements
     color_indexes = [[(255, 0, 0)], [(0, 0, 255)]]  # FIXME: load dynamically
-    for counter, score in scores:
+    for counter, score in enumerate(scores):
         progress_bar = ProgressBar(config, c.bot_right_corner - c.x * (counter + 1) - c.y * 5,
                                    c.x / 2 + c.y * 4.5, False, True, score, color_indexes[counter])
         score.progress_bar = progress_bar

@@ -213,7 +213,8 @@ class Extent:
         remapped_brick = brick.clone()
 
         if old_extent is None or new_extent is None:
-            logger.warning("Could not remap the brick: {}".format(brick))
+            logger.warning("Could not remap the brick: {} (old: {} or new: {} is None)".format(brick, old_extent,
+                                                                                               new_extent))
 
         else:
             x, y = Extent.remap_point(Vector(remapped_brick.centroid_x, remapped_brick.centroid_y),

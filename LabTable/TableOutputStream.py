@@ -10,7 +10,7 @@ from LabTable.BrickDetection.Tracker import Tracker
 from LabTable.Configurator import Configurator
 from LabTable.TableUI.MainMap import MainMap
 from LabTable.TableUI.UIElements.UIElement import UIElement
-from LabTable.Model.Brick import Brick, BrickColor, BrickShape, BrickStatus
+from LabTable.Model.Brick import Brick, BrickColor, BrickShape, BrickStatus, Token
 from LabTable.TableUI.ImageHandler import ImageHandler
 from LabTable.TableUI.BrickIcon import ExternalBrickIcon, InternalBrickIcon
 from LabTable.TableUI.CallbackManager import CallbackManager
@@ -413,8 +413,8 @@ class TableOutputStream:
                     color = BrickColor.RED_BRICK
 
                 # create brick on mouse position
-                mouse_brick = Extent.remap_brick(
-                    Brick(x, y, BrickShape.SQUARE_BRICK, color),
+                mouse_brick = Extent.remap_brick(Brick(x, y, Token(BrickShape.SQUARE_BRICK, color)),
+                                                 
                     self.extent_tracker.beamer, self.extent_tracker.board
                 )
 

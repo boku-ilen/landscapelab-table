@@ -35,12 +35,34 @@ class BrickStatus(Enum):
     OUTDATED_BRICK = 3
 
 
+# this class represents a type of brick
+class Token:
+
+    def __init__(self, shape: BrickShape, color: BrickColor, svg: str = None):
+        self.shape: BrickShape = shape
+        self.color: BrickColor = color
+        self.svg: str = svg
+
+    def __str__(self):
+        return "{} | {}".format(self.shape, self.color)
+
+    def __eq__(self, other):
+        if type(self) is not type(other):
+            return NotImplemented
+        if self.color == other.color and self.shape == other.shape:
+            return True
+        else:
+            return False
+
+    def __hash__(self):
+        return hash((self.shape, self.color))
+
+
 # this class represents a brick and holds related properties
 class Brick:
 
-    def __init__(self, centroid_x: int, centroid_y: int, shape: BrickShape, color: BrickColor):
-        # the object_id which the brick has in the LandscapeLab. this needs to be
-        # available if it is not a candidate and not internal
+    def __init__(self, centroid_x: int, centroid_y: int, token: Token):
+        # the object_id which the brick has in the LandscapeLab (for external bricks)
         self.object_id = None
 
         # the x and y coordinates locally (in stream coordinates)
@@ -48,8 +70,7 @@ class Brick:
         self.centroid_x: int = centroid_x
         self.centroid_y: int = centroid_y
 
-        self.shape: BrickShape = shape
-        self.color: BrickColor = color
+        self.token = token
         self.status: BrickStatus = BrickStatus.CANDIDATE_BRICK
 
         # the x and y coordinates in projected coordinates
@@ -65,7 +86,7 @@ class Brick:
 
     # returns an independent clone of this brick
     def clone(self):
-        clone = Brick(self.centroid_x, self.centroid_y, self.shape, self.color)
+        clone = Brick(self.centroid_x, self.centroid_y, self.token)
         clone.status = self.status
         clone.object_id = self.object_id
         clone.map_pos_x = self.map_pos_x
@@ -78,12 +99,12 @@ class Brick:
             return NotImplemented
         # FIXME: what about close by coordinates of the centroid?
         # FIXME: what about the status? do we consider them equal?
-        return (self.centroid_x, self.centroid_y, self.color, self.shape) == \
-               (other.centroid_x, other.centroid_y, other.color, other.shape)
+        return (self.centroid_x, self.centroid_y, self.token) == \
+               (other.centroid_x, other.centroid_y, other.token)
 
     def __hash__(self):
-        return hash((self.centroid_y, self.centroid_x, self.color, self.shape))
+        return hash((self.centroid_y, self.centroid_x, self.token))
 
     def __str__(self):
-        return "Brick ({}, {}) [{}|{}|{}] {}".format(self.centroid_x, self.centroid_y, self.color,
-                                                     self.shape, self.status, self.object_id)
+        return "Brick ({}, {}) [{}|{}] {}".format(self.centroid_x, self.centroid_y, self.token, self.status,
+                                                  self.object_id)

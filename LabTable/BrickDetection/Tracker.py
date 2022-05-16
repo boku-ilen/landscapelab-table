@@ -1,7 +1,7 @@
 import logging
 from typing import List
 
-from LabTable.Model.Brick import Brick, BrickStatus, BrickShape
+from LabTable.Model.Brick import Brick, BrickStatus, BrickShape, Token
 from LabTable.TableUI.UIElements.UIElement import UIElement
 from LabTable.Model.ProgramStage import ProgramStage
 from LabTable.ExtentTracker import ExtentTracker
@@ -41,18 +41,19 @@ class Tracker:
         # we initialize it with all available configurations
         # as soon as an external game mode is choosen it should change accordingly
         # FIXME: this should maybe move in a change_gamemode()
-        self.allowed_bricks = []
+        self.allowed_tokens: List[Token] = []
         brick_colors = config.get("brick_colors")
         for color in brick_colors:
             for shape in BrickShape:
-                self.allowed_bricks.append((color, shape))
+                token = Token(shape, color)
+                self.allowed_tokens.append(token)
 
         # Initialize a flag for changes in the map extent
         self.extent_changed = False
 
     # re-initialize the tracker after the game mode changed
-    def change_game_mode(self, allowed_bricks):
-        self.allowed_bricks = allowed_bricks
+    def change_game_mode(self, allowed_tokens: List[Token]):
+        self.allowed_tokens = allowed_tokens
         self.tracked_disappeared.clear()
         self.virtual_bricks.clear()
         self.confirmed_bricks.clear()
@@ -334,7 +335,6 @@ class Tracker:
     # checks if the brick is allowed in the current program stage
     def check_brick_valid(self, brick: Brick):
 
-        brick_type = (brick.color, brick.shape)
-        if brick_type in self.allowed_bricks:
+        if brick.token in self.allowed_tokens:
             return True
         return False

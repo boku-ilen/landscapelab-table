@@ -70,7 +70,7 @@ class Communicator(threading.Thread):
 
     def on_message(self, ws, message):
         json_message = json.loads(message)
-        logger.debug("received message: {:.250}".format(message))
+        logger.debug("received message: {:.1024}".format(message))
         message_id = int(json_message["message_id"])
         if message_id in self._message_stack:
             if ANSWER_STRING in json_message:
@@ -80,7 +80,10 @@ class Communicator(threading.Thread):
                 del json_message[ANSWER_STRING]
                 if callback:
                     del self._message_stack[message_id]
-                    callback(json_message)
+                    try:
+                        callback(json_message)
+                    except Exception as e:
+                        logger.exception(e)  # TODO: error handling to be refined
                 else:
                     logger.warning("could not find associated callback to message: {}".format(message_id))
             else:

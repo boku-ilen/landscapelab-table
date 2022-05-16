@@ -69,15 +69,15 @@ class LabTable:
         # Initialize the centroid tracker
         self.tracker = Tracker(self.config, ui_root, self.ll_communicator)
         self.ll_communicator.tracker = self.tracker
-        self.ll_communicator.ui_root = ui_root
         self.callback_manager.set_tracker_callbacks(self.tracker)
 
         # initialize map, map callbacks and ui
         self.main_map = MainMap(self.config, 'main_map', self.ll_communicator)
         self.callback_manager.set_map_callbacks(self.main_map)
-        mini_map, planning_ui = setup_ui(ui_root, self.main_map, self.config, self.callback_manager)
+        mini_map, progressbars_ui = setup_ui(ui_root, self.main_map, self.config, self.callback_manager)
         self.ll_communicator.mini_map = mini_map
         self.ll_communicator.main_map = self.main_map
+        self.ll_communicator.progressbars_ui = progressbars_ui
 
         # Initialize the qgis communication
         map_dict = {self.main_map.name: self.main_map, mini_map.name: mini_map}
@@ -88,11 +88,6 @@ class LabTable:
                                                self.config, self.board, self.program_stage)
         self.callback_manager.set_output_actions(self.output_stream)
         self.input_stream = TableInputStream.get_table_input_stream(self.config, self.board, usestream=self.used_stream)
-
-        # request the first rendered map section
-        # TODO: if these requests fail there is no extent defined which causes problems later
-        self.qgis_communicator.request_render(self.main_map)
-        self.qgis_communicator.request_render(mini_map)
 
         # initialize the brick detector
         self.shape_detector = ShapeDetector(self.config, self.output_stream)
@@ -145,6 +140,7 @@ class LabTable:
 
                             self.output_stream.set_active_channel(TableOutputChannel.CHANNEL_ROI)
                             self.program_stage.next()
+                            self.ll_communicator.initialize_handshake()
 
                     # do the general brick detection (for internal or external ProgramStage)
                     else:

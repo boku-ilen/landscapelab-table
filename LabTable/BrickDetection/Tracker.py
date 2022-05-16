@@ -54,6 +54,9 @@ class Tracker:
     # re-initialize the tracker after the game mode changed
     def change_game_mode(self, allowed_tokens: List[Token]):
         self.allowed_tokens = allowed_tokens
+        logger.info("the following tokens are allowed:")
+        for token in self.allowed_tokens:
+            logger.info("{}".format(token))
         self.tracked_disappeared.clear()
         self.virtual_bricks.clear()
         self.confirmed_bricks.clear()
@@ -335,6 +338,10 @@ class Tracker:
     # checks if the brick is allowed in the current program stage
     def check_brick_valid(self, brick: Brick):
 
-        if brick.token in self.allowed_tokens:
-            return True
+        for token in self.allowed_tokens:
+            if token == brick.token:
+                logger.debug("allowed brick: {}".format(brick))
+                return True
+
+        logger.debug("invalid brick: {} (allowed: {})".format(brick.token, self.allowed_tokens))
         return False

@@ -12,7 +12,6 @@ from LabTable.TableUI.MainMap import MainMap
 from LabTable.TableUI.UIElements.UIElement import UIElement
 from LabTable.Model.Brick import Brick, BrickColor, BrickShape, BrickStatus, Token
 from LabTable.TableUI.ImageHandler import ImageHandler
-from LabTable.TableUI.BrickIcon import ExternalBrickIcon, InternalBrickIcon
 from LabTable.TableUI.CallbackManager import CallbackManager
 from LabTable.ExtentTracker import ExtentTracker
 from LabTable.Model.Extent import Extent

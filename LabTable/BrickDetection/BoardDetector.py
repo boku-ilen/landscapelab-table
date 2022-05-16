@@ -261,6 +261,7 @@ class BoardDetector:
                 bottom_right_corner is not None and bottom_left_corner is not None:
 
             self.board.corners = [top_left_corner, top_right_corner, bottom_right_corner, bottom_left_corner]
+            self.compute_board_size(self.board.corners)
             logger.info("all board corners found: {}".format(self.board.corners))
             all_board_corners_found = True
 
@@ -289,12 +290,6 @@ class BoardDetector:
         source_corners[2] = corners[2]
         source_corners[3] = corners[3]
 
-        # If not done yet, compute width and height of the board
-        if self.board.width == 1:
-
-            # Compute width and height of the board
-            self.compute_board_size(corners)
-
         # Construct destination points which will be used to map the board to a top-down view
         destination_corners = np.array([
             [0, 0],
@@ -318,7 +313,7 @@ class BoardDetector:
         self.board.height = max_y - min_y
 
         ExtentTracker.get_instance().board = Extent.from_rectangle(0, 0, self.board.width, self.board.height)
-        logger.info('board has been set')
+        logger.info('board has been set to {}'.format(ExtentTracker.get_instance().board))
 
     # Display QR-codes location
     @staticmethod

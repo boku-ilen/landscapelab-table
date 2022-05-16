@@ -77,6 +77,10 @@ REC_GAMESTATE_INFO_MSG = {  # Received after the first handshake and if the game
     "start_position_y": 0.0,
     "start_extent_x": 0.0,  # height
     "start_extent_y": 0.0,  # width
+    "minimap_min_x": 0.0,
+    "minimap_min_y": 0.0,
+    "minimap_max_x": 0.0,
+    "minimap_max_y": 0.0,
     "projection_epsg": 0  # EPSG Code (optional, default is Austria Lambert)
 }
 REC_UPDATE_SCORE_MSG = {
@@ -237,8 +241,8 @@ class LLCommunicator(Communicator):
         self.tracker.change_game_mode(allowed_bricks)
 
         # add new tokens
-        for token in response["existing_tokens"]:
-            self.create_local_brick(token)
+        for brick in response["existing_tokens"]:
+            self.create_local_brick(brick)
 
         # create the scores for the new game mode
         scores = []

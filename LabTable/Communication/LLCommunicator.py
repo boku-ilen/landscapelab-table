@@ -3,7 +3,7 @@ import socket
 
 from LabTable.Configurator import Configurator
 from LabTable.Communication.Communicator import Communicator
-from LabTable.Model.Brick import Brick, BrickStatus, BrickShape, Token
+from LabTable.Model.Brick import Brick, BrickStatus, BrickShape, Token, BrickColor
 from LabTable.Model.Extent import Extent
 from LabTable.ExtentTracker import ExtentTracker
 
@@ -165,7 +165,7 @@ class LLCommunicator(Communicator):
                     brick.object_id = int(response["id"])
 
                 else:
-                    logger.debug("placement of brick {} is not allowed".format(brick))
+                    logger.info("placement of brick {} is not allowed".format(brick))
                     brick.status = BrickStatus.OUTDATED_BRICK
 
             else:
@@ -179,7 +179,8 @@ class LLCommunicator(Communicator):
 
         # Send request creating remote brick instance and save the response
         message = SEND_REC_CREATE_OBJECT_MSG.copy()
-        # TODO: send the brick type
+        message["shape"] = str(brick.token.shape)
+        message["color"] = str(brick.token.color)
         message["position_x"] = brick.map_pos_x
         message["position_y"] = brick.map_pos_y
 
@@ -248,8 +249,8 @@ class LLCommunicator(Communicator):
         # reset the tracker and feed him the allowed brick combinations
         allowed_bricks = []
         for token_dict in response["used_tokens"]:
-            shape = token_dict["shape"]
-            color = token_dict["color"]
+            shape = BrickShape[token_dict["shape"]]
+            color = BrickColor[token_dict["color"]]
             icon_id = token_dict["icon_name"]  # FIXME: @Mathias this icon_id should be used for a lookup for the Icon
             disappear = float(token_dict["disappear_after_seconds"])  # FIXME: to be implemented
             token = Token(shape, color, "")  # FIXME: currently the svg is not implemented

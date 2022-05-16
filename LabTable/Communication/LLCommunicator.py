@@ -3,7 +3,7 @@ import socket
 
 from LabTable.Configurator import Configurator
 from LabTable.Communication.Communicator import Communicator
-from LabTable.Model.Brick import Brick, BrickStatus, BrickShape
+from LabTable.Model.Brick import Brick, BrickStatus, BrickShape, Token
 from LabTable.Model.Extent import Extent
 from LabTable.ExtentTracker import ExtentTracker
 
@@ -138,7 +138,6 @@ class LLCommunicator(Communicator):
 
     def on_open(self, ws):
         super().on_open(ws)
-        self.initialize_handshake()
 
     # get the initial configuration settings related to the LabTable from the LL
     def initialize_handshake(self):
@@ -166,7 +165,7 @@ class LLCommunicator(Communicator):
                     brick.object_id = int(response["id"])
 
                 else:
-                    logger.debug("could not remotely create brick {}".format(brick))
+                    logger.debug("placement of brick {} is not allowed".format(brick))
                     brick.status = BrickStatus.OUTDATED_BRICK
 
             else:
@@ -181,7 +180,8 @@ class LLCommunicator(Communicator):
         # Send request creating remote brick instance and save the response
         message = SEND_REC_CREATE_OBJECT_MSG.copy()
         # TODO: send the brick type
-        message["position"] = [brick.map_pos_x, brick.map_pos_y]
+        message["position_x"] = brick.map_pos_x
+        message["position_y"] = brick.map_pos_y
 
         self.send_message(message, create_callback)
 
@@ -220,24 +220,40 @@ class LLCommunicator(Communicator):
     # this initializes a new game mode
     def game_mode_change(self, response: dict):
 
-        epsg = int(response["projection_epsg"])
+        logger.info("the landscapelab tries to change the game mode")
+
+        if "projection_epsg" in response:
+            epsg = int(response["projection_epsg"])
+        else:
+            epsg = self.config.get("map_settings", "coordinate_reference_system")
+
+        # calculate the main map extent based on the starting location
         start_position = Vector(float(response["start_position_x"]), float(response["start_position_y"]))
         width = float(response["start_extent_x"])
         height = float(response["start_extent_y"])
         start_extent = Extent.around_center(start_position, width, height/width)
+        self.extent_tracker.map_extent = start_extent
+
+        # setup the minimap extent
+        mm_min_x = float(response["minimap_min_x"])
+        mm_min_y = float(response["minimap_min_y"])
+        mm_max_x = float(response["minimap_max_x"])
+        mm_max_y = float(response["minimap_max_y"])
+        minimap_extent = Extent(mm_min_x, mm_min_y, mm_max_x, mm_max_y)
 
         # change the maps
-        self.mini_map.initialize_map(epsg, start_extent)  # TODO: minimap has other extent
+        self.mini_map.initialize_map(epsg, minimap_extent)
         self.main_map.initialize_map(epsg, start_extent)
 
         # reset the tracker and feed him the allowed brick combinations
         allowed_bricks = []
-        for token in response["used_tokens"]:
-            shape = token["shape"]
-            color = token["color"]
-            allowed_bricks.append((color, shape))
-            token["icon_svg"]
-            float(token["disappear_after_seconds"])
+        for token_dict in response["used_tokens"]:
+            shape = token_dict["shape"]
+            color = token_dict["color"]
+            svg = token_dict["icon_svg"]
+            disappear = float(token_dict["disappear_after_seconds"])  # FIXME: to be implemented
+            token = Token(shape, color, svg)
+            allowed_bricks.append(token)
         self.tracker.change_game_mode(allowed_bricks)
 
         # add new tokens
@@ -263,7 +279,8 @@ class LLCommunicator(Communicator):
     def create_local_brick(self, response: dict):
         shape = response["shape"]
         color = response["color"]
-        new_brick = Brick(0, 0, shape, color)  # centroid will be calculated later
+        token = Token(shape, color)
+        new_brick = Brick(0, 0, token)  # centroid will be calculated later
         new_brick.status = BrickStatus.EXTERNAL_BRICK
         new_brick.object_id = int(response["object_id"])
         new_brick.map_pos_x = float(response["position_x"])
@@ -284,6 +301,7 @@ class LLCommunicator(Communicator):
 
         score_id = int(response["score_id"])
         value = float(response["value"])
+        logger.info("the landscapelab sent a new value of {} for score {}".format(value, score_id))
 
         # FIXME: this logic should move somewhere where the UI is managed
         for progress_bar in self.progressbars_ui.get_by_type(ProgressBar):

@@ -132,31 +132,22 @@ class TableOutputStream:
         self.tracker: Tracker = tracker
 
         # create image handler to load images
-        image_handler = ImageHandler(config)
+        self.image_handler = ImageHandler(config)
 
         # load qr code images
         qr_size = self.config.get("qr_code", "size")
         # TODO calc optimal size on draw instead of scaling down to fixed size
-        self.qr_bottom_left = image_handler.load_image("qr_bottom_left", (qr_size, qr_size))
-        self.qr_bottom_right = image_handler.load_image("qr_bottom_right", (qr_size, qr_size))
-        self.qr_top_left = image_handler.load_image("qr_top_left", (qr_size, qr_size))
-        self.qr_top_right = image_handler.load_image("qr_top_right", (qr_size, qr_size))
+        self.qr_bottom_left = self.image_handler.load_image("qr_bottom_left", (qr_size, qr_size))
+        self.qr_bottom_right = self.image_handler.load_image("qr_bottom_right", (qr_size, qr_size))
+        self.qr_top_left = self.image_handler.load_image("qr_top_left", (qr_size, qr_size))
+        self.qr_top_right = self.image_handler.load_image("qr_top_right", (qr_size, qr_size))
 
         # load brick overlay images
-        self.brick_outdated = image_handler.load_image("outdated_brick")
-        self.brick_unknown = image_handler.load_image("unknown_brick")
+        self.brick_outdated = self.image_handler.load_image("outdated_brick")
+        self.brick_unknown = self.image_handler.load_image("unknown_brick")
 
         # load and initialize icon lists
-        internal_icons = config.get("brick_icon_mappings", "internal_bricks")
-        external_icons = config.get("brick_icon_mappings", "external_bricks")
-        self.internal_icon_list: List[InternalBrickIcon] = []
-        self.external_icon_list: List[ExternalBrickIcon] = []
-
-        for rule, icon_name in internal_icons.items():
-            self.internal_icon_list.append(InternalBrickIcon(rule, image_handler.load_image(icon_name)))
-
-        for rule, icon_name in external_icons.items():
-            self.external_icon_list.append(ExternalBrickIcon(rule, image_handler.load_image(icon_name)))
+        # FIXME: @Mathias maybe initialize the icons here?
 
     # fetches the correct monitor for the beamer output and writes it's data to the ConfigManager
     @staticmethod
@@ -378,15 +369,13 @@ class TableOutputStream:
 
         # search for correct internal icon and return it if brick is internal
         elif brick.status == BrickStatus.INTERNAL_BRICK:
-            for icon_candidate in self.internal_icon_list:
-                if icon_candidate.matches(brick):
-                    return icon_candidate.icon
+            # FIXME: @Mathias plz replace hardcoded code
+            return self.image_handler.load_image("yes_icon")
 
         # search for correct internal icon and return it if brick is external
         elif brick.status == BrickStatus.EXTERNAL_BRICK:
-            for icon_candidate in self.external_icon_list:
-                if icon_candidate.matches(brick, virtual):
-                    return icon_candidate.icon
+            # FIXME: @Mathias plz replace hardcoded code
+            return self.image_handler.load_image("no_icon")
 
         # return "unknown brick" icon if no icon matches
         return self.brick_unknown

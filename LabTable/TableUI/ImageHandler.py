@@ -32,6 +32,7 @@ class ImageHandler:
             raise ConfigError(err_msg)
 
         image_path = Configurator.reconstruct_path(self.resource_path, image_dict['path'])
+        logger.debug("loading image {}".format(image_path))
         img = cv2.imread(image_path, -1)
 
         # resize if size is not None or size specified in config
@@ -90,16 +91,23 @@ class ImageHandler:
         top_end_x = max(min(top_w, bac_w - top_x), 0)
         top_end_y = max(min(top_h, bac_h - top_y), 0)
 
-        alpha = img[top_start_y:top_end_y, top_start_x:top_end_x, 3] / 255.0
+        if len(img.shape) > 2:
+            alpha = img[top_start_y:top_end_y, top_start_x:top_end_x, 3] / 255.0
 
-        im_back[bac_start_y:bac_end_y, bac_start_x:bac_end_x, 0] = (1. - alpha) * im_back[bac_start_y:bac_end_y, bac_start_x:bac_end_x, 0] + alpha * img[top_start_y:top_end_y, top_start_x:top_end_x, 0]
-        im_back[bac_start_y:bac_end_y, bac_start_x:bac_end_x, 1] = (1. - alpha) * im_back[bac_start_y:bac_end_y, bac_start_x:bac_end_x, 1] + alpha * img[top_start_y:top_end_y, top_start_x:top_end_x, 1]
-        im_back[bac_start_y:bac_end_y, bac_start_x:bac_end_x, 2] = (1. - alpha) * im_back[bac_start_y:bac_end_y, bac_start_x:bac_end_x, 2] + alpha * img[top_start_y:top_end_y, top_start_x:top_end_x, 2]
+            im_back[bac_start_y:bac_end_y, bac_start_x:bac_end_x, 0] = (1. - alpha) * im_back[bac_start_y:bac_end_y, bac_start_x:bac_end_x, 0] + alpha * img[top_start_y:top_end_y, top_start_x:top_end_x, 0]
+            im_back[bac_start_y:bac_end_y, bac_start_x:bac_end_x, 1] = (1. - alpha) * im_back[bac_start_y:bac_end_y, bac_start_x:bac_end_x, 1] + alpha * img[top_start_y:top_end_y, top_start_x:top_end_x, 1]
+            im_back[bac_start_y:bac_end_y, bac_start_x:bac_end_x, 2] = (1. - alpha) * im_back[bac_start_y:bac_end_y, bac_start_x:bac_end_x, 2] + alpha * img[top_start_y:top_end_y, top_start_x:top_end_x, 2]
 
-        if im_back.shape[2] == 4:
-            im_back[bac_start_y:bac_end_y, bac_start_x:bac_end_x, 3] = np.maximum(
-                im_back[bac_start_y:bac_end_y, bac_start_x:bac_end_x, 3], alpha * 255)
-            # NOTE unsure if correct alpha blending but results seem fine
+            if len(im_back.shape) > 2:
+                if im_back.shape[2] == 4:
+                    im_back[bac_start_y:bac_end_y, bac_start_x:bac_end_x, 3] = np.maximum(
+                        im_back[bac_start_y:bac_end_y, bac_start_x:bac_end_x, 3], alpha * 255)
+            else:
+                logger.warning("ProgrammingError: Got an image without an alpha channel")
+
+        else:
+            logger.warning("ProgrammingError: Got an image without an alpha channel")
+
         return im_back
 
     # makes sure that the given image has an alpha channel, adds one if necessary and returns the modified image
@@ -107,9 +115,10 @@ class ImageHandler:
     def ensure_alpha_channel(image):
 
         # add alpha channel if not already here
-        if image.shape[2] == 3:
-            b, g, r = cv2.split(image)
-            a = np.ones(b.shape, dtype=b.dtype) * 255
-            image = cv2.merge((b, g, r, a))
+        if len(image.shape) > 2:
+            if image.shape[2] == 3:
+                b, g, r = cv2.split(image)
+                a = np.ones(b.shape, dtype=b.dtype) * 255
+                image = cv2.merge((b, g, r, a))
 
         return image

@@ -56,7 +56,7 @@ REC_GAMESTATE_INFO_MSG = {  # Received after the first handshake and if the game
     "used_tokens": [{
         "shape": "",
         "color": "",
-        "icon_svg": "",  # the svg as ascii string
+        "icon_name": "",  # the icon identifier
         "disappear_after_seconds": 0.0
     }],
     "scores": [{
@@ -250,9 +250,9 @@ class LLCommunicator(Communicator):
         for token_dict in response["used_tokens"]:
             shape = token_dict["shape"]
             color = token_dict["color"]
-            svg = token_dict["icon_svg"]
+            icon_id = token_dict["icon_name"]  # FIXME: @Mathias this icon_id should be used for a lookup for the Icon
             disappear = float(token_dict["disappear_after_seconds"])  # FIXME: to be implemented
-            token = Token(shape, color, svg)
+            token = Token(shape, color, "")  # FIXME: currently the svg is not implemented
             allowed_bricks.append(token)
         self.tracker.change_game_mode(allowed_bricks)
 

@@ -68,7 +68,8 @@ class MapHandler:
 
     # with these settings the map can be reset and display a different game mode
     def initialize_map(self, crs, extent):
-        self.crs = crs
+        if crs > 0:  # TODO: truly validate epsg-code?
+            self.crs = crs
         extent.fit_to_ratio(self.resolution_y / self.resolution_x)
         self.current_extent = extent
         self.request_render(self.current_extent)

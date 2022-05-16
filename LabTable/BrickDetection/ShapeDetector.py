@@ -15,8 +15,7 @@ import math
 
 from numpy import ndarray
 
-from LabTable.Model.Brick import Brick, BrickShape, BrickColor
-
+from LabTable.Model.Brick import Brick, BrickShape, BrickColor, Token
 
 # enable logger
 logger = logging.getLogger(__name__)
@@ -110,7 +109,8 @@ class ShapeDetector:
                         if detected_color is not BrickColor.UNKNOWN_COLOR:
 
                             # return a Brick with the detected parameters
-                            brick = Brick(centroid_x, centroid_y, contour_shape, BrickColor[detected_color])
+                            token = Token(contour_shape, BrickColor[detected_color])
+                            brick = Brick(centroid_x, centroid_y, token)
                             brick.aspect_ratio = aspect_ratio
                             brick.average_detected_color = detected_color
                             brick.detected_area = area

@@ -13,10 +13,10 @@ from LabTable.Model.Score import Score
 from LabTable.TableUI.UIElements import UISetup
 from LabTable.TableUI.UIElements.ProgressBar import ProgressBar
 from LabTable.TableUI.UIElements.UIElement import UIElement
-from Model.ProgramStage import CurrentProgramStage
-from Model.Vector import Vector
-from TableUI.MainMap import MainMap
-from TableUI.UIElements.MiniMap import MiniMap
+from LabTable.Model.ProgramStage import CurrentProgramStage
+from LabTable.Model.Vector import Vector
+from LabTable.TableUI.MainMap import MainMap
+from LabTable.TableUI.UIElements.MiniMap import MiniMap
 
 logger = logging.getLogger(__name__)
 
@@ -162,7 +162,7 @@ class LLCommunicator(Communicator):
 
                     # set the remote asset id
                     #FIXME: does this reference to the brick instance work?
-                    brick.object_id = int(response["id"])
+                    brick.object_id = int(response["object_id"])
 
                 else:
                     logger.info("placement of brick {} is not allowed".format(brick))
@@ -179,8 +179,8 @@ class LLCommunicator(Communicator):
 
         # Send request creating remote brick instance and save the response
         message = SEND_REC_CREATE_OBJECT_MSG.copy()
-        message["shape"] = str(brick.token.shape)
-        message["color"] = str(brick.token.color)
+        message["shape"] = str(brick.token.shape).replace("BrickShape.", "")
+        message["color"] = str(brick.token.color).replace("BrickColor.", "")
         message["position_x"] = brick.map_pos_x
         message["position_y"] = brick.map_pos_y
 
@@ -306,6 +306,6 @@ class LLCommunicator(Communicator):
 
         # FIXME: this logic should move somewhere where the UI is managed
         for progress_bar in self.progressbars_ui.get_by_type(ProgressBar):
-            if progress_bar.score:
+            if hasattr(progress_bar, "score"):
                 if progress_bar.score.score_id == score_id:
                     progress_bar.score.set_value(value)

@@ -34,6 +34,7 @@ class BrickStatus(Enum):
     CANDIDATE_BRICK = 2
     OUTDATED_BRICK = 3
 
+icon_config = {}
 
 # this class represents a type of brick
 class Token:
@@ -41,7 +42,13 @@ class Token:
     def __init__(self, shape: BrickShape, color: BrickColor, svg: str = None):
         self.shape: BrickShape = shape
         self.color: BrickColor = color
-        self.svg: str = svg
+
+        brick_format = (shape.name, str(color))
+        if svg == None and brick_format in icon_config:
+            self.svg = icon_config[brick_format]
+        else:
+            icon_config[brick_format] = svg
+            self.svg: str = svg
 
     def __str__(self):
         return "{} | {}".format(self.shape, self.color)

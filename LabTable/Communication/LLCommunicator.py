@@ -7,6 +7,7 @@ from LabTable.Model.Brick import Brick, BrickStatus, BrickShape, Token, BrickCol
 from LabTable.Model.Extent import Extent
 from LabTable.ExtentTracker import ExtentTracker
 
+import LabTable.Model.Brick as brick_config
 
 # Configure logging
 from LabTable.Model.Score import Score
@@ -104,7 +105,6 @@ REC_PLAYER_POSITION_MSG = {  # this is received on change from LL
 
 # the LL specific implementation part for the communication
 class LLCommunicator(Communicator):
-
     tracker = None
     progressbars_ui: UIElement = None
     main_map: MainMap = None
@@ -219,6 +219,21 @@ class LLCommunicator(Communicator):
         pass
 
     # this initializes a new game mode
+    # dict of format: {
+    #   'keyword': 'GAMESTATE_INFO',
+    #   'used_tokens': [
+    #       {   
+    #           'shape': 'SQUARE_BRICK', 'color': 'RED_BRICK', 
+    #           'icon_name': 'windmill_icon', 'disappear_after_seconds': 0
+    #       }, ...
+    #   ]
+    #   'scores': [{...}], 
+    #   'existing_tokens': [{...}, {...}, {...}, {...}, {...}, {...}, {...}, {...}, {...}, ...],
+    #   'start_position_x': 662000.125, 'start_position_y': 454750.09375, 
+    #   'start_extent_x': 5000, 'start_extent_y': 5000, 
+    #   'minimap_min_x': 569000, 'minimap_min_y': 380000, 
+    #   'minimap_max_x': 599000, 'minimap_max_y': 410000
+    # }
     def game_mode_change(self, response: dict):
 
         logger.info("the landscapelab tries to change the game mode")
@@ -251,9 +266,11 @@ class LLCommunicator(Communicator):
         for token_dict in response["used_tokens"]:
             shape = BrickShape[token_dict["shape"]]
             color = BrickColor[token_dict["color"]]
-            icon_id = token_dict["icon_name"]  # FIXME: @Mathias this icon_id should be used for a lookup for the Icon
+            icon_id = token_dict["icon_name"] 
+            brick_config.icon_config[(token_dict["shape"], token_dict["color"])] = icon_id
+
             disappear = float(token_dict["disappear_after_seconds"])  # FIXME: to be implemented
-            token = Token(shape, color, "")  # FIXME: currently the svg is not implemented
+            token = Token(shape, color, icon_id)  # FIXME: currently the svg is not implemented (coded via icon names)
             allowed_bricks.append(token)
         self.tracker.change_game_mode(allowed_bricks)
 
@@ -280,7 +297,7 @@ class LLCommunicator(Communicator):
     def create_local_brick(self, response: dict):
         shape = response["shape"]
         color = response["color"]
-        token = Token(shape, color)
+        token = Token(BrickShape[shape], color)
         new_brick = Brick(0, 0, token)  # centroid will be calculated later
         new_brick.status = BrickStatus.EXTERNAL_BRICK
         new_brick.object_id = int(response["object_id"])

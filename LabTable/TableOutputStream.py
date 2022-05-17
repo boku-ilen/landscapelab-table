@@ -144,9 +144,15 @@ class TableOutputStream:
         # load brick overlay images
         self.brick_outdated = self.image_handler.load_image("outdated_brick")
         self.brick_unknown = self.image_handler.load_image("unknown_brick")
+        self.brick_internal = self.image_handler.load_image("internal_brick")
 
         # load and initialize icon lists
-        # FIXME: @Mathias maybe initialize the icons here?
+        self.brick_icons = {}
+        self.virtual_icons = {}
+        self.brick_icons["windmill_icon"] = self.image_handler.load_image("windmill_brick")
+        self.brick_icons["pv_icon"] = self.image_handler.load_image("pv_brick")
+        self.virtual_icons["windmill_icon"] = self.image_handler.load_image("windmill_icon")
+        self.virtual_icons["pv_icon"] = self.image_handler.load_image("pv_icon")
 
     # fetches the correct monitor for the beamer output and writes it's data to the ConfigManager
     @staticmethod
@@ -360,7 +366,7 @@ class TableOutputStream:
         ImageHandler.img_on_background(render_target, icon, pos)
 
     # returns the correct brick icon for any given brick
-    def get_brick_icon(self, brick, virtual):
+    def get_brick_icon(self, brick: Brick, virtual):
 
         # return x icon if brick is outdated
         if brick.status == BrickStatus.OUTDATED_BRICK:
@@ -368,13 +374,29 @@ class TableOutputStream:
 
         # search for correct internal icon and return it if brick is internal
         elif brick.status == BrickStatus.INTERNAL_BRICK:
-            # FIXME: @Mathias plz replace hardcoded code
-            return self.image_handler.load_image("yes_icon")
+            # FIXME: Not 100% sure but i am not aware of another state than an internal-brick
+            # visualizing the green square
+            return self.brick_internal
 
         # search for correct internal icon and return it if brick is external
         elif brick.status == BrickStatus.EXTERNAL_BRICK:
-            # FIXME: @Mathias plz replace hardcoded code
-            return self.image_handler.load_image("no_icon")
+            # FIXME:
+            
+            lookup_dict = self.virtual_icons if virtual else self.brick_icons 
+
+            if hasattr(brick, "token"):# and brick.token.svg != "" and brick.token.svg != None:
+                try:
+                    # This should actually not be the case but for safety reasons
+                    if not brick.token.svg in lookup_dict:
+                        return self.image_handler.load_image(brick.token.svg)
+                    return lookup_dict[brick.token.svg]
+
+                except Exception as e:
+                    logger.error(
+                        "Could not load image with config identifier: {}".format(brick.token.svg))
+                    logger.error("closing because encountered a problem: {}".format(e))
+                    logger.exception(e)
+                    return self.brick_unknown
 
         # return "unknown brick" icon if no icon matches
         return self.brick_unknown

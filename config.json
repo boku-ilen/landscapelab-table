@@ -81,6 +81,11 @@
       "size": [50, 50],
       "center": [25, 25]
     },
+    "": {
+      "path": ["brick_overlays", "not_a_.png"],
+      "size": [50, 50],
+      "center": [25, 25]
+    },
     "button_left": {
       "path": ["button_icons", "left.png"]
     },

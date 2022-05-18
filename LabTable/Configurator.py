@@ -41,7 +41,7 @@ class Configurator:
         value = ""  # FIXME:
 
         try:
-            if not key:
+            if key == None:
                 value = self.config_data[group]
             else:
                 value = self.config_data[group][key]

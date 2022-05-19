@@ -321,6 +321,8 @@ class LLCommunicator(Communicator):
         value = float(response["value"])
         logger.info("the landscapelab sent a new value of {} for score {}".format(value, score_id))
 
+        self.config.set("ui_settings", "ui_refreshed", True)
+
         # FIXME: this logic should move somewhere where the UI is managed
         for progress_bar in self.progressbars_ui.get_by_type(ProgressBar):
             if hasattr(progress_bar, "score"):

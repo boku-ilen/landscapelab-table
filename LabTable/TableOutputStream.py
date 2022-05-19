@@ -217,7 +217,7 @@ class TableOutputStream:
     @staticmethod
     def labeling(frame, tracked_brick: Brick):
         # Draw brick IDs
-        text = "ID {}".format(tracked_brick.object_id)
+        text = "Hue {}".format(tracked_brick.average_detected_color)
         tracked_brick_position = tracked_brick.centroid_x, tracked_brick.centroid_y
         cv2.putText(frame, text, (tracked_brick.centroid_x - BRICK_LABEL_OFFSET,
                                   tracked_brick.centroid_y - BRICK_LABEL_OFFSET),

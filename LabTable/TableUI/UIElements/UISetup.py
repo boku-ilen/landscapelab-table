@@ -1,5 +1,7 @@
 from typing import Tuple
+from LabTable.TableUI.UIElements.Icon import Icon
 
+from LabTable.TableUI.UIElements.UIText import UIText
 from .UIElement import UIElement, UIActionType
 from .Button import Button
 from .UIStructureBlock import UIStructureBlock
@@ -21,6 +23,12 @@ def setup_ui(root: UIElement, main_map: MainMap, config: Configurator, callback_
 
     # create detection mode ui
     progressbar_ui = UIElement()
+
+    # Test text and icon ui
+    test_text = UIText(config, Vector(0, 0), Vector(1, 1), [], [], 1.0, "test")
+    test_icon = Icon(config, Vector(0, 0), Vector(1, 1), [], [], 0, "yes_icon")
+    progressbar_ui.add_child(test_text)
+    progressbar_ui.add_child(test_icon)
 
     # setup hierarchy
     root.add_child(nav_block)

@@ -1,7 +1,7 @@
 import logging
 from typing import List
 
-from LabTable.Model.Brick import Brick, BrickStatus, BrickShape, Token
+from LabTable.Model.Brick import Brick, BrickStatus, BrickShape, BrickColor, Token
 from LabTable.TableUI.UIElements.UIElement import UIElement
 from LabTable.Model.ProgramStage import ProgramStage
 from LabTable.ExtentTracker import ExtentTracker
@@ -15,7 +15,6 @@ class Tracker:
 
     BRICKS_REFRESHED = False
 
-    landscape_lab = None
     tracked_candidates = {}  # we hold candidates which are not confirmed yet for some ticks
     confirmed_bricks: List[Brick] = []
     virtual_bricks: List[Brick] = []
@@ -24,11 +23,10 @@ class Tracker:
     external_min_appeared: int = None
     external_max_disappeared: int = None
 
-    def __init__(self, config, ui_root: UIElement, ll_communicator):
+    def __init__(self, config, ui_root: UIElement):
 
         self.config = config
         self.extent_tracker = ExtentTracker.get_instance()
-        self.landscape_lab = ll_communicator
         self.ui_root = ui_root
 
         # get ticker thresholds from config
@@ -45,11 +43,17 @@ class Tracker:
         brick_colors = config.get("brick_colors")
         for color in brick_colors:
             for shape in BrickShape:
-                token = Token(shape, color)
+                token = Token(shape, BrickColor[color])
                 self.allowed_tokens.append(token)
 
         # Initialize a flag for changes in the map extent
         self.extent_changed = False
+    
+    def handle_new_brick(self, brick):
+        print("New brick: " , brick)
+
+    def handle_removed_brick(self, brick):
+        print("Removed brick: " , brick)
 
     # re-initialize the tracker after the game mode changed
     def change_game_mode(self, allowed_tokens: List[Token]):
@@ -170,8 +174,7 @@ class Tracker:
 
                 # if the brick is associated with an object also send a remove request to the server
                 if brick.status == BrickStatus.EXTERNAL_BRICK:
-                    # FIXME: distinguish handler
-                    self.landscape_lab.remove_remote_brick_instance(brick)
+                    self.handle_removed_brick(brick)
 
         # remove the disappeared elements from dicts
         for brick in bricks_to_remove:
@@ -189,7 +192,7 @@ class Tracker:
                 if brick.status == BrickStatus.EXTERNAL_BRICK:
                     Tracker.set_brick_outdated(brick)
                     # FIXME: distinguish handler
-                    self.landscape_lab.remove_remote_brick_instance(brick)
+                    self.handle_removed_brick(brick)
             else:
                 if brick.status == BrickStatus.INTERNAL_BRICK:
                     Tracker.set_brick_outdated(brick)
@@ -224,6 +227,7 @@ class Tracker:
                 # if the brick is on top of a virtual brick, remove it and mark the brick as outdated
                 virtual_brick = self.check_min_distance(candidate, self.virtual_bricks)
                 if virtual_brick:
+                    pass
                     self.remove_external_virtual_brick(virtual_brick)
                     candidate.status = BrickStatus.OUTDATED_BRICK
 
@@ -234,8 +238,7 @@ class Tracker:
                         if self.check_brick_valid(candidate):
                             candidate.status = BrickStatus.EXTERNAL_BRICK
                             # if the brick is associated with an object also send a create request to the server
-                            # FIXME: distinguish action based on brick configuration (eg teleport)
-                            self.landscape_lab.create_remote_brick_instance(candidate)
+                            self.handle_new_brick(candidate)
                         else:
                             candidate.status = BrickStatus.OUTDATED_BRICK
 
@@ -254,7 +257,7 @@ class Tracker:
                 brick.status = BrickStatus.INTERNAL_BRICK
             else:
                 brick.status = BrickStatus.EXTERNAL_BRICK
-                self.landscape_lab.create_remote_brick_instance(brick)
+                self.handle_new_brick(brick)
 
     # Check if the brick lies within min distance to the any in the list, returns None if no neighbour was found
     def check_min_distance(self, brick: Brick, bricks_list) -> [None, Brick]:
@@ -312,8 +315,7 @@ class Tracker:
 
     def remove_external_virtual_brick(self, brick: Brick):
 
-        # FIXME: distinguish action
-        self.landscape_lab.remove_remote_brick_instance(brick)
+        self.handle_removed_brick(brick)
         self.virtual_bricks.remove(brick)
 
     def brick_on_ui(self, brick):
@@ -329,6 +331,8 @@ class Tracker:
     # sets all external bricks to outdated
     def invalidate_external_bricks(self):
 
+        return
+
         for brick in self.confirmed_bricks:
             if brick.status == BrickStatus.EXTERNAL_BRICK:
                 # change status of bricks to outdated
@@ -343,5 +347,5 @@ class Tracker:
                 logger.debug("allowed brick: {}".format(brick))
                 return True
 
-        logger.debug("invalid brick: {} (allowed: {})".format(brick.token, self.allowed_tokens))
+        logger.warning("invalid brick: {} (allowed: {})".format(brick.token, [str(token) for token in self.allowed_tokens]))
         return False

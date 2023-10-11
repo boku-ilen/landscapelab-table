@@ -63,28 +63,12 @@ class LabTable:
         self.board_detector = BoardDetector(self.config)
         self.board = self.board_detector.board
 
-        # Initialize websocket communication class
-        self.ll_communicator = LLCommunicator(self.config, self.program_stage)
-
         # Initialize the centroid tracker
-        self.tracker = Tracker(self.config, ui_root, self.ll_communicator)
-        self.ll_communicator.tracker = self.tracker
+        self.tracker = Tracker(self.config, ui_root)
         self.callback_manager.set_tracker_callbacks(self.tracker)
 
-        # initialize map, map callbacks and ui
-        self.main_map = MainMap(self.config, 'main_map', self.ll_communicator)
-        self.callback_manager.set_map_callbacks(self.main_map)
-        mini_map, progressbars_ui = setup_ui(ui_root, self.main_map, self.config, self.callback_manager)
-        self.ll_communicator.mini_map = mini_map
-        self.ll_communicator.main_map = self.main_map
-        self.ll_communicator.progressbars_ui = progressbars_ui
-
-        # Initialize the qgis communication
-        map_dict = {self.main_map.name: self.main_map, mini_map.name: mini_map}
-        self.qgis_communicator = QGISCommunicator(self.config, map_dict)
-
         # initialize the input and output stream
-        self.output_stream = TableOutputStream(self.main_map, ui_root, self.callback_manager, self.tracker,
+        self.output_stream = TableOutputStream(ui_root, self.callback_manager, self.tracker,
                                                self.config, self.board, self.program_stage)
         self.callback_manager.set_output_actions(self.output_stream)
         self.input_stream = TableInputStream.get_table_input_stream(self.config, self.board, usestream=self.used_stream)
@@ -140,7 +124,6 @@ class LabTable:
 
                             self.output_stream.set_active_channel(TableOutputChannel.CHANNEL_ROI)
                             self.program_stage.next()
-                            self.ll_communicator.initialize_handshake()
 
                     # do the general brick detection (for internal or external ProgramStage)
                     else:
@@ -149,10 +132,6 @@ class LabTable:
             except Exception as e:
                 logger.error("closing because encountered a problem: {}".format(e))
                 logger.exception(e)
-
-        # close the websocket connection
-        self.ll_communicator.close()
-        self.qgis_communicator.close()
 
         # handle the output stream correctly
         if self.output_stream:

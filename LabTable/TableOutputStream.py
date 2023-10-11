@@ -70,7 +70,6 @@ class TableOutputStream:
     MOUSE_BRICKS_REFRESHED = False
 
     def __init__(self,
-                 map_handler: MainMap,
                  ui_root: UIElement,
                  callback_manager: CallbackManager,
                  tracker: Tracker,
@@ -127,7 +126,6 @@ class TableOutputStream:
 
         # set ui_root and map handler, create empty variable for tracker
         self.ui_root = ui_root
-        self.map_handler = map_handler
         self.tracker: Tracker = tracker
 
         # create image handler to load images
@@ -307,7 +305,10 @@ class TableOutputStream:
                 or TableOutputStream.MOUSE_BRICKS_REFRESHED:
 
             # get map image from map handler
-            frame = self.map_handler.get_map_image().copy()
+            resolution_x = int(self.config.get("beamer_resolution", "width"))
+            resolution_y = int(self.config.get("beamer_resolution", "height"))
+
+            frame = ImageHandler.ensure_alpha_channel(np.ones((resolution_y, resolution_x, 3), np.uint8) * 255)
 
             # render virtual external bricks on top of map
             self.render_external_virtual_bricks(frame)

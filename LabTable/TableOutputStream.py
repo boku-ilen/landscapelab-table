@@ -344,6 +344,8 @@ class TableOutputStream:
 
     # renders all bricks except external virtual ones since those get rendered earlier
     def render_bricks(self, render_target):
+        return
+        
         # render all confirmed bricks without transparency
         for brick in self.tracker.confirmed_bricks:
             self.render_brick(brick, render_target)

@@ -8,7 +8,6 @@ from .BrickDetection.ShapeDetector import ShapeDetector
 from .InputStream.TableInputStream import TableInputStream
 from .TableOutputStream import TableOutputStream, TableOutputChannel
 from .BrickDetection.Tracker import Tracker
-from .TableUI import ImageHandler
 from .Configurator import Configurator
 from .ParameterManager import ParameterManager
 

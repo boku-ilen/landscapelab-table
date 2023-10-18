@@ -9,7 +9,7 @@ from LabTable.Model.ProgramStage import ProgramStage, CurrentProgramStage
 from LabTable.BrickDetection.Tracker import Tracker
 from LabTable.Configurator import Configurator
 from LabTable.Model.Brick import Brick, BrickColor, BrickShape, BrickStatus, Token
-from LabTable.TableUI.ImageHandler import ImageHandler
+from LabTable.ImageHandler import ImageHandler
 from LabTable.ExtentTracker import ExtentTracker
 from LabTable.Model.Extent import Extent
 from LabTable.Model.Board import Board

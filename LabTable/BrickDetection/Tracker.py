@@ -50,9 +50,11 @@ class Tracker:
         self.extent_changed = False
     
     def handle_new_brick(self, brick):
+        # TODO: Add ability to inject custom class here
         print("New brick: " , brick)
 
     def handle_removed_brick(self, brick):
+        # TODO: Add ability to inject custom class here
         print("Removed brick: " , brick)
 
     # re-initialize the tracker after the game mode changed

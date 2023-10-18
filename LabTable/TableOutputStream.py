@@ -261,6 +261,7 @@ class TableOutputStream:
 
         else:
             self.redraw_brick_detection()
+            cv2.destroyWindow(TableOutputStream.WINDOW_NAME_BEAMER)
 
     # displays a white screen so that the board detector can more easily detect the qr-codes later
     # called every frame when in ProgramStage WHITE_BALANCE

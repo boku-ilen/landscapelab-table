@@ -2,7 +2,6 @@ import logging
 from typing import List
 
 from LabTable.Model.Brick import Brick, BrickStatus, BrickShape, BrickColor, Token
-from LabTable.TableUI.UIElements.UIElement import UIElement
 from LabTable.Model.ProgramStage import ProgramStage
 from LabTable.ExtentTracker import ExtentTracker
 from LabTable.Model.Extent import Extent
@@ -23,11 +22,10 @@ class Tracker:
     external_min_appeared: int = None
     external_max_disappeared: int = None
 
-    def __init__(self, config, ui_root: UIElement):
+    def __init__(self, config):
 
         self.config = config
         self.extent_tracker = ExtentTracker.get_instance()
-        self.ui_root = ui_root
 
         # get ticker thresholds from config
         self.min_distance = config.get("tracker_thresholds", "min_distance")
@@ -97,10 +95,6 @@ class Tracker:
         self.remove_old_virtual_bricks()
 
         self.select_and_classify_candidates(program_stage)
-
-        # handle mouse placed bricks and
-        # do ui tick so that the button release event can be recognized and triggered
-        self.ui_root.ui_tick()
 
         self.mark_external_bricks_outdated_if_map_updated()
 
@@ -190,14 +184,8 @@ class Tracker:
 
             # mark all bricks as outdated that previously were on ui and now lie on the map or vice versa
             # this might happen when a ui elements visibility gets toggled
-            if self.brick_on_ui(brick):
-                if brick.status == BrickStatus.EXTERNAL_BRICK:
-                    Tracker.set_brick_outdated(brick)
-                    # FIXME: distinguish handler
-                    self.handle_removed_brick(brick)
-            else:
-                if brick.status == BrickStatus.INTERNAL_BRICK:
-                    Tracker.set_brick_outdated(brick)
+            if brick.status == BrickStatus.INTERNAL_BRICK:
+                Tracker.set_brick_outdated(brick)
 
     def remove_old_virtual_bricks(self):
 
@@ -205,7 +193,7 @@ class Tracker:
         for v_brick in self.virtual_bricks:
 
             # remove any virtual internal bricks that do not lie on ui elements anymore
-            if v_brick.status == BrickStatus.INTERNAL_BRICK and not self.brick_on_ui(v_brick):
+            if v_brick.status == BrickStatus.INTERNAL_BRICK:
                 self.virtual_bricks.remove(v_brick)
 
     # selects those candidates that appeared long enough to be considered confirmed and add them to the confirmed list
@@ -218,10 +206,6 @@ class Tracker:
             # select the correct threshold on whether or not the candidate would be internal
             # (internal bricks appear faster)
             target_appeared = self.external_min_appeared
-            if self.brick_would_land_on_ui(candidate):
-                target_appeared = self.internal_min_appeared
-            # NOTE calling brick_would_land_on_ui every frame might cause performance hits
-            #  a cheaper solution would be to call it once the first frame the candidate registered and save the result
 
             # check for the threshold value of new candidates
             if amount > target_appeared and candidate not in self.confirmed_bricks:
@@ -234,15 +218,12 @@ class Tracker:
                     candidate.status = BrickStatus.OUTDATED_BRICK
 
                 else:
-                    if self.brick_on_ui(candidate):
-                        candidate.status = BrickStatus.INTERNAL_BRICK
+                    if self.check_brick_valid(candidate):
+                        candidate.status = BrickStatus.EXTERNAL_BRICK
+                        # if the brick is associated with an object also send a create request to the server
+                        self.handle_new_brick(candidate)
                     else:
-                        if self.check_brick_valid(candidate):
-                            candidate.status = BrickStatus.EXTERNAL_BRICK
-                            # if the brick is associated with an object also send a create request to the server
-                            self.handle_new_brick(candidate)
-                        else:
-                            candidate.status = BrickStatus.OUTDATED_BRICK
+                        candidate.status = BrickStatus.OUTDATED_BRICK
 
                 # add a new brick to the confirmed bricks list
                 self.confirmed_bricks.append(candidate)
@@ -255,11 +236,8 @@ class Tracker:
 
             logger.debug("classifying mouse brick {}".format(brick))
 
-            if self.brick_on_ui(brick):
-                brick.status = BrickStatus.INTERNAL_BRICK
-            else:
-                brick.status = BrickStatus.EXTERNAL_BRICK
-                self.handle_new_brick(brick)
+            brick.status = BrickStatus.EXTERNAL_BRICK
+            self.handle_new_brick(brick)
 
     # Check if the brick lies within min distance to the any in the list, returns None if no neighbour was found
     def check_min_distance(self, brick: Brick, bricks_list) -> [None, Brick]:
@@ -319,16 +297,6 @@ class Tracker:
 
         self.handle_removed_brick(brick)
         self.virtual_bricks.remove(brick)
-
-    def brick_on_ui(self, brick):
-
-        brick_on_beamer = Extent.remap_brick(brick, self.extent_tracker.board, self.extent_tracker.beamer)
-        return self.ui_root.brick_on_element(brick_on_beamer)
-
-    def brick_would_land_on_ui(self, brick):
-
-        brick_on_beamer = Extent.remap_brick(brick, self.extent_tracker.board, self.extent_tracker.beamer)
-        return self.ui_root.brick_would_land_on_element(brick_on_beamer)
 
     # sets all external bricks to outdated
     def invalidate_external_bricks(self):

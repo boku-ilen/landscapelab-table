@@ -8,11 +8,8 @@ from typing import List
 from LabTable.Model.ProgramStage import ProgramStage, CurrentProgramStage
 from LabTable.BrickDetection.Tracker import Tracker
 from LabTable.Configurator import Configurator
-from LabTable.TableUI.MainMap import MainMap
-from LabTable.TableUI.UIElements.UIElement import UIElement
 from LabTable.Model.Brick import Brick, BrickColor, BrickShape, BrickStatus, Token
 from LabTable.TableUI.ImageHandler import ImageHandler
-from LabTable.TableUI.CallbackManager import CallbackManager
 from LabTable.ExtentTracker import ExtentTracker
 from LabTable.Model.Extent import Extent
 from LabTable.Model.Board import Board
@@ -70,8 +67,6 @@ class TableOutputStream:
     MOUSE_BRICKS_REFRESHED = False
 
     def __init__(self,
-                 ui_root: UIElement,
-                 callback_manager: CallbackManager,
                  tracker: Tracker,
                  config: Configurator,
                  board: Board,
@@ -79,7 +74,6 @@ class TableOutputStream:
                  video_output_name=None):
 
         self.config = config
-        self.callback_manager = callback_manager
         self.extent_tracker = ExtentTracker.get_instance()
         self.board = board
         self.program_stage = program_stage
@@ -124,8 +118,7 @@ class TableOutputStream:
 
         self.last_frame = None
 
-        # set ui_root and map handler, create empty variable for tracker
-        self.ui_root = ui_root
+        # create empty variable for tracker
         self.tracker: Tracker = tracker
 
         # create image handler to load images
@@ -241,8 +234,6 @@ class TableOutputStream:
         # check if key pressed
         key = cv2.waitKeyEx(1)
 
-        self.callback_manager.call_key_action(key)
-
         # Break with Esc  # FIXME: CG: keyboard might not be available - use signals?
         if key == 27:
             logger.info("quit the program with the key")
@@ -313,9 +304,6 @@ class TableOutputStream:
 
             # render virtual external bricks on top of map
             self.render_external_virtual_bricks(frame)
-
-            # render ui over map and external virtual bricks
-            self.ui_root.draw(frame)
 
             # render remaining bricks in front of ui
             self.render_bricks(frame)

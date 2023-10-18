@@ -7,11 +7,8 @@ from .BrickDetection.BoardDetector import BoardDetector
 from .BrickDetection.ShapeDetector import ShapeDetector
 from .InputStream.TableInputStream import TableInputStream
 from .TableOutputStream import TableOutputStream, TableOutputChannel
-from .TableUI.MainMap import MainMap
-from .TableUI.CallbackManager import CallbackManager
-from .TableUI.UIElements.UISetup import setup_ui
-from .TableUI.UIElements.UIElement import UIElement
 from .BrickDetection.Tracker import Tracker
+from .TableUI import ImageHandler
 from .Configurator import Configurator
 from .ParameterManager import ParameterManager
 
@@ -47,11 +44,7 @@ class LabTable:
         self.config = Configurator()
         TableOutputStream.set_screen_config_info(self.config)
 
-        # create ui root element and callback manager
-        ui_root = UIElement()
-        self.callback_manager = CallbackManager(self.config)
-
-        self.program_stage = CurrentProgramStage(self.callback_manager.stage_change_actions)
+        self.program_stage = CurrentProgramStage()
 
         # Initialize parameter manager and parse arguments
         self.parser = ParameterManager(self.config)
@@ -62,13 +55,11 @@ class LabTable:
         self.board = self.board_detector.board
 
         # Initialize the centroid tracker
-        self.tracker = Tracker(self.config, ui_root)
-        self.callback_manager.set_tracker_callbacks(self.tracker)
+        self.tracker = Tracker(self.config)
 
         # initialize the input and output stream
-        self.output_stream = TableOutputStream(ui_root, self.callback_manager, self.tracker,
+        self.output_stream = TableOutputStream(self.tracker,
                                                self.config, self.board, self.program_stage)
-        self.callback_manager.set_output_actions(self.output_stream)
         self.input_stream = TableInputStream.get_table_input_stream(self.config, self.board, usestream=self.used_stream)
 
         # initialize the brick detector

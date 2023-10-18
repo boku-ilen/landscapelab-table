@@ -1,7 +1,5 @@
 import logging
 
-from LabTable.TableUI.UICallback import UICallback
-
 from enum import Enum
 from typing import Dict
 
@@ -33,23 +31,14 @@ class ProgramStage(Enum):
 # TODO (future releases) convert to singleton
 class CurrentProgramStage:
 
-    def __init__(self, callbacks: Dict[Enum, UICallback]):
+    def __init__(self):
         self.current_stage: ProgramStage = ProgramStage.WHITE_BALANCE
-        self.callbacks = callbacks
         logger.info("initialized first program stage: {}".format(self.current_stage))
 
     def next(self):
         self.current_stage = self.current_stage.next_stage()
         logger.info("entering program stage: {}".format(self.current_stage))
 
-        # call callback function if there is one
-        if self.current_stage in self.callbacks:
-            self.callbacks[self.current_stage].call(None)
-
     def prev(self):
         self.current_stage = self.current_stage.prev_stage()
         logger.info("entering program stage: {}".format(self.current_stage))
-
-        # call callback function if there is one
-        if self.current_stage in self.callbacks:
-            self.callbacks[self.current_stage].call(None)

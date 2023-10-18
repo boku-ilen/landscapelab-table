@@ -8,6 +8,7 @@ from .BrickDetection.ShapeDetector import ShapeDetector
 from .InputStream.TableInputStream import TableInputStream
 from .TableOutputStream import TableOutputStream, TableOutputChannel
 from .BrickDetection.Tracker import Tracker
+from .BrickHandling.WebSocket import WebSocketBrickHandler
 from .Configurator import Configurator
 from .ParameterManager import ParameterManager
 
@@ -54,7 +55,7 @@ class LabTable:
         self.board = self.board_detector.board
 
         # Initialize the centroid tracker
-        self.tracker = Tracker(self.config)
+        self.tracker = Tracker(self.config, WebSocketBrickHandler())
 
         # initialize the input and output stream
         self.output_stream = TableOutputStream(self.tracker,

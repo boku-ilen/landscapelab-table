@@ -5,6 +5,7 @@ from LabTable.Model.Brick import Brick, BrickStatus, BrickShape, BrickColor, Tok
 from LabTable.Model.ProgramStage import ProgramStage
 from LabTable.ExtentTracker import ExtentTracker
 from LabTable.Model.Extent import Extent
+from LabTable.BrickHandling.BrickHandler import BrickHandler
 
 # configure logging
 logger = logging.getLogger(__name__)
@@ -21,8 +22,10 @@ class Tracker:
     min_distance: int = None
     external_min_appeared: int = None
     external_max_disappeared: int = None
+    brick_handler: BrickHandler = None
+    next_brick_id: int = 0
 
-    def __init__(self, config):
+    def __init__(self, config, brick_handler):
 
         self.config = config
         self.extent_tracker = ExtentTracker.get_instance()
@@ -33,6 +36,8 @@ class Tracker:
         self.external_max_disappeared = config.get("tracker_thresholds", "external_max_disappeared")
         self.internal_min_appeared = config.get("tracker_thresholds", "internal_min_appeared")
         self.internal_max_disappeared = config.get("tracker_thresholds", "internal_max_disappeared")
+
+        self.brick_handler = brick_handler
 
         # we initialize it with all available configurations
         # as soon as an external game mode is choosen it should change accordingly
@@ -48,12 +53,13 @@ class Tracker:
         self.extent_changed = False
     
     def handle_new_brick(self, brick):
-        # TODO: Add ability to inject custom class here
-        print("New brick: " , brick)
+        brick.object_id = self.next_brick_id
+        self.next_brick_id += 1
+
+        self.brick_handler.handle_new_brick(brick)
 
     def handle_removed_brick(self, brick):
-        # TODO: Add ability to inject custom class here
-        print("Removed brick: " , brick)
+        self.brick_handler.handle_removed_brick(brick)
 
     # re-initialize the tracker after the game mode changed
     def change_game_mode(self, allowed_tokens: List[Token]):

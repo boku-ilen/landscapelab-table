@@ -73,6 +73,7 @@ class ShapeDetector:
         self.resolution_width = config.get("video_resolution", "width")
         self.masks_configuration = config.get("brick_colors")
 
+
     # Check if the contour is a brick
     def detect_brick(self, contour, frame) -> Optional[Brick]:
 
@@ -112,6 +113,7 @@ class ShapeDetector:
                             token = Token(contour_shape, BrickColor[detected_color])
                             brick = Brick(centroid_x, centroid_y, token)
                             brick.aspect_ratio = aspect_ratio
+                            brick.relative_position = [] # TODO
                             brick.average_detected_color = detected_color
                             brick.detected_area = area
                             brick.rotated_bbox_lengths = rotated_bbox_lengths

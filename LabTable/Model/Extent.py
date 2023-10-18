@@ -121,6 +121,12 @@ class Extent:
             min(self.y_max, extent.y_max),
             extent.y_inverted
         )
+    
+    def get_position_within_extent(self, x_position, y_position):
+        return [
+            (x_position - self.x_min) / (self.x_max - self.x_min),
+            (y_position - self.y_min) / (self.y_max - self.y_min),
+        ]
 
     # returns human readable string interpretation
     def __str__(self):

@@ -17,7 +17,7 @@ class WebSocketBrickHandler(BrickHandler):
             "event": "brick_added",
             "data": {
                 "id": brick.object_id,
-                "position": [brick.centroid_x, brick.centroid_y],
+                "position": brick.get_relative_position(),
                 "shape": str(brick.token.shape),
                 "color": str(brick.token.color)
             }

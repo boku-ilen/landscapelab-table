@@ -56,6 +56,9 @@ class Tracker:
         brick.object_id = self.next_brick_id
         self.next_brick_id += 1
 
+        brick.relative_position = self.extent_tracker.board \
+            .get_position_within_extent(brick.centroid_x, brick.centroid_y)
+
         self.brick_handler.handle_new_brick(brick)
 
     def handle_removed_brick(self, brick):

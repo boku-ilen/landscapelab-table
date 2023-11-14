@@ -2,7 +2,7 @@ from .BrickHandler import BrickHandler
 import websocket
 import json
 
-WEBSOCKET_URL = "ws://127.0.0.1:1234"
+WEBSOCKET_URL = "ws://127.0.0.1:14541"
 
 class WebSocketBrickHandler(BrickHandler):
 
@@ -27,6 +27,9 @@ class WebSocketBrickHandler(BrickHandler):
         self.ws.send(json.dumps({
             "event": "brick_removed",
             "data": {
-                "id": brick.object_id
+                "id": brick.object_id,
+                "position": brick.get_relative_position(),
+                "shape": str(brick.token.shape),
+                "color": str(brick.token.color)
             }
         }))

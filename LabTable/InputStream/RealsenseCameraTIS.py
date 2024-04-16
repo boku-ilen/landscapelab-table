@@ -2,6 +2,7 @@ import logging
 import numpy as np
 # Used pyrealsense2 on License: Apache 2.0.
 import pyrealsense2.pyrealsense2 as rs
+import time
 
 from .TableInputStream import TableInputStream
 
@@ -56,6 +57,15 @@ class RealsenseCameraTIS(TableInputStream):
             depth_sensor = self.profile.get_device().first_depth_sensor()
             self.depth_scale = depth_sensor.get_depth_scale()
 
+            # Set optimal exposure for getting rid of projector interference
+            s = self.profile.get_device().query_sensors()[1]
+            s.set_option(rs.option.exposure, 83.0) # 83.0 and 166.0 seem to work best for getting rid of interference
+            s.set_option(rs.option.gain, 0)
+            s.set_option(rs.option.sharpness, 70.0)
+            s.set_option(rs.option.gamma, 500.0)
+            s.set_option(rs.option.brightness, 0.0)
+            s.set_option(rs.option.contrast, 50.0)
+
             self.initialized = True
 
         except RuntimeError as e:
@@ -66,7 +76,6 @@ class RealsenseCameraTIS(TableInputStream):
         logger.debug("Depth Scale is: {}".format(self.depth_scale))
 
     def get_frame(self):
-
         # Wait for depth and color frames
         frames = self.pipeline.wait_for_frames()
 
@@ -76,6 +85,17 @@ class RealsenseCameraTIS(TableInputStream):
         # Get aligned frames (depth images)
         self.aligned_depth_frame = aligned_frames.get_depth_frame()
         self.color_frame = aligned_frames.get_color_frame()
+
+        # Get all options:
+        # (Note: this does not seem to return options updated by auto_ options)
+        # s = self.profile.get_device().query_sensors()[1]
+        # for option in s.get_supported_options():
+        #         try:
+        #             print(option)
+        #             print(s.get_option(option))
+        #             print()
+        #         except TypeError:
+        #             pass
 
         # Validate that both frames are valid
         if self.aligned_depth_frame and self.color_frame:

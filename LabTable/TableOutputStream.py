@@ -66,6 +66,8 @@ class TableOutputStream:
 
     MOUSE_BRICKS_REFRESHED = False
 
+    is_window_destroyed: bool = False
+
     def __init__(self,
                  tracker: Tracker,
                  config: Configurator,
@@ -251,7 +253,9 @@ class TableOutputStream:
             self.draw_corner_qr_codes()
 
         else:
+            if self.is_window_destroyed: return
             cv2.destroyWindow(TableOutputStream.WINDOW_NAME_BEAMER)
+            self.is_window_destroyed = True
 
     # displays a white screen so that the board detector can more easily detect the qr-codes later
     # called every frame when in ProgramStage WHITE_BALANCE

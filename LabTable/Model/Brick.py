@@ -71,6 +71,7 @@ class Brick:
     def __init__(self, centroid_x: int, centroid_y: int, token: Token):
         # the object_id which the brick has in the LandscapeLab (for external bricks)
         self.object_id = None
+        self.relative_position = []
 
         # the x and y coordinates locally (in stream coordinates)
         # of the center of the detected shape
@@ -90,6 +91,9 @@ class Brick:
         self.detected_area = 0.0  # square pixel
         self.aspect_ratio = 0
         self.rotated_bbox_lengths = None
+    
+    def get_relative_position(self):
+        return self.relative_position
 
     # returns an independent clone of this brick
     def clone(self):

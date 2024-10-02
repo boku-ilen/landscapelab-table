@@ -8,11 +8,8 @@ from typing import List
 from LabTable.Model.ProgramStage import ProgramStage, CurrentProgramStage
 from LabTable.BrickDetection.Tracker import Tracker
 from LabTable.Configurator import Configurator
-from LabTable.TableUI.MainMap import MainMap
-from LabTable.TableUI.UIElements.UIElement import UIElement
 from LabTable.Model.Brick import Brick, BrickColor, BrickShape, BrickStatus, Token
-from LabTable.TableUI.ImageHandler import ImageHandler
-from LabTable.TableUI.CallbackManager import CallbackManager
+from LabTable.ImageHandler import ImageHandler
 from LabTable.ExtentTracker import ExtentTracker
 from LabTable.Model.Extent import Extent
 from LabTable.Model.Board import Board
@@ -69,10 +66,9 @@ class TableOutputStream:
 
     MOUSE_BRICKS_REFRESHED = False
 
+    is_window_destroyed: bool = False
+
     def __init__(self,
-                 map_handler: MainMap,
-                 ui_root: UIElement,
-                 callback_manager: CallbackManager,
                  tracker: Tracker,
                  config: Configurator,
                  board: Board,
@@ -80,7 +76,6 @@ class TableOutputStream:
                  video_output_name=None):
 
         self.config = config
-        self.callback_manager = callback_manager
         self.extent_tracker = ExtentTracker.get_instance()
         self.board = board
         self.program_stage = program_stage
@@ -125,9 +120,7 @@ class TableOutputStream:
 
         self.last_frame = None
 
-        # set ui_root and map handler, create empty variable for tracker
-        self.ui_root = ui_root
-        self.map_handler = map_handler
+        # create empty variable for tracker
         self.tracker: Tracker = tracker
 
         # create image handler to load images
@@ -243,8 +236,6 @@ class TableOutputStream:
         # check if key pressed
         key = cv2.waitKeyEx(1)
 
-        self.callback_manager.call_key_action(key)
-
         # Break with Esc  # FIXME: CG: keyboard might not be available - use signals?
         if key == 27:
             logger.info("quit the program with the key")
@@ -262,7 +253,9 @@ class TableOutputStream:
             self.draw_corner_qr_codes()
 
         else:
-            self.redraw_brick_detection()
+            if self.is_window_destroyed: return
+            cv2.destroyWindow(TableOutputStream.WINDOW_NAME_BEAMER)
+            self.is_window_destroyed = True
 
     # displays a white screen so that the board detector can more easily detect the qr-codes later
     # called every frame when in ProgramStage WHITE_BALANCE
@@ -307,13 +300,13 @@ class TableOutputStream:
                 or TableOutputStream.MOUSE_BRICKS_REFRESHED:
 
             # get map image from map handler
-            frame = self.map_handler.get_map_image().copy()
+            resolution_x = int(self.config.get("beamer_resolution", "width"))
+            resolution_y = int(self.config.get("beamer_resolution", "height"))
+
+            frame = ImageHandler.ensure_alpha_channel(np.ones((resolution_y, resolution_x, 3), np.uint8) * 255)
 
             # render virtual external bricks on top of map
             self.render_external_virtual_bricks(frame)
-
-            # render ui over map and external virtual bricks
-            self.ui_root.draw(frame)
 
             # render remaining bricks in front of ui
             self.render_bricks(frame)
@@ -343,6 +336,8 @@ class TableOutputStream:
 
     # renders all bricks except external virtual ones since those get rendered earlier
     def render_bricks(self, render_target):
+        return
+        
         # render all confirmed bricks without transparency
         for brick in self.tracker.confirmed_bricks:
             self.render_brick(brick, render_target)

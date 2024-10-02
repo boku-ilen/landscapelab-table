@@ -18,7 +18,7 @@ class Configurator:
     config_data = None
     _config_file = None
 
-    def __init__(self, configfile="config.json"):
+    def __init__(self, configfile="table-config.json"):
 
         # Load inital config data
         self._config_file = configfile

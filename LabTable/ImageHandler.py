@@ -17,7 +17,8 @@ class ImageHandler:
     def __init__(self, config: Configurator):
 
         self.config = config
-        self.resource_path = Configurator.reconstruct_path(os.getcwd(), self.config.get("resources", "relative_path"))
+        self.resource_path = Configurator.reconstruct_path(os.path.dirname(__file__), self.config.get("resources", "relative_path"))
+        print(self.resource_path)
 
     # loads images stores them in a dictionary with additional info and returns this dictionary
     def load_image(self, name: str, size: Optional[Tuple[int, int]] = None,

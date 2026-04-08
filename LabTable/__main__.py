@@ -1,7 +1,11 @@
 import json
 import logging.config
+import time
+
+import cv2
 import numpy as np
 
+from LabTable.DrawingRecognition.DrawingDetector import average_mats, mark_drawings
 from .Model.ProgramStage import ProgramStage, CurrentProgramStage
 from .BrickDetection.BoardDetector import BoardDetector
 from .BrickDetection.ShapeDetector import ShapeDetector
@@ -34,6 +38,8 @@ except Exception as e:
 # region of interest image
 CHANNELS_NUMBER = 3
 
+DRAWING_NUM_FRAMES = 15
+DRAWING_INTERVAL = 1
 
 # this class manages the base workflow and handles the main loop
 class LabTable:
@@ -76,7 +82,8 @@ class LabTable:
             logger.info("initialized input stream")
 
             try:
-
+                last_drawing = time.time()
+                drawing_buffer = []
                 # main loop which handles each frame
                 while not self.output_stream.update(self.program_stage):
 
@@ -117,6 +124,19 @@ class LabTable:
                     # do the general brick detection (for internal or external ProgramStage)
                     else:
                         self.do_brick_detection(region_of_interest, color_image)
+
+
+                        if time.time() - last_drawing > DRAWING_INTERVAL:
+                            drawing_buffer.append((self.board_detector.rectify_image(region_of_interest, color_image)).copy())
+                            if len(drawing_buffer) >= DRAWING_NUM_FRAMES:
+                                tick = time.time()
+                                draw_base = average_mats(drawing_buffer)
+                                draw_marked = mark_drawings(draw_base)
+                                cv2.imshow("marked", draw_marked)
+                                drawing_buffer.clear()
+                                last_drawing = time.time()
+                                logger.info(f"Took {time.time() - tick}")
+
 
             except Exception as e:
                 logger.error("closing because encountered a problem: {}".format(e))

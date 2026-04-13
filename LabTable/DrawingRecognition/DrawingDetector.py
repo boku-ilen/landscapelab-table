@@ -250,13 +250,13 @@ def mark_drawings(base_color, number_of_colors=None, sample_points = None):
                 fill_recursive(drawing, contours, hierarchy, hierarchy[i][2], 0)
             ids.append(col_ids[i])
             bbox = list(cv2.boundingRect(contours[i]))
-            drawing = drawing[bbox[1]:bbox[1]+bbox[3],bbox[0]:bbox[0]+bbox[2]]
-            drawings.append(drawing.dumps().hex())
+            drawing = drawing[bbox[1]:bbox[1]+bbox[3],bbox[0]:bbox[0]+bbox[2]].astype("uint8")
+            drawings.append(drawing.tobytes().hex())
 
             for c in range(len(bbox)):
-                bbox[c] = bbox[c] / contour_ready.shape[c % 2]
+                bbox[c] = bbox[c] / contour_ready.shape[1-(c % 2)]
             bounds.append(bbox)
-            resolution.append([drawing.shape[0], drawing.shape[1]])
+            resolution.append([drawing.shape[1], drawing.shape[0]])
 
 
     return drawings, ids, bounds, resolution

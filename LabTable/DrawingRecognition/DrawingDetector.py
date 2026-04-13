@@ -248,9 +248,14 @@ def mark_drawings(base_color, number_of_colors=None, sample_points = None):
                 cv2.fillPoly(drawing, [contours[i]], 255, cv2.LINE_AA)
                 # unfill everything inside
                 fill_recursive(drawing, contours, hierarchy, hierarchy[i][2], 0)
-            drawings.append(drawing.dumps().hex())
             ids.append(col_ids[i])
-            bounds.append(cv2.boundingRect(contours[i]))
+            bbox = list(cv2.boundingRect(contours[i]))
+            drawing = drawing[bbox[1]:bbox[1]+bbox[3],bbox[0]:bbox[0]+bbox[2]]
+            drawings.append(drawing.dumps().hex())
+
+            for c in range(len(bbox)):
+                bbox[c] = bbox[c] / contour_ready.shape[c % 2]
+            bounds.append(bbox)
 
 
     return drawings, ids, bounds, resolution

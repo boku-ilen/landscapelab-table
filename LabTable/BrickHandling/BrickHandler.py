@@ -2,6 +2,11 @@ from LabTable.Model.Brick import Brick, BrickStatus, BrickShape, BrickColor, Tok
 
 
 class BrickHandler:
+    def queued_drawing_samples(self):
+        return None
+
+    def handle_processed_drawing(self, bitmaps, ids, bounds, resolution):
+        pass
 
     def handle_new_brick(self, Brick):
         pass

@@ -42,7 +42,7 @@ def fill_recursive(image, contours, hierarchy, start_index, color=(0,0,0)):
 def ms(t):
     return f"{round(t*1000)}ms"
 
-def mark_drawings(base_color, number_of_colors=None):
+def mark_drawings(base_color, number_of_colors=None, sample_points = None):
     contour_base = base_color.copy()
 
     # erosion to make the lines sharper
@@ -76,13 +76,13 @@ def mark_drawings(base_color, number_of_colors=None):
     contour_ready = cv2.bitwise_and(simple_gray, simple_gray, mask=margin_mask)
     #contour_ready = simple_gray * margin_mask
     struc_elem = cv2.getStructuringElement(cv2.MORPH_RECT, (3,3),(-1,-1))
-    drawing = np.zeros((contour_ready.shape[0], contour_ready.shape[1], 3), dtype=np.uint8)
+    #drawing = np.zeros((contour_ready.shape[0], contour_ready.shape[1], 3), dtype=np.uint8)
 
     # contour detection
     contours, hierarchy = cv2.findContours(contour_ready, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_L1)
     plausibility = [contour_plausible(cv2.boundingRect(c), contour_ready) for c in contours]
     if hierarchy is None or len(contours) == 0:
-        return drawing
+        return [],[]
     hierarchy = hierarchy[0]
 
     filtered_contours = []
@@ -114,6 +114,8 @@ def mark_drawings(base_color, number_of_colors=None):
     contour_base = cv2.erode(contour_base, cv2.getStructuringElement(cv2.MORPH_RECT, (11,11),(-1,-1)))
 
     sample_locations = [[66,325],[66,448], [66,575]]
+    if sample_points is not None:
+        sample_locations = [[int(s[0] * contour_base.shape[0]), int(s[1] * contour_base.shape[1])] for s in sample_points]
     sample_means = []
     for loc in sample_locations[:number_of_colors]:
         mask = np.zeros_like(contour_ready)
@@ -196,6 +198,11 @@ def mark_drawings(base_color, number_of_colors=None):
                 best_label = label
 
     class_colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255)]
+    col_ids = []
+    drawings = []
+    ids = []
+    bounds = []
+    resolution = [contour_ready.shape[0], contour_ready.shape[1]]
 
     #logger.info(f"best k was {len(best_centroids)}")
     for i in range(len(contours)):
@@ -215,7 +222,7 @@ def mark_drawings(base_color, number_of_colors=None):
             best = sorted([(i,count)for i,count in enumerate(counts)],key=lambda c:c[1],reverse=True)[0][0]
             centroid = best_centroids[best]
             rgb = cv2.cvtColor(np.uint8([[centroid]]), cv2.COLOR_Lab2RGB)[0][0]
-
+            col_ids.append(best)
         else:
             pts = all_color_points[color_starts[i]:stop_index]
             point_mean = np.mean(pts, axis=0)
@@ -223,6 +230,7 @@ def mark_drawings(base_color, number_of_colors=None):
                                       key=lambda t: t[1])
 
             rgb = class_colors[sample_distances[0][0]]
+            col_ids.append(sample_distances[0][0])
 
         colors[i] = (float(rgb[0]), float(rgb[1]), float(rgb[2]))
 
@@ -230,17 +238,22 @@ def mark_drawings(base_color, number_of_colors=None):
         # if hierarchy has no parent for contour
         if hierarchy[i][3] < 0:
             col_rgb = colors[i]
+            drawing = np.zeros_like(contour_ready)
             children = [j for j,l in enumerate(hierarchy) if l[3] == i]
             if len(children) >= 2 or any(hierarchy[c][2] > 0 for c in children):
                 # assumed to be a filled area
-                cv2.fillPoly(drawing, pts=[contours[i]], color=col_rgb, lineType=cv2.LINE_AA)
+                cv2.fillPoly(drawing, pts=[contours[i]], color=255, lineType=cv2.LINE_AA)
             else:
                 # fill outermost contour
-                cv2.fillPoly(drawing, [contours[i]], col_rgb, cv2.LINE_AA)
+                cv2.fillPoly(drawing, [contours[i]], 255, cv2.LINE_AA)
                 # unfill everything inside
-                fill_recursive(drawing, contours, hierarchy, hierarchy[i][2], (0,0,0))
+                fill_recursive(drawing, contours, hierarchy, hierarchy[i][2], 0)
+            drawings.append(drawing.dumps().hex())
+            ids.append(col_ids[i])
+            bounds.append(cv2.boundingRect(contours[i]))
 
-    return drawing
+
+    return drawings, ids, bounds, resolution
 
 def contour_plausible(bounding_box: Sequence[int],
                       contour_ready: Mat | ndarray[Any, dtype[integer[Any] | floating[Any]]]) -> Any:

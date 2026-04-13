@@ -265,10 +265,10 @@ class ShapeDetector:
         return tangent
 
     # Calculate possible brick dimensions using distance to the board
-    def calculate_possible_brick_dimensions(self, board_distance):
+    def calculate_possible_brick_dimensions(self, board_distance, horizontal_fov = HORIZONTAL_ANGLE):
 
         # Use a tangent of the half of horizontal angle to calculate the display width in mm
-        horizontal_side_length = 2 * board_distance * self.calculate_tangent(HORIZONTAL_ANGLE / 2)
+        horizontal_side_length = 2 * board_distance * self.calculate_tangent(horizontal_fov / 2)
         # Calculate how many pixels give one centimeter
         one_cm_in_pixel = 10 * self.resolution_width / horizontal_side_length
 

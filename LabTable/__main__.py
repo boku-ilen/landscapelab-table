@@ -38,7 +38,7 @@ except Exception as e:
 # region of interest image
 CHANNELS_NUMBER = 3
 
-DRAWING_NUM_FRAMES = 15
+DRAWING_NUM_FRAMES = 5
 DRAWING_INTERVAL = 1
 
 # this class manages the base workflow and handles the main loop
@@ -116,7 +116,11 @@ class LabTable:
                         # if all corners were found change channel and start next stage
                         if all_board_corners_found:
                             # Use distance to set possible brick size
-                            self.shape_detector.calculate_possible_brick_dimensions(self.board.distance)
+                            hfov = self.input_stream.get_horizontal_fov()
+                            if hfov < 0:
+                                self.shape_detector.calculate_possible_brick_dimensions(self.board.distance)
+                            else:
+                                self.shape_detector.calculate_possible_brick_dimensions(self.board.distance, hfov)
 
                             self.output_stream.set_active_channel(TableOutputChannel.CHANNEL_ROI)
                             self.program_stage.next()
@@ -129,13 +133,13 @@ class LabTable:
                         if time.time() - last_drawing > DRAWING_INTERVAL:
                             drawing_buffer.append((self.board_detector.rectify_image(region_of_interest, color_image)).copy())
                             if len(drawing_buffer) >= DRAWING_NUM_FRAMES:
-                                tick = time.time()
+                                draw_start = time.time()
                                 draw_base = average_mats(drawing_buffer)
-                                draw_marked = mark_drawings(draw_base)
+                                draw_marked = mark_drawings(draw_base, 3)
                                 cv2.imshow("marked", draw_marked)
                                 drawing_buffer.clear()
+                                logger.info(f"Drawing took {round((time.time() - draw_start)*1000)} ms")
                                 last_drawing = time.time()
-                                logger.info(f"Took {time.time() - tick}")
 
 
             except Exception as e:

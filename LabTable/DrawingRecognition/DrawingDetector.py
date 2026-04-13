@@ -202,7 +202,7 @@ def mark_drawings(base_color, number_of_colors=None, sample_points = None):
     drawings = []
     ids = []
     bounds = []
-    resolution = [contour_ready.shape[0], contour_ready.shape[1]]
+    resolution = []
 
     #logger.info(f"best k was {len(best_centroids)}")
     for i in range(len(contours)):
@@ -256,6 +256,7 @@ def mark_drawings(base_color, number_of_colors=None, sample_points = None):
             for c in range(len(bbox)):
                 bbox[c] = bbox[c] / contour_ready.shape[c % 2]
             bounds.append(bbox)
+            resolution.append([drawing.shape[0], drawing.shape[1]])
 
 
     return drawings, ids, bounds, resolution

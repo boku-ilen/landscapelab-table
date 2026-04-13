@@ -40,7 +40,7 @@ class WebSocketBrickHandler(BrickHandler):
                 "event": "drawing_processed",
                 "data": {
                     "bitmap": bitmaps[i],
-                    "resolution": resolution,
+                    "resolution": resolution[i],
                     "bounds": bounds[i],
                     "id": ids[i]
                 }

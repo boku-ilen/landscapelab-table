@@ -10,7 +10,7 @@
   "camera": {
     "implementation": "OpenCV",
     "base_distance": 800,
-    "opencv_device_nr": 2
+    "opencv_device_nr": 0
   },
 
   "resources": {

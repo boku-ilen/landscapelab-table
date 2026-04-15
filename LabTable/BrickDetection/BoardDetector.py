@@ -329,19 +329,14 @@ class BoardDetector:
         qr_size = self.config.get("qr_code", "size")
         qr_size_x = (qr_size / self.config.get("screen_resolution", "width")) * self.board.width
         qr_size_y = (qr_size / self.config.get("screen_resolution", "height")) * self.board.height
-        # Construct destination points which will be used to map the board to a top-down view
-        destination_corners = np.array([
-            [0, 0],
-            [self.board.width - 1, 0],
-            [self.board.width - 1, self.board.height - 1],
-            [0, self.board.height - 1]], dtype="float32")
 
+        # Construct destination points which will be used to map the board to a top-down view
         destination_corners = np.array([
             [qr_size_x/2, qr_size_y/2],
             [self.board.width - qr_size_x/2, qr_size_y/2],
             [self.board.width - qr_size_x/2, self.board.height - qr_size_y/2],
             [qr_size_x/2, self.board.height - qr_size_y/2]], dtype="float32")
-        logger.info(source_corners.dtype)
+
         # Calculate the perspective transform matrix
         matrix = cv2.getPerspectiveTransform(source_corners, destination_corners)
         rectified_image = cv2.warpPerspective(image, matrix, (self.board.width, self.board.height))

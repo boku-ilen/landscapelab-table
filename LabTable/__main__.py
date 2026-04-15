@@ -132,7 +132,8 @@ class LabTable:
 
                         if self.program_stage.current_stage == ProgramStage.DRAWING_CAPTURE:
                             drawing_buffer.append((self.board_detector.rectify_image(region_of_interest, color_image)).copy())
-                            if len(drawing_buffer) >= DRAWING_NUM_FRAMES:
+                            if len(drawing_buffer) >= DRAWING_NUM_FRAMES + 10:
+                                drawing_buffer = drawing_buffer[10:]
                                 draw_base = average_mats(drawing_buffer)
                                 sample_pts = self.tracker.brick_handler.queued_drawing_samples()
                                 drawings, ids, bounds, resolution = mark_drawings(draw_base, len(sample_pts), sample_pts)

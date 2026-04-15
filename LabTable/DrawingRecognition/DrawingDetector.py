@@ -59,7 +59,7 @@ def mark_drawings(base_color, number_of_colors=None, sample_points = None):
 
     simple_gray *= 255
 
-    #simple_gray = cv2.erode(simple_gray, element)
+    simple_gray = cv2.erode(simple_gray, element)
 
     # adaptive threshold to extract lines from projector noise
     simple_gray = cv2.adaptiveThreshold(simple_gray.astype('uint8'), 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 31, 5)
@@ -112,15 +112,18 @@ def mark_drawings(base_color, number_of_colors=None, sample_points = None):
 
     # enlarge color areas for color detection
     contour_base = cv2.erode(contour_base, cv2.getStructuringElement(cv2.MORPH_RECT, (11,11),(-1,-1)))
-
+    dbg_drawing = np.zeros_like(contour_ready)
     sample_locations = [[66,325],[66,448], [66,575]]
     if sample_points is not None:
-        sample_locations = [[int(s[0] * contour_base.shape[0]), int(s[1] * contour_base.shape[1])] for s in sample_points]
+        sample_locations = [[int(s[0] * contour_base.shape[1]), int(s[1] * contour_base.shape[0])] for s in sample_points]
     sample_means = []
     for loc in sample_locations[:number_of_colors]:
         mask = np.zeros_like(contour_ready)
-        cv2.circle(mask, loc, 24, 1, -1)
+        cv2.circle(mask, loc, 32, 1, -1)
+
         mask = cv2.bitwise_and(mask, mask, mask=simple_gray)
+        dbg_drawing += mask
+
         #mask *= simple_gray
         bbox = (loc[0] - 24, loc[1] - 24, 48, 48)
         base = contour_base[bbox[1]:bbox[1] + bbox[3], bbox[0]:bbox[0] + bbox[2]]
@@ -128,7 +131,8 @@ def mark_drawings(base_color, number_of_colors=None, sample_points = None):
         mean = np.mean(base[mask.astype('bool')], axis=0)
         sample_means.append(cv2.cvtColor(np.uint8([[[mean[0], mean[1], mean[2]]]]), cv2.COLOR_RGB2Lab)[0][0])
 
-
+    dbg_drawing = np.clip(dbg_drawing * 255.0, 0, 255)
+    cv2.imshow("pts", dbg_drawing)
 
     for i in range(len(contours)):
         # get color info

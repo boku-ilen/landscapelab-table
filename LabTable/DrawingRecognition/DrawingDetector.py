@@ -16,10 +16,8 @@ from LabTable.Configurator import logger
 
 
 def average_mats(input_mats):
-    #mats = [im / 255.0 for im in input_mats]
     base_color = np.mean(input_mats, axis=0).astype('uint8')
-    #base_color = reduce(lambda x, y: x + y, mats, np.zeros_like(mats[0])) / len(mats)
-    #base_color = (base_color * 255.0).astype('uint8')
+
     return base_color
 
 def hue_delta(a,b,wrap=255):
@@ -29,7 +27,7 @@ def hue_delta(a,b,wrap=255):
 
 def color_distance(a,b):
     #return (b[0] - a[0])**2 + (b[1] - a[1])**2 + (b[2] - a[2]) ** 2
-    return sqrt((b[1] - a[1])**2 + (b[2] - a[2]) ** 2)
+    return sqrt((b[1] - a[1])**2 + (b[2] - a[2]) ** 2) # consider a* and b* only (ignore lightness L*)
 
 def fill_recursive(image, contours, hierarchy, start_index, color=(0,0,0)):
     current_index = start_index
@@ -59,7 +57,7 @@ def mark_drawings(base_color, number_of_colors=None, sample_points = None):
 
     simple_gray *= 255
 
-    simple_gray = cv2.erode(simple_gray, element)
+    #simple_gray = cv2.erode(simple_gray, element)
 
     # adaptive threshold to extract lines from projector noise
     simple_gray = cv2.adaptiveThreshold(simple_gray.astype('uint8'), 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 31, 5)
@@ -112,52 +110,42 @@ def mark_drawings(base_color, number_of_colors=None, sample_points = None):
 
     # enlarge color areas for color detection
     contour_base = cv2.erode(contour_base, cv2.getStructuringElement(cv2.MORPH_RECT, (11,11),(-1,-1)))
-    dbg_drawing = np.zeros_like(contour_ready)
+
     sample_locations = [[66,325],[66,448], [66,575]]
     if sample_points is not None:
+        # we received sample/swatch locations via WebSocket
         sample_locations = [[int(s[0] * contour_base.shape[1]), int(s[1] * contour_base.shape[0])] for s in sample_points]
     sample_means = []
     for loc in sample_locations[:number_of_colors]:
         mask = np.zeros_like(contour_ready)
         cv2.circle(mask, loc, 32, 1, -1)
-
+        # drawn lines within circle only
         mask = cv2.bitwise_and(mask, mask, mask=simple_gray)
-        dbg_drawing += mask
 
-        #mask *= simple_gray
+        # crop to bounding box before taking mean
         bbox = (loc[0] - 24, loc[1] - 24, 48, 48)
         base = contour_base[bbox[1]:bbox[1] + bbox[3], bbox[0]:bbox[0] + bbox[2]]
         mask = mask[bbox[1]:bbox[1] + bbox[3], bbox[0]:bbox[0] + bbox[2]]
         mean = np.mean(base[mask.astype('bool')], axis=0)
         sample_means.append(cv2.cvtColor(np.uint8([[[mean[0], mean[1], mean[2]]]]), cv2.COLOR_RGB2Lab)[0][0])
 
-    dbg_drawing = np.clip(dbg_drawing * 255.0, 0, 255)
-    cv2.imshow("pts", dbg_drawing)
-
     for i in range(len(contours)):
         # get color info
         mask = np.zeros(simple_gray.shape, np.uint8)
         cv2.fillPoly(mask, [contours[i]], 255) # full area
-        #mask = ((mask * (contour_ready / 255)) * 255).astype('uint8') # lines in area only
+        # lines in area only
         mask = cv2.bitwise_and(mask, mask, mask=contour_ready)
         bbox = cv2.boundingRect(contours[i])
         base = contour_base[bbox[1]:bbox[1]+bbox[3],bbox[0]:bbox[0]+bbox[2]]
         mask = mask[bbox[1]:bbox[1]+bbox[3],bbox[0]:bbox[0]+bbox[2]]
 
-
-        #mean_col = cv2.mean(base, mask=mask)
-
         pixels = np.array([base[mask.astype('bool')]])
-        #print(pixels)
 
         # CIELAB color space, since Euclidean distance corresponds better to perceptual distance
         pixels_lab = cv2.cvtColor(pixels, cv2.COLOR_RGB2Lab)
-        #pixels_lab = cv2.cvtColor(np.uint8([[mean_col]]), cv2.COLOR_RGB2Lab)
 
         # multi sampling
         colors.append(random.choices(pixels_lab[0].astype('float64'), None, k=32))
-
-        #logger.info(colors[-1])
 
     best_centroids = []
     best_label = []
@@ -237,12 +225,27 @@ def mark_drawings(base_color, number_of_colors=None, sample_points = None):
             col_ids.append(sample_distances[0][0])
 
         colors[i] = (float(rgb[0]), float(rgb[1]), float(rgb[2]))
+    scale_factor = 3
+    drawing_shape = (contour_ready.shape[0] * scale_factor, contour_ready.shape[1] * scale_factor)
+    logger.info(drawing_shape)
+    for i in range(len(contours)):
 
+
+        bb = cv2.boundingRect(contours[i])
+        logger.info(bb)
+
+        downshift = np.ones_like(contours[i])
+        downshift[:,0,0] = bb[0] + bb[2] * 0.5
+        downshift[:,0,1] = bb[1] + bb[3] * 0.5
+        #contours[i] -= downshift
+        contours[i] *= scale_factor
+        #contours[i] += downshift * scale_factor
     for i in range(len(contours)):
         # if hierarchy has no parent for contour
         if hierarchy[i][3] < 0:
             col_rgb = colors[i]
-            drawing = np.zeros_like(contour_ready)
+            # drawing = np.zeros_like(contour_ready)
+            drawing = np.zeros((drawing_shape[0], drawing_shape[1]), 'uint8')
             children = [j for j,l in enumerate(hierarchy) if l[3] == i]
             if len(children) >= 2 or any(hierarchy[c][2] > 0 for c in children):
                 # assumed to be a filled area
@@ -258,7 +261,7 @@ def mark_drawings(base_color, number_of_colors=None, sample_points = None):
             drawings.append(drawing.tobytes().hex())
 
             for c in range(len(bbox)):
-                bbox[c] = bbox[c] / contour_ready.shape[1-(c % 2)]
+                bbox[c] = bbox[c] / drawing_shape[1-(c % 2)]
             bounds.append(bbox)
             resolution.append([drawing.shape[1], drawing.shape[0]])
 

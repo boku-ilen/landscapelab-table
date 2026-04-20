@@ -346,11 +346,23 @@ class BoardDetector:
     # Compute board size and set in configs
     def compute_board_size(self, corners):
 
+        top_width = abs(self.centroids[1][0] - self.centroids[0][0])
+
+        qr_size_x = self.config.get("qr_code", "size") / self.config.get("screen_resolution", "width")
+
+        # distance between horizontal centroid pairs plus approximate qr code width
+        top_width = self.pythagoras(self.centroids[1][0] - self.centroids[0][0], self.centroids[1][1] - self.centroids[0][1])
+        top_width *= 1 + qr_size_x
+        bottom_width = abs(self.centroids[2][0] - self.centroids[3][0])
+        bottom_width = self.pythagoras(self.centroids[2][0] - self.centroids[3][0], self.centroids[2][1] - self.centroids[3][1])
+        bottom_width *= 1 + qr_size_x
         min_x, min_y, max_x, max_y = self.find_min_max(corners)
 
         # Compute board size
-        self.board.width = max_x - min_x
-        self.board.height = max_y - min_y
+        # assumption: width in middle approximately equals the mean of top and bottom
+        self.board.width = int((top_width + bottom_width) / 2)
+        # assumption: square pixels -> aspect ratio should be the same as screen resolution
+        self.board.height = int((self.config.get("screen_resolution", "height")/self.config.get("screen_resolution", "width"))*self.board.width)
 
         ExtentTracker.get_instance().board = Extent.from_rectangle(0, 0, self.board.width, self.board.height)
         logger.info('board has been set to {}'.format(ExtentTracker.get_instance().board))

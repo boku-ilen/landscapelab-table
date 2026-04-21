@@ -138,7 +138,6 @@ class LabTable:
                                 sample_pts = self.tracker.brick_handler.queued_drawing_samples()
                                 logger.info("marking")
                                 drawings, ids, bounds, resolution = mark_drawings(draw_base, len(sample_pts), sample_pts)
-                                logger.info("sending " + str(len(drawings)) + ", res0 = " + str(resolution[0]))
                                 drawing_buffer.clear()
                                 self.tracker.brick_handler.handle_processed_drawing(drawings, ids, bounds, resolution)
                                 self.program_stage.current_stage = self.pre_drawing_stage

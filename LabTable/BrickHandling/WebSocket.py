@@ -34,6 +34,13 @@ class WebSocketBrickHandler(BrickHandler):
                 self.queued_samples = data_obj["data"]["points"]
 
     def handle_processed_drawing(self, bitmaps, ids, bounds, resolution):
+        self.ws.send(json.dumps({
+            "event": "drawing_done",
+            "data": {
+                "number_of_results": len(bitmaps)
+            }
+        }))
+
         for i in range(len(bitmaps)):
             self.ws.send(json.dumps({
                 "event": "drawing_processed",

@@ -80,7 +80,7 @@ def mark_drawings(base_color, number_of_colors=None, sample_points = None):
     contours, hierarchy = cv2.findContours(contour_ready, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_L1)
     plausibility = [contour_plausible(cv2.boundingRect(c), contour_ready) for c in contours]
     if hierarchy is None or len(contours) == 0:
-        return [],[]
+        return [],[],[],[]
     hierarchy = hierarchy[0]
 
     filtered_contours = []
@@ -126,6 +126,11 @@ def mark_drawings(base_color, number_of_colors=None, sample_points = None):
         bbox = (loc[0] - 24, loc[1] - 24, 48, 48)
         base = contour_base[bbox[1]:bbox[1] + bbox[3], bbox[0]:bbox[0] + bbox[2]]
         mask = mask[bbox[1]:bbox[1] + bbox[3], bbox[0]:bbox[0] + bbox[2]]
+        if not mask.astype('bool').any():
+            # simplistic fallback if no lines are detected:
+            # just use the whole area and draw the mean
+            # TODO is there a better way to handle this? -> maybe feedback to display in UI?
+            mask = np.ones_like(mask) * 255
         mean = np.mean(base[mask.astype('bool')], axis=0)
         sample_means.append(cv2.cvtColor(np.uint8([[[mean[0], mean[1], mean[2]]]]), cv2.COLOR_RGB2Lab)[0][0])
 
@@ -147,6 +152,9 @@ def mark_drawings(base_color, number_of_colors=None, sample_points = None):
         # multi sampling
         colors.append(random.choices(pixels_lab[0].astype('float64'), None, k=32))
 
+    if len(colors) == 0:
+        # case: contours may exist, but none are valid -> return empty
+        return [],[],[],[]
     best_centroids = []
     best_label = []
     best_silhouette = -100

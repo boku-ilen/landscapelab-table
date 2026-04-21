@@ -30,7 +30,7 @@ class OpenCVCameraTIS(TableInputStream):
                 ("auto_exposure", 1),
                 ("focus_automatic_continuous", 0),
                 ("white_balance_automatic",1),
-                ("pan_absolute", 3600),
+                ("pan_absolute", 21600),
                 ("sharpness", 64)
             ]
             if sys.platform == "linux":
@@ -38,7 +38,7 @@ class OpenCVCameraTIS(TableInputStream):
                     linux_set_cam_option(cam[0], cam[1], dev_num)
             logger.info(self.camera.get(cv2.CAP_PROP_AUTO_EXPOSURE))
 
-            self.camera.set(cv2.CAP_PROP_ZOOM, 160)
+            self.camera.set(cv2.CAP_PROP_ZOOM, 110)
             self.camera.set(cv2.CAP_PROP_EXPOSURE, 100)
 
             self.distance = config.get("camera", "base_distance")

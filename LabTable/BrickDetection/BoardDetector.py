@@ -33,6 +33,7 @@ MAX_VALUE = 255
 class BoardDetector:
     background = None
     last_color_image = None
+    centroids = [[0,0] for _ in range(4)]
 
     def __init__(self, config):
 
@@ -166,15 +167,36 @@ class BoardDetector:
             # data is not set yet, add the new found data
             if "TL" in code_data and self.all_codes_polygons_points[0] is None:
                 self.all_codes_polygons_points[0] = code.polygon
+
+                code_polygon = geometry.Polygon([[point.x, point.y]
+                                                 for point in code.polygon])
+                code_centroid = int(code_polygon.centroid.x), int(code_polygon.centroid.y)
+
+                self.centroids[0] = code_centroid
                 logger.debug("detected TL at {}".format(code.polygon))
             if "TR" in code_data and self.all_codes_polygons_points[1] is None:
                 self.all_codes_polygons_points[1] = code.polygon
+                code_polygon = geometry.Polygon([[point.x, point.y]
+                                                 for point in code.polygon])
+                code_centroid = int(code_polygon.centroid.x), int(code_polygon.centroid.y)
+
+                self.centroids[1] = code_centroid
                 logger.debug("detected TR at {}".format(code.polygon))
             if "BR" in code_data and self.all_codes_polygons_points[2] is None:
                 self.all_codes_polygons_points[2] = code.polygon
+                code_polygon = geometry.Polygon([[point.x, point.y]
+                                                 for point in code.polygon])
+                code_centroid = int(code_polygon.centroid.x), int(code_polygon.centroid.y)
+
+                self.centroids[2] = code_centroid
                 logger.debug("detected BL at {}".format(code.polygon))
             if "BL" in code_data and self.all_codes_polygons_points[3] is None:
                 self.all_codes_polygons_points[3] = code.polygon
+                code_polygon = geometry.Polygon([[point.x, point.y]
+                                                 for point in code.polygon])
+                code_centroid = int(code_polygon.centroid.x), int(code_polygon.centroid.y)
+
+                self.centroids[3] = code_centroid
                 logger.debug("detected BR at {}".format(code.polygon))
 
     # Detect the board using four QR-Codes in the board corners
@@ -210,7 +232,7 @@ class BoardDetector:
 
         # Count found qr-codes
         self.board.found_codes_number = sum(code is not None for code in self.all_codes_polygons_points)
-
+        extreme_directions = [[-1,1], [1,1], [1,-1], [-1,-1]]
         # Update the flag
         if self.board.found_codes_number > self.found_codes_number:
 
@@ -230,10 +252,23 @@ class BoardDetector:
                 code_centroid = int(code_polygon.centroid.x), int(code_polygon.centroid.y)
                 logger.debug("QR-code centroid found: {}".format(code_centroid))
 
+                extreme_x = code_polygon.centroid.x
+                extreme_y = code_polygon.centroid.y
+                for p in self.all_codes_polygons_points[points_idx]:
+                    if extreme_directions[points_idx][0] > 0:
+                        extreme_x = max(extreme_x, p.x)
+                    else:
+                        extreme_x = min(extreme_x, p.x)
+
+                    if extreme_directions[points_idx][1] > 0:
+                        extreme_y = max(extreme_y, p.y)
+                    else:
+                        extreme_y = min(extreme_y, p.y)
+
                 # Compute the distance between the centroid and the first of corners
                 centroid_corner_distance = BoardDetector.calculate_distance \
-                    (self.all_codes_polygons_points[points_idx][0].x,
-                     self.all_codes_polygons_points[points_idx][0].y,
+                    (extreme_x,
+                     extreme_y,
                      code_polygon.centroid.x, code_polygon.centroid.y)
 
                 # Save all centroids in an array -> [top left, top right, bottom right, bottom left]
@@ -289,13 +324,18 @@ class BoardDetector:
         source_corners[1] = corners[1]
         source_corners[2] = corners[2]
         source_corners[3] = corners[3]
+        source_corners = np.array([[float(c[0]), float(c[1])] for c in self.centroids], dtype="float32")
+
+        qr_size = self.config.get("qr_code", "size")
+        qr_size_x = (qr_size / self.config.get("screen_resolution", "width")) * self.board.width
+        qr_size_y = (qr_size / self.config.get("screen_resolution", "height")) * self.board.height
 
         # Construct destination points which will be used to map the board to a top-down view
         destination_corners = np.array([
-            [0, 0],
-            [self.board.width - 1, 0],
-            [self.board.width - 1, self.board.height - 1],
-            [0, self.board.height - 1]], dtype="float32")
+            [qr_size_x/2, qr_size_y/2],
+            [self.board.width - qr_size_x/2, qr_size_y/2],
+            [self.board.width - qr_size_x/2, self.board.height - qr_size_y/2],
+            [qr_size_x/2, self.board.height - qr_size_y/2]], dtype="float32")
 
         # Calculate the perspective transform matrix
         matrix = cv2.getPerspectiveTransform(source_corners, destination_corners)
@@ -306,11 +346,23 @@ class BoardDetector:
     # Compute board size and set in configs
     def compute_board_size(self, corners):
 
+        top_width = abs(self.centroids[1][0] - self.centroids[0][0])
+
+        qr_size_x = self.config.get("qr_code", "size") / self.config.get("screen_resolution", "width")
+
+        # distance between horizontal centroid pairs plus approximate qr code width
+        top_width = self.pythagoras(self.centroids[1][0] - self.centroids[0][0], self.centroids[1][1] - self.centroids[0][1])
+        top_width *= 1 + qr_size_x
+        bottom_width = abs(self.centroids[2][0] - self.centroids[3][0])
+        bottom_width = self.pythagoras(self.centroids[2][0] - self.centroids[3][0], self.centroids[2][1] - self.centroids[3][1])
+        bottom_width *= 1 + qr_size_x
         min_x, min_y, max_x, max_y = self.find_min_max(corners)
 
         # Compute board size
-        self.board.width = max_x - min_x
-        self.board.height = max_y - min_y
+        # assumption: width in middle approximately equals the mean of top and bottom
+        self.board.width = int((top_width + bottom_width) / 2)
+        # assumption: square pixels -> aspect ratio should be the same as screen resolution
+        self.board.height = int((self.config.get("screen_resolution", "height")/self.config.get("screen_resolution", "width"))*self.board.width)
 
         ExtentTracker.get_instance().board = Extent.from_rectangle(0, 0, self.board.width, self.board.height)
         logger.info('board has been set to {}'.format(ExtentTracker.get_instance().board))

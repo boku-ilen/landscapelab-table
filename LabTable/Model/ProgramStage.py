@@ -12,11 +12,12 @@ class ProgramStage(Enum):
     FIND_CORNERS = 2
     INTERNAL_MODE = 3  # brick detection without rules (disconnected, debug, ..)
     EXTERNAL_MODE = 4  # we are playing a game
+    DRAWING_CAPTURE = 5
 
     def next_stage(self):
         value = self.value + 1
-        if value > 4:
-            value = 4
+        if value > 5:
+            value = 5
         return ProgramStage(value)
 
     def prev_stage(self):

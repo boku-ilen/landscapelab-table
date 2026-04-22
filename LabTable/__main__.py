@@ -1,7 +1,11 @@
 import json
 import logging.config
+import time
+
+import cv2
 import numpy as np
 
+from LabTable.DrawingRecognition.DrawingDetector import average_mats, mark_drawings
 from .Model.ProgramStage import ProgramStage, CurrentProgramStage
 from .BrickDetection.BoardDetector import BoardDetector
 from .BrickDetection.ShapeDetector import ShapeDetector
@@ -34,7 +38,6 @@ except Exception as e:
 # region of interest image
 CHANNELS_NUMBER = 3
 
-
 # this class manages the base workflow and handles the main loop
 class LabTable:
 
@@ -65,6 +68,14 @@ class LabTable:
         # initialize the brick detector
         self.shape_detector = ShapeDetector(self.config, self.output_stream)
 
+        self.pre_drawing_stage = self.program_stage.current_stage
+
+        # number of frames to average for drawing capture
+        self.drawing_num_frames = self.config.get("drawing", "frame_average_count")
+
+        # number of frames to skip before averaging for drawing capture
+        self.drawing_num_discard = self.config.get("drawing", "frame_delay_count")
+
     # Run bricks detection and tracking code
     def run(self):
 
@@ -76,7 +87,8 @@ class LabTable:
             logger.info("initialized input stream")
 
             try:
-
+                last_drawing = time.time()
+                drawing_buffer = []
                 # main loop which handles each frame
                 while not self.output_stream.update(self.program_stage):
 
@@ -109,14 +121,37 @@ class LabTable:
                         # if all corners were found change channel and start next stage
                         if all_board_corners_found:
                             # Use distance to set possible brick size
-                            self.shape_detector.calculate_possible_brick_dimensions(self.board.distance)
+                            hfov = self.input_stream.get_horizontal_fov()
+                            if hfov < 0:
+                                self.shape_detector.calculate_possible_brick_dimensions(self.board.distance)
+                            else:
+                                self.shape_detector.calculate_possible_brick_dimensions(self.board.distance, hfov)
 
                             self.output_stream.set_active_channel(TableOutputChannel.CHANNEL_ROI)
                             self.program_stage.next()
 
                     # do the general brick detection (for internal or external ProgramStage)
                     else:
-                        self.do_brick_detection(region_of_interest, color_image)
+                        # drawing capture stage: take frames until ready to average and mark
+                        if self.program_stage.current_stage == ProgramStage.DRAWING_CAPTURE:
+                            drawing_buffer.append((self.board_detector.rectify_image(region_of_interest, color_image)).copy())
+                            if len(drawing_buffer) >= self.drawing_num_frames + self.drawing_num_discard:
+                                drawing_buffer = drawing_buffer[int(self.drawing_num_discard):]
+                                draw_base = average_mats(drawing_buffer)
+                                sample_pts = self.tracker.brick_handler.queued_drawing_samples()
+                                logger.info("marking")
+                                drawings, ids, bounds, resolution = mark_drawings(draw_base, len(sample_pts), sample_pts)
+                                drawing_buffer.clear()
+                                self.tracker.brick_handler.handle_processed_drawing(drawings, ids, bounds, resolution)
+                                self.program_stage.current_stage = self.pre_drawing_stage
+                        else:
+                            # normal brick detection, then switch to capture if requested
+                            self.pre_drawing_stage = self.program_stage.current_stage
+                            self.do_brick_detection(region_of_interest, color_image)
+                            if self.tracker.brick_handler.queued_drawing_samples() is not None:
+                                self.program_stage.current_stage = ProgramStage.DRAWING_CAPTURE
+
+
 
             except Exception as e:
                 logger.error("closing because encountered a problem: {}".format(e))

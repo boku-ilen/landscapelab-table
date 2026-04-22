@@ -40,8 +40,12 @@ def fill_recursive(image, contours, hierarchy, start_index, color=(0,0,0)):
 def ms(t):
     return f"{round(t*1000)}ms"
 
+# mark drawings from base color image
+# returns list of bitmaps, list of color IDs, list of clip space bounding boxes, list of bitmap resolutions
 def mark_drawings(base_color, number_of_colors=None, sample_points = None):
     contour_base = base_color.copy()
+
+    # image preparation
 
     # erosion to make the lines sharper
     element = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3,3), (-1,-1))
@@ -77,11 +81,15 @@ def mark_drawings(base_color, number_of_colors=None, sample_points = None):
     #drawing = np.zeros((contour_ready.shape[0], contour_ready.shape[1], 3), dtype=np.uint8)
 
     # contour detection
+
     contours, hierarchy = cv2.findContours(contour_ready, cv2.RETR_TREE, cv2.CHAIN_APPROX_TC89_L1)
-    plausibility = [contour_plausible(cv2.boundingRect(c), contour_ready) for c in contours]
     if hierarchy is None or len(contours) == 0:
         return [],[],[],[]
     hierarchy = hierarchy[0]
+
+    # contour plausibility filtering and correction of contour hierarchy entries
+
+    plausibility = [contour_plausible(cv2.boundingRect(c), contour_ready) for c in contours]
 
     filtered_contours = []
     new_indices = {}
@@ -104,17 +112,20 @@ def mark_drawings(base_color, number_of_colors=None, sample_points = None):
     contours = filtered_contours
     hierarchy = filtered_hierarchy
 
-    depths = []
-    last_parents = []
+    # color swatch detection or clustering if no samples exist
+
     colors = []
 
     # enlarge color areas for color detection
     contour_base = cv2.erode(contour_base, cv2.getStructuringElement(cv2.MORPH_RECT, (11,11),(-1,-1)))
 
-    sample_locations = [[66,325],[66,448], [66,575]]
-    if sample_points is not None:
-        # we received sample/swatch locations via WebSocket
-        sample_locations = [[int(s[0] * contour_base.shape[1]), int(s[1] * contour_base.shape[0])] for s in sample_points]
+
+    if sample_points is None:
+        # no samples received, do not perform any recognition
+        return [],[],[],[]
+
+    # we received sample/swatch locations via WebSocket
+    sample_locations = [[int(s[0] * contour_base.shape[1]), int(s[1] * contour_base.shape[0])] for s in sample_points]
     sample_means = []
     for loc in sample_locations[:number_of_colors]:
         mask = np.zeros_like(contour_ready)
@@ -134,6 +145,7 @@ def mark_drawings(base_color, number_of_colors=None, sample_points = None):
         mean = np.mean(base[mask.astype('bool')], axis=0)
         sample_means.append(cv2.cvtColor(np.uint8([[[mean[0], mean[1], mean[2]]]]), cv2.COLOR_RGB2Lab)[0][0])
 
+    # color sampling per contour
     for i in range(len(contours)):
         # get color info
         mask = np.zeros(simple_gray.shape, np.uint8)
@@ -155,6 +167,8 @@ def mark_drawings(base_color, number_of_colors=None, sample_points = None):
     if len(colors) == 0:
         # case: contours may exist, but none are valid -> return empty
         return [],[],[],[]
+
+
     best_centroids = []
     best_label = []
     best_silhouette = -100
@@ -197,21 +211,19 @@ def mark_drawings(base_color, number_of_colors=None, sample_points = None):
                 best_centroids = centroids
                 best_label = label
 
-    class_colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255)]
+    # bitmap generation and metadata collection
+
     col_ids = []
     drawings = []
     ids = []
     bounds = []
     resolution = []
 
-    #logger.info(f"best k was {len(best_centroids)}")
     for i in range(len(contours)):
         # color assignment
         stop_index = len(all_color_points)
         if len(color_starts) > i + 1:
             stop_index = color_starts[i + 1]
-
-        rgb = (255,0,255)
 
         if k is None:
             # per-bin count among samples in contour
@@ -221,7 +233,6 @@ def mark_drawings(base_color, number_of_colors=None, sample_points = None):
             # best candidate ~= most samples in bin
             best = sorted([(i,count)for i,count in enumerate(counts)],key=lambda c:c[1],reverse=True)[0][0]
             centroid = best_centroids[best]
-            rgb = cv2.cvtColor(np.uint8([[centroid]]), cv2.COLOR_Lab2RGB)[0][0]
             col_ids.append(best)
         else:
             pts = all_color_points[color_starts[i]:stop_index]
@@ -229,31 +240,20 @@ def mark_drawings(base_color, number_of_colors=None, sample_points = None):
             sample_distances = sorted([(i, color_distance(point_mean, s)) for i, s in enumerate(sample_means)],
                                       key=lambda t: t[1])
 
-            rgb = class_colors[sample_distances[0][0]]
             col_ids.append(sample_distances[0][0])
 
-        colors[i] = (float(rgb[0]), float(rgb[1]), float(rgb[2]))
     scale_factor = 3
     drawing_shape = (contour_ready.shape[0] * scale_factor, contour_ready.shape[1] * scale_factor)
-    logger.info(drawing_shape)
+
+    # scale up contour points to draw in higher resolution
     for i in range(len(contours)):
-
-
-        bb = cv2.boundingRect(contours[i])
-        logger.info(bb)
-
-        downshift = np.ones_like(contours[i])
-        downshift[:,0,0] = bb[0] + bb[2] * 0.5
-        downshift[:,0,1] = bb[1] + bb[3] * 0.5
-        #contours[i] -= downshift
         contours[i] *= scale_factor
-        #contours[i] += downshift * scale_factor
+
     for i in range(len(contours)):
         # if hierarchy has no parent for contour
         if hierarchy[i][3] < 0:
-            col_rgb = colors[i]
-            # drawing = np.zeros_like(contour_ready)
             drawing = np.zeros((drawing_shape[0], drawing_shape[1]), 'uint8')
+
             children = [j for j,l in enumerate(hierarchy) if l[3] == i]
             if len(children) >= 2 or any(hierarchy[c][2] > 0 for c in children):
                 # assumed to be a filled area
@@ -263,13 +263,18 @@ def mark_drawings(base_color, number_of_colors=None, sample_points = None):
                 cv2.fillPoly(drawing, [contours[i]], 255, cv2.LINE_AA)
                 # unfill everything inside
                 fill_recursive(drawing, contours, hierarchy, hierarchy[i][2], 0)
+
             ids.append(col_ids[i])
+
+            # bounding box is already adjusted to higher resoution since contours are scaled
             bbox = list(cv2.boundingRect(contours[i]))
             drawing = drawing[bbox[1]:bbox[1]+bbox[3],bbox[0]:bbox[0]+bbox[2]].astype("uint8")
             drawings.append(drawing.tobytes().hex())
 
             for c in range(len(bbox)):
+                # adjust to clip space (shape has order (y, x) and bbox is (x, y))
                 bbox[c] = bbox[c] / drawing_shape[1-(c % 2)]
+
             bounds.append(bbox)
             resolution.append([drawing.shape[1], drawing.shape[0]])
 

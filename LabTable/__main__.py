@@ -38,9 +38,6 @@ except Exception as e:
 # region of interest image
 CHANNELS_NUMBER = 3
 
-DRAWING_NUM_FRAMES = 5
-DRAWING_INTERVAL = 1
-
 # this class manages the base workflow and handles the main loop
 class LabTable:
 
@@ -72,6 +69,12 @@ class LabTable:
         self.shape_detector = ShapeDetector(self.config, self.output_stream)
 
         self.pre_drawing_stage = self.program_stage.current_stage
+
+        # number of frames to average for drawing capture
+        self.drawing_num_frames = self.config.get("drawing", "frame_average_count")
+
+        # number of frames to skip before averaging for drawing capture
+        self.drawing_num_discard = self.config.get("drawing", "frame_delay_count")
 
     # Run bricks detection and tracking code
     def run(self):
@@ -129,11 +132,11 @@ class LabTable:
 
                     # do the general brick detection (for internal or external ProgramStage)
                     else:
-
+                        # drawing capture stage: take frames until ready to average and mark
                         if self.program_stage.current_stage == ProgramStage.DRAWING_CAPTURE:
                             drawing_buffer.append((self.board_detector.rectify_image(region_of_interest, color_image)).copy())
-                            if len(drawing_buffer) >= DRAWING_NUM_FRAMES + 10:
-                                drawing_buffer = drawing_buffer[10:]
+                            if len(drawing_buffer) >= self.drawing_num_frames + self.drawing_num_discard:
+                                drawing_buffer = drawing_buffer[int(self.drawing_num_discard):]
                                 draw_base = average_mats(drawing_buffer)
                                 sample_pts = self.tracker.brick_handler.queued_drawing_samples()
                                 logger.info("marking")
@@ -142,6 +145,7 @@ class LabTable:
                                 self.tracker.brick_handler.handle_processed_drawing(drawings, ids, bounds, resolution)
                                 self.program_stage.current_stage = self.pre_drawing_stage
                         else:
+                            # normal brick detection, then switch to capture if requested
                             self.pre_drawing_stage = self.program_stage.current_stage
                             self.do_brick_detection(region_of_interest, color_image)
                             if self.tracker.brick_handler.queued_drawing_samples() is not None:

@@ -16,32 +16,32 @@ class OpenCVCameraTIS(TableInputStream):
 
     camera = None
     distance = 0
+    fov = 65
 
     def __init__(self, config, board, usestream):
 
         try:
             dev_num = config.get("camera", "opencv_device_nr")
-            self.camera = cv2.VideoCapture(dev_num)
+            if sys.platform == "windows":
+                # on windows, manually select DSHOW backend
+                self.camera = cv2.VideoCapture(dev_num, cv2.CAP_DSHOW)
+            else:
+                # on linux, automatic selection works fine
+                self.camera = cv2.VideoCapture(dev_num)
             self.camera.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter.fourcc('M','J','P','G'))
             self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, config.get("video_resolution","width"))
             self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, config.get("video_resolution", "height"))
-            self.camera.set(cv2.CAP_PROP_FPS, 30)
-            cam_options = [
-                ("auto_exposure", 1),
-                ("focus_automatic_continuous", 0),
-                ("white_balance_automatic",1),
-                ("pan_absolute", 21600),
-                ("sharpness", 64)
-            ]
+            self.camera.set(cv2.CAP_PROP_FPS, config.get("video_resolution", "framerate"))
             if sys.platform == "linux":
-                for cam in cam_options:
-                    linux_set_cam_option(cam[0], cam[1], dev_num)
-            logger.info(self.camera.get(cv2.CAP_PROP_AUTO_EXPOSURE))
+                linux_options = config.get("camera", "linux_options")
+                for opt in linux_options.keys():
+                    linux_set_cam_option(opt, linux_options[opt], dev_num)
 
-            self.camera.set(cv2.CAP_PROP_ZOOM, 110)
-            self.camera.set(cv2.CAP_PROP_EXPOSURE, 100)
+            self.camera.set(cv2.CAP_PROP_ZOOM, config.get("camera", "opencv_zoom"))
+            self.camera.set(cv2.CAP_PROP_EXPOSURE, config.get("camera", "opencv_exposure"))
 
             self.distance = config.get("camera", "base_distance")
+            self.fov = config.get("camera", "opencv_horizontal_fov")
         except Exception as e:
             logger.info("Could not initialize OpenCV Camera")
             logger.debug(e.__traceback__)
@@ -61,6 +61,6 @@ class OpenCVCameraTIS(TableInputStream):
             self.camera.release()
 
     def get_horizontal_fov(self):
-        return 70
+        return self.fov
     def get_distance_to_board(self):
         self.board.distance = self.distance

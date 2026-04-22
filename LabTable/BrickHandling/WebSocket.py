@@ -33,6 +33,11 @@ class WebSocketBrickHandler(BrickHandler):
                 # should be clip space ([0,1],[0,1]) to be resolution agnostic
                 self.queued_samples = data_obj["data"]["points"]
 
+    # pass on information about finished drawings
+    # bitmaps: list of hex-encoded string representations of R8 images
+    # ids: list of indices corresponding to which of the provided color samples (classes) applies to a given bitmap
+    # bounds: list of bounding boxes in clip space in format [x,y,width,height] with origin as top left corner
+    # resolution: list of bitmap resolutions in format [width, height]
     def handle_processed_drawing(self, bitmaps, ids, bounds, resolution):
         self.ws.send(json.dumps({
             "event": "drawing_done",

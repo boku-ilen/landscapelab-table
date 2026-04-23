@@ -112,7 +112,7 @@ class TableOutputStream:
         if video_output_name:
             # Define the codec and create VideoWriter object. The output is stored in .avi file.
             # Define the fps to be equal to 10. Also frame size is passed.
-            self.video_handler = cv2.VideoWriter(video_output_name, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'),
+            self.video_handler = cv2.VideoWriter(video_output_name, cv2.VideoWriter.fourcc('M', 'J', 'P', 'G'),
                                                  10, (config.get('video_resolution', 'width'),
                                                       config.get('video_resolution', 'height')))
         else:
@@ -125,6 +125,8 @@ class TableOutputStream:
 
         # create image handler to load images
         self.image_handler = ImageHandler(config)
+
+        self.aruco_image = self.image_handler.load_image("aruco_screen", (self.config.get("beamer_resolution", "width"), self.config.get("beamer_resolution", "height")))
 
         # load qr code images
         qr_size = self.config.get("qr_code", "size")
@@ -246,11 +248,8 @@ class TableOutputStream:
     # TODO: maybe make the image configurable via the GameEngine?
     def redraw_beamer_image(self, program_stage: CurrentProgramStage):
 
-        if program_stage.current_stage == ProgramStage.WHITE_BALANCE:
-            self.draw_white_frame()
-
-        elif program_stage.current_stage == ProgramStage.FIND_CORNERS:
-            self.draw_corner_qr_codes()
+        if program_stage.current_stage == ProgramStage.FIND_CORNERS:
+            self.draw_calibration_screen()
 
         else:
             if self.is_window_destroyed: return
@@ -270,24 +269,8 @@ class TableOutputStream:
 
     # displays qr-codes in each corner for the detection of the game board dimensions
     # called every frame when in ProgramStage FIND_CORNERS
-    def draw_corner_qr_codes(self):
-        frame = self.last_frame
-
-        # calculate qr-code offsets
-        pos_top_left = (0, 0)
-        pos_top_right = (frame.shape[1] - self.qr_top_right['image'].shape[1], 0)
-        pos_bottom_left = (0, frame.shape[0] - self.qr_bottom_left['image'].shape[0])
-        pos_bottom_right = (
-            frame.shape[1] - self.qr_bottom_right['image'].shape[1],
-            frame.shape[0] - self.qr_bottom_right['image'].shape[0]
-        )
-
-        # display images with calculated offsets
-        ImageHandler.img_on_background(frame, self.qr_top_left, pos_top_left)
-        ImageHandler.img_on_background(frame, self.qr_top_right, pos_top_right)
-        ImageHandler.img_on_background(frame, self.qr_bottom_left, pos_bottom_left)
-        ImageHandler.img_on_background(frame, self.qr_bottom_right, pos_bottom_right)
-        cv2.imshow(TableOutputStream.WINDOW_NAME_BEAMER, frame)
+    def draw_calibration_screen(self):
+        cv2.imshow(TableOutputStream.WINDOW_NAME_BEAMER, self.aruco_image["image"])
 
     # checks if the frame has updated and redraws it if this is the case
     # called every frame when running the actual game

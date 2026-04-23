@@ -207,7 +207,7 @@ class ShapeDetector:
         return contours
 
     # this is used to classify
-    def classify_color(self, bbox, frame):
+    def classify_color(self, bbox, frame: cv2.Mat):
 
         frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
@@ -265,13 +265,11 @@ class ShapeDetector:
         return tangent
 
     # Calculate possible brick dimensions using distance to the board
-    def calculate_possible_brick_dimensions(self, board_distance, horizontal_fov = HORIZONTAL_ANGLE):
+    def calculate_possible_brick_dimensions(self, board_height_mm, board_height_px):
 
-        # Use a tangent of the half of horizontal angle to calculate the display width in mm
-        horizontal_side_length = 2 * board_distance * self.calculate_tangent(horizontal_fov / 2)
         # Calculate how many pixels give one centimeter
-        one_cm_in_pixel = 10 * self.resolution_width / horizontal_side_length
-
+        one_cm_in_pixel = 10 * board_height_px / board_height_mm
+        logger.info(f"{one_cm_in_pixel} pixel/cm")
         # Calculate the squared brick side
         square_length = one_cm_in_pixel * BRICK_SHORT_SIDE
         # Add buffer

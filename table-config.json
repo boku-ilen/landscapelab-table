@@ -8,7 +8,7 @@
   },
 
   "camera": {
-    "implementation": "OpenCV",
+    "implementation": "Realsense",
     "base_distance": 800,
     "opencv_device_nr": 0,
     "opencv_zoom": 110,
@@ -20,7 +20,9 @@
       "white_balance_automatic":1,
       "pan_absolute": 21600,
       "sharpness": 64
-    }
+    },
+
+    "aruco_height_fraction": 0.5
   },
 
   "drawing": {
@@ -30,7 +32,12 @@
 
   "resources": {
     "relative_path": ["resources"],
-
+    "aruco_screen": {
+      "path": ["QR_Codes", "aruco_half_height.png"]
+    },
+    "calibration_file":{
+      "path": ["camera_calibration_data", "realsense_hd.json"]
+    },
     "qr_bottom_left": {
       "path": ["QR_Codes", "bottom_left.png"]
     },
@@ -141,8 +148,8 @@
   },
 
   "video_resolution": {
-    "width": 3840,
-    "height": 2160,
+    "width": 1280,
+    "height": 720,
     "framerate": 30
   },
 
@@ -155,6 +162,7 @@
 
   "beamer_resolution": {
     "screen_id": 0,
+    "screen_height_mm": 465,
     "NOTE": ["screen id refers to the display the projector output should be started on",
       "if the id exceeds the currently attached screen count the screen with the highest id will be selected",
       "if the id is negative the projector output will be shown in a window instead of full-screen"],

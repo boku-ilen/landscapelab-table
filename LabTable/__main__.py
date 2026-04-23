@@ -2,7 +2,6 @@ import json
 import logging.config
 import time
 
-import cv2
 import numpy as np
 
 from LabTable.DrawingRecognition.DrawingDetector import average_mats, mark_drawings
@@ -102,54 +101,41 @@ class LabTable:
                     self.output_stream.write_to_channel(TableOutputChannel.CHANNEL_BOARD_DETECTION, color_image_debug)
 
                     # call different functions depending on program state
-                    if self.program_stage.current_stage == ProgramStage.WHITE_BALANCE:
-
-                        # calculate the average white image
-                        if self.board_detector.compute_background(color_image):
-                            # switch to next stage if finished
-                            self.program_stage.next()
-
-                    # detect the corners by finding the qr-codes
-                    elif self.program_stage.current_stage == ProgramStage.FIND_CORNERS:
+                    if self.program_stage.current_stage == ProgramStage.FIND_CORNERS:
 
                         # Compute distance to the board
                         self.input_stream.get_distance_to_board()
 
                         # Find position of board corners
-                        all_board_corners_found = self.board_detector.detect_board(color_image, self.output_stream)
+                        all_board_corners_found = self.board_detector.detect_board(color_image)
 
                         # if all corners were found change channel and start next stage
                         if all_board_corners_found:
                             # Use distance to set possible brick size
-                            hfov = self.input_stream.get_horizontal_fov()
-                            if hfov < 0:
-                                self.shape_detector.calculate_possible_brick_dimensions(self.board.distance)
-                            else:
-                                self.shape_detector.calculate_possible_brick_dimensions(self.board.distance, hfov)
+
+                            self.shape_detector.calculate_possible_brick_dimensions(self.board_detector.projection_height, self.board.height)
 
                             self.output_stream.set_active_channel(TableOutputChannel.CHANNEL_ROI)
                             self.program_stage.next()
-
+                    # drawing capture stage: take frames until ready to average and mark
+                    elif self.program_stage.current_stage == ProgramStage.DRAWING_CAPTURE:
+                        drawing_buffer.append((self.board_detector.rectify(color_image)))
+                        if len(drawing_buffer) >= self.drawing_num_frames + self.drawing_num_discard:
+                            drawing_buffer = drawing_buffer[int(self.drawing_num_discard):]
+                            draw_base = average_mats(drawing_buffer)
+                            sample_pts = self.tracker.brick_handler.queued_drawing_samples()
+                            logger.info("marking")
+                            drawings, ids, bounds, resolution = mark_drawings(draw_base, len(sample_pts), sample_pts)
+                            drawing_buffer.clear()
+                            self.tracker.brick_handler.handle_processed_drawing(drawings, ids, bounds, resolution)
+                            self.program_stage.current_stage = self.pre_drawing_stage
                     # do the general brick detection (for internal or external ProgramStage)
                     else:
-                        # drawing capture stage: take frames until ready to average and mark
-                        if self.program_stage.current_stage == ProgramStage.DRAWING_CAPTURE:
-                            drawing_buffer.append((self.board_detector.rectify_image(region_of_interest, color_image)).copy())
-                            if len(drawing_buffer) >= self.drawing_num_frames + self.drawing_num_discard:
-                                drawing_buffer = drawing_buffer[int(self.drawing_num_discard):]
-                                draw_base = average_mats(drawing_buffer)
-                                sample_pts = self.tracker.brick_handler.queued_drawing_samples()
-                                logger.info("marking")
-                                drawings, ids, bounds, resolution = mark_drawings(draw_base, len(sample_pts), sample_pts)
-                                drawing_buffer.clear()
-                                self.tracker.brick_handler.handle_processed_drawing(drawings, ids, bounds, resolution)
-                                self.program_stage.current_stage = self.pre_drawing_stage
-                        else:
-                            # normal brick detection, then switch to capture if requested
-                            self.pre_drawing_stage = self.program_stage.current_stage
-                            self.do_brick_detection(region_of_interest, color_image)
-                            if self.tracker.brick_handler.queued_drawing_samples() is not None:
-                                self.program_stage.current_stage = ProgramStage.DRAWING_CAPTURE
+                        # normal brick detection, then switch to capture if requested
+                        self.pre_drawing_stage = self.program_stage.current_stage
+                        self.do_brick_detection(color_image)
+                        if self.tracker.brick_handler.queued_drawing_samples() is not None:
+                            self.program_stage.current_stage = ProgramStage.DRAWING_CAPTURE
 
 
 
@@ -165,12 +151,12 @@ class LabTable:
         if self.input_stream:
             self.input_stream.close()
 
-    def do_brick_detection(self, region_of_interest, color_image):
+    def do_brick_detection(self, color_image):
         # If the board is detected take only the region
         # of interest and start brick detection
 
         # Take only the region of interest from the color image
-        region_of_interest = self.board_detector.rectify_image(region_of_interest, color_image)
+        region_of_interest = self.board_detector.rectify(color_image)
         region_of_interest_debug = region_of_interest.copy()
 
         # Initialize brick properties list

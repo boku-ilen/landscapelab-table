@@ -4,6 +4,7 @@ screeninfo
 dataclasses
 pyrealsense2  # (https://pypi.org/project/pyrealsense2/) on License: Apache 2.0.
 pyzbar  # (https://pypi.org/project/pyzbar/)
+rel
 numpy
 shapely
 scipy

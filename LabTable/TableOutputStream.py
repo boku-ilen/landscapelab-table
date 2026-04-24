@@ -67,6 +67,7 @@ class TableOutputStream:
     MOUSE_BRICKS_REFRESHED = False
 
     is_window_destroyed: bool = False
+    last_program_stage = None
 
     def __init__(self,
                  tracker: Tracker,
@@ -88,6 +89,8 @@ class TableOutputStream:
         for channel in TableOutputChannel:
             self.channel_images[channel.name] = np.empty((1, 1))
 
+        self.channel_dirty_flags = {ch.name: False for ch in TableOutputChannel}
+
         # create debug window
         cv2.namedWindow(TableOutputStream.WINDOW_NAME_DEBUG, cv2.WINDOW_NORMAL)
         cv2.resizeWindow(TableOutputStream.WINDOW_NAME_DEBUG, config.get("screen_resolution", "width"),
@@ -108,7 +111,6 @@ class TableOutputStream:
             cv2.namedWindow(TableOutputStream.WINDOW_NAME_BEAMER, cv2.WINDOW_AUTOSIZE)
 
         cv2.setMouseCallback(TableOutputStream.WINDOW_NAME_BEAMER, self.beamer_mouse_callback)
-
         if video_output_name:
             # Define the codec and create VideoWriter object. The output is stored in .avi file.
             # Define the fps to be equal to 10. Also frame size is passed.
@@ -188,6 +190,7 @@ class TableOutputStream:
 
         # store the last frame for later display
         self.channel_images[channel.name] = frame
+        self.channel_dirty_flags[channel.name] = True
 
     # change the active channel, which is displayed in the window
     def set_active_channel(self, channel):
@@ -233,11 +236,14 @@ class TableOutputStream:
         self.redraw_beamer_image(program_stage)
 
         # redraw debug window
-        cv2.imshow(self.active_window, self.channel_images[self.active_channel.name])
+        if self.channel_dirty_flags[self.active_channel.name]:
+            cv2.imshow(self.active_window, self.channel_images[self.active_channel.name])
+            self.channel_dirty_flags[self.active_channel.name] = False
 
         # check if key pressed
-        key = cv2.waitKeyEx(1)
-
+        #key = cv2.waitKeyEx(1)
+        key = cv2.pollKey()
+        #key = 1
         # Break with Esc  # FIXME: CG: keyboard might not be available - use signals?
         if key == 27:
             logger.info("quit the program with the key")
@@ -247,7 +253,9 @@ class TableOutputStream:
     # redraws the beamer image if necessary with the correct frame depending on the ProgramStage
     # TODO: maybe make the image configurable via the GameEngine?
     def redraw_beamer_image(self, program_stage: CurrentProgramStage):
-
+        if program_stage.current_stage == self.last_program_stage:
+            return
+        self.last_program_stage = program_stage.current_stage
         if program_stage.current_stage == ProgramStage.FIND_CORNERS:
             self.draw_calibration_screen()
 

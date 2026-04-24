@@ -37,7 +37,7 @@ class BoardDetector:
             calib_data = json.load(calib_fp)
             self.camera_matrix = np.array(calib_data["matrix"])
             self.dist_coeffs = np.array(calib_data["dist_coeffs"])
-
+        self.undistort_map = None
         self.perspective_matrix = np.identity(4)
 
         self.current_loop = 0
@@ -55,7 +55,7 @@ class BoardDetector:
 
     # Detect the board using one ArUco marker in the center
     def detect_board(self, color_image: cv2.Mat):
-        aruco_frame_gray = cv2.cvtColor(color_image, cv2.COLOR_BGR2GRAY)
+        aruco_frame_gray = cv2.undistort(cv2.cvtColor(color_image, cv2.COLOR_BGR2GRAY), self.camera_matrix, self.dist_coeffs)
         aruco_detector = cv2.aruco.ArucoDetector(
             cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50),
             cv2.aruco.DetectorParameters())
@@ -92,6 +92,18 @@ class BoardDetector:
             solved, rvec, tvec = cv2.solvePnP(aruco_object_points, corners[i], self.camera_matrix, self.dist_coeffs)
             if solved:
                 image_pts, _ = cv2.projectPoints(board_corners, rvec, tvec, self.camera_matrix, self.dist_coeffs)
+
+                self.undistort_map = cv2.initUndistortRectifyMap(self.camera_matrix,
+                                                                 self.dist_coeffs,
+                                                                 np.identity(3),
+                                                                 cv2.getOptimalNewCameraMatrix(self.camera_matrix,
+                                                                                               self.dist_coeffs,
+                                                                                               (self.frame_width,
+                                                                                                self.frame_height),
+                                                                                               -1)[0],
+                                                                 (self.frame_width, self.frame_height),
+                                                                 cv2.CV_32FC1)
+
                 image_pts = cv2.undistortImagePoints(image_pts, self.camera_matrix, self.dist_coeffs)
                 self.board.corners = [x[0] for x in image_pts.tolist()]
                 self.compute_board_size(self.board.corners)
@@ -110,12 +122,13 @@ class BoardDetector:
 
                 # Pre-calculate the perspective transform matrix
                 self.perspective_matrix = cv2.getPerspectiveTransform(source_corners, destination_corners)
+
                 return True
         return False
 
     # Wrap the frame perspective to a top-down view (rectangle)
     def rectify(self, image):
-        return cv2.warpPerspective(cv2.undistort(image, self.camera_matrix, self.dist_coeffs), self.perspective_matrix, (self.board.width, self.board.height))
+        return cv2.warpPerspective(cv2.remap(image, self.undistort_map[0], self.undistort_map[1], cv2.INTER_LINEAR), self.perspective_matrix, (self.board.width, self.board.height))
 
     # Compute board size and set in configs
     def compute_board_size(self, corners):

@@ -81,9 +81,14 @@ class ShapeDetector:
         # with Douglas-Peucker algorithm
         epsilon = 0.1 * cv2.arcLength(contour, True)
         approx = cv2.approxPolyDP(contour, epsilon, True)
+        if type(approx) is cv2.UMat:
+            approx = approx.get()
+
+        if type(frame) is cv2.UMat:
+            frame = frame.get()
 
         # Check if the contour has 4 vertices
-        if len(approx) == 4:
+        if approx.shape[0] == 4:
 
             # Compute the centroid of the contour
             moments_dict = cv2.moments(contour)
@@ -189,11 +194,14 @@ class ShapeDetector:
         return rotated_bbox_lengths
 
     @staticmethod
-    def detect_contours(frame):
+    def detect_contours(frame: cv2.UMat):
 
         # Find all edges
         frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        frame_gray = 255 - frame_gray
+        # if type(frame_gray) == cv2.UMat:
+        #     frame_gray = cv2.UMat.get(frame_gray)
+        frame_gray = cv2.subtract(255, frame_gray)
+        #frame_gray = 255 - frame_gray
         edges = cv2.Canny(frame_gray, 30, 120)
 
         # Find contours in the edges image
@@ -202,7 +210,7 @@ class ShapeDetector:
         if major == '3':
             _, contours, hierarchy = cv2.findContours(edges.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
         else:
-            contours, hierarchy = cv2.findContours(edges.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+            contours, hierarchy = cv2.findContours(edges, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
 
         return contours
 

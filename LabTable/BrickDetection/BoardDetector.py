@@ -28,9 +28,11 @@ class BoardDetector:
         self.frame_width = self.config.get("video_resolution", "width")
         self.frame_height = self.config.get("video_resolution", "height")
 
+        # get data relating to aruco dimensions
         self.projection_height = self.config.get("beamer_resolution", "screen_height_mm")
         self.aruco_size = self.config.get("camera", "aruco_height_fraction") * self.projection_height
 
+        # get data about camera calibration
         calib_file = self.config.get("resources", "calibration_file")["path"]
         calib_file.insert(0, "resources")
         with open(os.sep.join(calib_file), "r") as calib_fp:
@@ -55,13 +57,17 @@ class BoardDetector:
 
     # Detect the board using one ArUco marker in the center
     def detect_board(self, color_image: cv2.Mat):
-        aruco_frame_gray = cv2.undistort(cv2.cvtColor(color_image, cv2.COLOR_BGR2GRAY), self.camera_matrix, self.dist_coeffs)
+        # initialize detector and image
+        aruco_frame_gray = cv2.cvtColor(color_image, cv2.COLOR_BGR2GRAY)
         aruco_detector = cv2.aruco.ArucoDetector(
             cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50),
             cv2.aruco.DetectorParameters())
+
+        # real-world size of marker is derived from our one known dimension, projected image height
         screen_height = self.config.get("beamer_resolution", "screen_height_mm")
         marker_size_mm = screen_height * self.config.get("camera", "aruco_height_fraction")
 
+        # corners in correct order - center is origin
         corner_ones = np.array([
             [-1,  1, 0],
             [ 1,  1, 0],
@@ -74,9 +80,10 @@ class BoardDetector:
 
         # outside corners of board in marker's space
         board_corners = corner_ones
-        board_corners[:,0] *= (screen_height * (self.config.get("screen_resolution", "width") / self.config.get("screen_resolution", "height"))) * 0.5
+        board_corners[:,0] *= (screen_height * (self.frame_width / self.frame_height)) * 0.5
         board_corners[:,1] *= screen_height * 0.5
 
+        # marker detection
         corners, ids, _ = aruco_detector.detectMarkers(aruco_frame_gray)
         if ids is None:
             # no markers found
@@ -86,13 +93,18 @@ class BoardDetector:
                 # aruco marker should have ID 0, otherwise it's probably noise
                 continue
             for j in range(corners[i].shape[0]):
+                # refine corners for better estimation
                 better_corner = cv2.cornerSubPix(aruco_frame_gray, corners[i][j], (5, 5), (-1, -1),
                                                 (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_COUNT, 40, 0.001))
                 corners[i][j] = better_corner
+
+            # aruco pose estimation
             solved, rvec, tvec = cv2.solvePnP(aruco_object_points, corners[i], self.camera_matrix, self.dist_coeffs)
             if solved:
+                # board corners in screen space
                 image_pts, _ = cv2.projectPoints(board_corners, rvec, tvec, self.camera_matrix, self.dist_coeffs)
 
+                # precalculate undistortion maps to speed up rectify()
                 self.undistort_map = cv2.initUndistortRectifyMap(self.camera_matrix,
                                                                  self.dist_coeffs,
                                                                  np.identity(3),
@@ -104,9 +116,13 @@ class BoardDetector:
                                                                  (self.frame_width, self.frame_height),
                                                                  cv2.CV_32FC1)
 
+                # since we do perspective correction on undistorted image, undistort the corner coords
                 image_pts = cv2.undistortImagePoints(image_pts, self.camera_matrix, self.dist_coeffs)
                 self.board.corners = [x[0] for x in image_pts.tolist()]
+
                 self.compute_board_size(self.board.corners)
+
+                # estimate distance to board using aruco data
                 self.board.distance = -np.matmul(cv2.Rodrigues(rvec)[0], tvec)[2][0]
                 logger.info(f"distance to board center: {self.board.distance} mm")
 
@@ -126,9 +142,18 @@ class BoardDetector:
                 return True
         return False
 
-    # Wrap the frame perspective to a top-down view (rectangle)
+    # Undistort and warp the frame perspective to a top-down view (rectangle with screen's aspect ratio)
     def rectify(self, image):
-        return cv2.warpPerspective(cv2.remap(image, self.undistort_map[0], self.undistort_map[1], cv2.INTER_LINEAR), self.perspective_matrix, (self.board.width, self.board.height))
+        return cv2.warpPerspective(
+            cv2.remap(
+                image,
+                self.undistort_map[0],
+                self.undistort_map[1],
+                cv2.INTER_LINEAR
+            ),
+            self.perspective_matrix,
+            (self.board.width, self.board.height)
+        )
 
     # Compute board size and set in configs
     def compute_board_size(self, corners):

@@ -8,7 +8,7 @@
   },
 
   "camera": {
-    "implementation": "OpenCV",
+    "implementation": "Realsense",
     "base_distance": 800,
     "opencv_device_nr": 2,
     "opencv_zoom": 110,
@@ -36,7 +36,7 @@
       "path": ["QR_Codes", "aruco_half_height.png"]
     },
     "calibration_file":{
-      "path": ["camera_calibration_data", "brio_4k.json"]
+      "path": ["camera_calibration_data", "realsense_hd.json"]
     },
     "qr_bottom_left": {
       "path": ["QR_Codes", "bottom_left.png"]
@@ -148,8 +148,8 @@
   },
 
   "video_resolution": {
-    "width": 3840,
-    "height": 2160,
+    "width": 1280,
+    "height": 720,
     "framerate": 30
   },
 

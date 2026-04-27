@@ -49,7 +49,7 @@ HIST_SIZE = 181
 # V-value range (0 to 255)
 
 # TODO: set in masks_configuration only hue and saturation/value separately, the same for all colors?
-MIN_SATURATION = 100
+MIN_SATURATION = 130
 MAX_SATURATION = 255
 
 
@@ -193,17 +193,19 @@ class ShapeDetector:
 
         return rotated_bbox_lengths
 
-    @staticmethod
-    def detect_contours(frame: cv2.UMat):
+    def detect_contours(self, frame: cv2.Mat):
 
         # Find all edges
-        frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+        frame_gray = frame_hsv[:,:,1]
         # if type(frame_gray) == cv2.UMat:
         #     frame_gray = cv2.UMat.get(frame_gray)
-        frame_gray = cv2.subtract(255, frame_gray)
-        #frame_gray = 255 - frame_gray
-        edges = cv2.Canny(frame_gray, 30, 120)
-
+        frame_gray = 255 - frame_gray
+        frame_gray = cv2.threshold(frame_gray, 150, 255, cv2.THRESH_TRUNC)[1]
+        frame_gray = cv2.GaussianBlur(frame_gray, (3,3), 0)
+        edges = cv2.Canny(frame_gray, 20, 80)
+        edges = cv2.dilate(edges, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (4,4), (-1,-1)))
+        cv2.imshow("edges", edges)
         # Find contours in the edges image
         # Retrieve all of the contours without establishing any hierarchical relationships (RETR_LIST)
         major = cv2.__version__.split('.')[0]

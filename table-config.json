@@ -8,12 +8,11 @@
   },
 
   "camera": {
-    "implementation": "Realsense",
+    "implementation": "OpenCV",
     "base_distance": 800,
     "opencv_device_nr": 2,
     "opencv_zoom": 110,
     "opencv_exposure": 100,
-    "opencv_horizontal_fov": 65,
     "linux_options": {
       "auto_exposure": 1,
       "focus_automatic_continuous": 0,
@@ -35,8 +34,11 @@
     "aruco_screen": {
       "path": ["QR_Codes", "aruco_half_height.png"]
     },
+    "edge_screen": {
+      "path": ["QR_Codes", "edge_green.png"]
+    },
     "calibration_file":{
-      "path": ["camera_calibration_data", "realsense_hd.json"]
+      "path": ["camera_calibration_data", "brio_4k.json"]
     },
     "qr_bottom_left": {
       "path": ["QR_Codes", "bottom_left.png"]
@@ -148,8 +150,8 @@
   },
 
   "video_resolution": {
-    "width": 1280,
-    "height": 720,
+    "width": 3840,
+    "height": 2160,
     "framerate": 30
   },
 
@@ -172,13 +174,9 @@
     "pos_y": NaN
   },
 
-  "qr_code": {
-    "size": 150
-  },
-
   "tracker_thresholds": {
     "min_distance": 6,
-    "external_min_appeared": 6,
+    "external_min_appeared": 5,
     "external_max_disappeared": 40,
     "internal_min_appeared": 3,
     "internal_max_disappeared": 10
@@ -187,7 +185,7 @@
   "brick_colors": {
     "RED_BRICK": [[[0, 100, 50], [20, 255, 255]], [[160, 100, 50], [180, 255, 255]]],
     "BLUE_BRICK": [[[95, 100, 50], [120, 255, 255]]],
-    "GREEN_BRICK": [[[60, 100, 50], [95, 255, 255]]],
+    "GREEN_BRICK": [[[50, 100, 50], [90, 255, 255]]],
     "YELLOW_BRICK": [[[10, 100, 100], [20, 255, 200]]]
   },
 

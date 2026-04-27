@@ -5,6 +5,7 @@ import numpy as np
 import logging
 from typing import List
 
+from LabTable.BrickDetection.BoardDetector import BoardDetectorStage
 from LabTable.Model.ProgramStage import ProgramStage, CurrentProgramStage
 from LabTable.BrickDetection.Tracker import Tracker
 from LabTable.Configurator import Configurator
@@ -20,14 +21,14 @@ logger = logging.getLogger(__name__)
 # drawing constants
 BRICK_DISPLAY_SIZE = 10
 VIRTUAL_BRICK_ALPHA = 0.3
-BRICK_LABEL_OFFSET = 10
+BRICK_LABEL_OFFSET = 50
 BLUE = (255, 0, 0)
 GREEN = (0, 255, 0)
 RED = (0, 0, 255)
 DARK_GRAY = (40, 40, 40)
-FONT_SIZE = 0.4
-FONT_THICKNESS = 1
-CONTOUR_THICKNESS = 1
+FONT_SIZE = 1.4
+FONT_THICKNESS = 3
+CONTOUR_THICKNESS = 3
 IDX_DRAW_ALL = -1
 RADIUS = 3
 
@@ -74,6 +75,7 @@ class TableOutputStream:
                  config: Configurator,
                  board: Board,
                  program_stage: CurrentProgramStage,
+                 board_detector,
                  video_output_name=None):
 
         self.config = config
@@ -125,24 +127,13 @@ class TableOutputStream:
         # create empty variable for tracker
         self.tracker: Tracker = tracker
 
+        self.board_detector = board_detector
+
         # create image handler to load images
         self.image_handler = ImageHandler(config)
 
         self.aruco_image = self.image_handler.load_image("aruco_screen", (self.config.get("beamer_resolution", "width"), self.config.get("beamer_resolution", "height")))
-
-        # load qr code images
-        qr_size = self.config.get("qr_code", "size")
-        # TODO calc optimal size on draw instead of scaling down to fixed size
-        self.qr_bottom_left = self.image_handler.load_image("qr_bottom_left", (qr_size, qr_size))
-        self.qr_bottom_right = self.image_handler.load_image("qr_bottom_right", (qr_size, qr_size))
-        self.qr_top_left = self.image_handler.load_image("qr_top_left", (qr_size, qr_size))
-        self.qr_top_right = self.image_handler.load_image("qr_top_right", (qr_size, qr_size))
-
-        # load brick overlay images
-        self.brick_outdated = self.image_handler.load_image("outdated_brick")
-        self.brick_unknown = self.image_handler.load_image("unknown_brick")
-        self.brick_internal = self.image_handler.load_image("internal_brick")
-
+        self.edge_image = self.image_handler.load_image("edge_screen", (self.config.get("beamer_resolution", "width"), self.config.get("beamer_resolution", "height")))
         # load and initialize icon lists
         self.brick_icons = {}
         self.virtual_icons = {}
@@ -253,12 +244,12 @@ class TableOutputStream:
     # redraws the beamer image if necessary with the correct frame depending on the ProgramStage
     # TODO: maybe make the image configurable via the GameEngine?
     def redraw_beamer_image(self, program_stage: CurrentProgramStage):
-        if program_stage.current_stage == self.last_program_stage:
-            return
         self.last_program_stage = program_stage.current_stage
         if program_stage.current_stage == ProgramStage.FIND_CORNERS:
-            self.draw_calibration_screen()
-
+            if self.board_detector.stage == BoardDetectorStage.MARKER_DETECTION:
+                self.draw_calibration_screen()
+            elif self.board_detector.stage == BoardDetectorStage.CORNER_REFINEMENT:
+                self.draw_refinement_screen()
         else:
             if self.is_window_destroyed: return
             cv2.destroyWindow(TableOutputStream.WINDOW_NAME_BEAMER)
@@ -280,6 +271,8 @@ class TableOutputStream:
     def draw_calibration_screen(self):
         cv2.imshow(TableOutputStream.WINDOW_NAME_BEAMER, self.aruco_image["image"])
 
+    def draw_refinement_screen(self):
+        cv2.imshow(TableOutputStream.WINDOW_NAME_BEAMER, self.edge_image["image"])
     # checks if the frame has updated and redraws it if this is the case
     # called every frame when running the actual game
     def redraw_brick_detection(self):

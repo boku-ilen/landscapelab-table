@@ -63,7 +63,7 @@ class LabTable:
 
         # initialize the input and output stream
         self.output_stream = TableOutputStream(self.tracker,
-                                               self.config, self.board, self.program_stage)
+                                               self.config, self.board, self.program_stage, self.board_detector)
         self.input_stream = TableInputStream.get_table_input_stream(self.config, self.board, usestream=self.used_stream)
 
         # initialize the brick detector
@@ -76,6 +76,7 @@ class LabTable:
 
         # number of frames to skip before averaging for drawing capture
         self.drawing_num_discard = self.config.get("drawing", "frame_delay_count")
+        self.frame_times = []
 
     # Run bricks detection and tracking code
     def run(self, once=False):
@@ -92,6 +93,8 @@ class LabTable:
                 drawing_buffer = []
                 # main loop which handles each frame
                 while not exit_flag:
+                    if self.output_stream.update(self.program_stage):
+                        break
 
                     # get the next frame
                     depth_image_3d, color_image = self.input_stream.get_frame()
@@ -146,9 +149,8 @@ class LabTable:
                             self.program_stage.current_stage = ProgramStage.DRAWING_CAPTURE
                     if once:
                         exit_flag = True
-                    logger.info(f"processing took {(time.perf_counter_ns() - tick) / 1000000}")
-                    if self.output_stream.update(self.program_stage):
-                        break
+                    self.frame_times.append((time.perf_counter_ns() - tick) / 1000000)
+
 
             except Exception as e:
                 logger.error("closing because encountered a problem: {}".format(e))
@@ -205,6 +207,9 @@ class LabTable:
         # write current frame to the stream output
         self.output_stream.write_to_file(region_of_interest)
 
+        cv2.putText(region_of_interest, f"{format(round(sum(self.frame_times[-5:])/5, 2), ".2f")} ms/frame", (0,128),
+                    cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255), 3)
+        self.frame_times = self.frame_times[-5:]
         # Render shape detection images
         self.output_stream.write_to_channel(TableOutputChannel.CHANNEL_ROI, cv2.resize(region_of_interest, (1280, 720)))
 

@@ -68,7 +68,7 @@ class LabTable:
 
         # initialize the brick detector
         self.shape_detector = ShapeDetector(self.config, self.output_stream)
-
+        self.output_stream.shape_detector = self.shape_detector
         self.pre_drawing_stage = self.program_stage.current_stage
 
         # number of frames to average for drawing capture
@@ -207,7 +207,9 @@ class LabTable:
         # write current frame to the stream output
         self.output_stream.write_to_file(region_of_interest)
 
-        cv2.putText(region_of_interest, f"{format(round(sum(self.frame_times[-5:])/5, 2), ".2f")} ms/frame", (0,128),
+        cv2.putText(region_of_interest, f"{round(sum(self.frame_times[-5:])/5, 2)} ms/frame", (0,128),
+                    cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255), 3)
+        cv2.putText(region_of_interest, f"threshold {self.shape_detector.sat_threshold}", (0,256),
                     cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255), 3)
         self.frame_times = self.frame_times[-5:]
         # Render shape detection images

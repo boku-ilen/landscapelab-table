@@ -69,7 +69,7 @@ class TableOutputStream:
 
     is_window_destroyed: bool = False
     last_program_stage = None
-
+    shape_detector = None
     def __init__(self,
                  tracker: Tracker,
                  config: Configurator,
@@ -148,8 +148,8 @@ class TableOutputStream:
 
         monitors = screeninfo.get_monitors()
 
-        config.set("screen_resolution", "width", monitors[0].width)
-        config.set("screen_resolution", "height", monitors[0].height)
+        config.set("screen_resolution", "width", int(monitors[0].width / 2))
+        config.set("screen_resolution", "height", int(monitors[0].height / 2))
         config.set("screen_resolution", "pos_x", monitors[0].x - 1)
         config.set("screen_resolution", "pos_y", monitors[0].y - 1)
 
@@ -239,6 +239,10 @@ class TableOutputStream:
         if key == 27:
             logger.info("quit the program with the key")
             return True
+        if key == ord("1"):
+            self.shape_detector.sat_threshold = min(self.shape_detector.sat_threshold + 5, 255)
+        if key == ord("2"):
+            self.shape_detector.sat_threshold = max(self.shape_detector.sat_threshold - 5, 0)
         return False
 
     # redraws the beamer image if necessary with the correct frame depending on the ProgramStage

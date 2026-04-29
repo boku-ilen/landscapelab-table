@@ -177,7 +177,7 @@ def mark_drawings(base_color, number_of_colors=None, sample_points = None):
 
     for points in colors[1:]:
         color_starts.append(len(all_color_points))
-        all_color_points = np.concat((all_color_points, points))
+        all_color_points = np.concatenate((all_color_points, points))
 
     if k is None: # no number given, try to guess
         for k in range(2, min(len(contours), 10)):

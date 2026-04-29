@@ -49,7 +49,7 @@ HIST_SIZE = 181
 # V-value range (0 to 255)
 
 # TODO: set in masks_configuration only hue and saturation/value separately, the same for all colors?
-MIN_SATURATION = 80
+MIN_SATURATION = 20
 MAX_SATURATION = 255
 
 
@@ -65,6 +65,7 @@ class ShapeDetector:
     max_square_area = None
     min_rectangle_area = None
     max_rectangle_area = None
+    sat_threshold = 85
 
     def __init__(self, config, output_stream):
 
@@ -198,10 +199,10 @@ class ShapeDetector:
         frame_gray = frame_hsv[:,:,1]
         #frame_gray = cv2.dilate(frame_gray, cv2.getStructuringElement(cv2.MORPH_CLOSE, (6, 6), (-1, -1)), iterations=1)
 
-        frame_gray = cv2.threshold(frame_gray, 120, 255, cv2.THRESH_BINARY)[1]
-
+        frame_gray = cv2.threshold(frame_gray, self.sat_threshold, 255, cv2.THRESH_BINARY)[1]
         edges = cv2.Canny(frame_gray.astype(np.uint8), 40, 120)
-        edges = cv2.dilate(edges, cv2.getStructuringElement(cv2.MORPH_CLOSE, (5,5), (-1,-1)), iterations=1)
+        edges = cv2.dilate(edges, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5,5), (-1,-1)), iterations=1)
+        cv2.imshow("edges", cv2.resize(edges, (1280, 720)))
 
         # Find contours in the edges image
         # Retrieve all of the contours without establishing any hierarchical relationships (RETR_LIST)

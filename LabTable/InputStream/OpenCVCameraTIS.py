@@ -22,7 +22,7 @@ class OpenCVCameraTIS(TableInputStream):
 
         try:
             dev_num = config.get("camera", "opencv_device_nr")
-            if sys.platform == "windows":
+            if sys.platform == "win32":
                 # on windows, manually select DSHOW backend
                 self.camera = cv2.VideoCapture(dev_num, cv2.CAP_DSHOW)
             else:
@@ -37,8 +37,8 @@ class OpenCVCameraTIS(TableInputStream):
                 for opt in linux_options.keys():
                     linux_set_cam_option(opt, linux_options[opt], dev_num)
 
-            self.camera.set(cv2.CAP_PROP_ZOOM, config.get("camera", "opencv_zoom"))
-            self.camera.set(cv2.CAP_PROP_EXPOSURE, config.get("camera", "opencv_exposure"))
+                self.camera.set(cv2.CAP_PROP_ZOOM, config.get("camera", "opencv_zoom"))
+                self.camera.set(cv2.CAP_PROP_EXPOSURE, config.get("camera", "opencv_exposure"))
 
             self.distance = config.get("camera", "base_distance")
             self.fov = config.get("camera", "opencv_horizontal_fov")

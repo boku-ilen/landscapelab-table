@@ -45,14 +45,6 @@ class TableInputStream:
     def get_frame(self):
         pass
 
-    @abstractmethod
-    def get_distance_to_board(self):
-        pass
-
-    # horizontal field of view, if available (otherwise fall back -> assume realsense)
-    def get_horizontal_fov(self):
-        return -1
-
     def is_initialized(self):
         return self.initialized
 

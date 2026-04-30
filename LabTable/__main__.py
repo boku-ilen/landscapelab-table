@@ -113,9 +113,6 @@ class LabTable:
                     # call different functions depending on program state
                     if self.program_stage.current_stage == ProgramStage.FIND_CORNERS:
 
-                        # Compute distance to the board
-                        self.input_stream.get_distance_to_board()
-
                         logger.info("running board detection")
                         # Find position of board corners
                         all_board_corners_found = self.board_detector.detect_board(color_image)

@@ -40,8 +40,6 @@ class OpenCVCameraTIS(TableInputStream):
                 self.camera.set(cv2.CAP_PROP_ZOOM, config.get("camera", "opencv_zoom"))
                 self.camera.set(cv2.CAP_PROP_EXPOSURE, config.get("camera", "opencv_exposure"))
 
-            self.distance = config.get("camera", "base_distance")
-            self.fov = config.get("camera", "opencv_horizontal_fov")
             self.last_handled_frame_count = 0
         except Exception as e:
             logger.info("Could not initialize OpenCV Camera")
@@ -50,11 +48,6 @@ class OpenCVCameraTIS(TableInputStream):
         super().__init__(config, board, usestream)
 
     def get_frame(self):
-        # ok = False
-        # tries = 0
-        # while not ok and tries < 10:
-        #     tries += 1
-        #     ok,frame = self.camera.read()
         if not self.camera.grab():
             return None, None
         ok, frame = self.camera.retrieve()
@@ -65,8 +58,3 @@ class OpenCVCameraTIS(TableInputStream):
     def close(self):
         if self.camera.isOpened():
             self.camera.release()
-
-    def get_horizontal_fov(self):
-        return self.fov
-    def get_distance_to_board(self):
-        self.board.distance = self.distance

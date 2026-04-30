@@ -34,6 +34,7 @@ class ImageHandler:
 
         image_path = Configurator.reconstruct_path(self.resource_path, image_dict['path'])
         logger.debug("loading image {}".format(image_path))
+        logger.info(image_path)
         img = cv2.imread(image_path, -1)
 
         # resize if size is not None or size specified in config

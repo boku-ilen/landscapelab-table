@@ -1,6 +1,7 @@
 import json
 import os
 from enum import Enum
+from operator import concat
 
 import cv2
 import numpy as np
@@ -41,11 +42,10 @@ class BoardDetector:
 
         # get data about camera calibration
         calib_file = self.config.get("resources", "calibration_file")["path"]
-        resources_path = self.config.get("resources", "relative_path")
-        resources_path.insert(0, "..")
-        self.resource_path = Configurator.reconstruct_path(os.path.dirname(__file__),
+        resources_path = list(concat([".."], self.config.get("resources", "relative_path")))
+        resource_path = Configurator.reconstruct_path(os.path.dirname(__file__),
                                                            resources_path)
-        calib_file_path = Configurator.reconstruct_path(self.resource_path, calib_file)
+        calib_file_path = Configurator.reconstruct_path(resource_path, calib_file)
 
         with open(calib_file_path, "r") as calib_fp:
             calib_data = json.load(calib_fp)

@@ -4,3 +4,5 @@ __pycache__
 *.bat
 logs/*
 logging.conf
+build/
+*.egg-info

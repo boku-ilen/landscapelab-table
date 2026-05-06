@@ -5,10 +5,15 @@ import numpy as np
 
 logger = logging.getLogger(__name__)
 
+SMOOTHING_WINDOW_SIZE = 3
+
 class PenDetector:
     def __init__(self, board_detector, marker_size_mm = 40):
         aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
         aruco_params = cv2.aruco.DetectorParameters()
+        aruco_params.useAruco3Detection = True
+        aruco_params.perspectiveRemovePixelPerCell = 12
+        aruco_params.cornerRefinementMethod = cv2.aruco.CORNER_REFINE_CONTOUR
         self.aruco_detector = cv2.aruco.ArucoDetector(aruco_dict, aruco_params)
 
         obj_points = np.array([
@@ -68,7 +73,11 @@ class PenDetector:
         self.camera_matrix = board_detector.camera_matrix
         self.dist_coeffs = board_detector.dist_coeffs
         self.board_detector = board_detector
+        self.bypass = True
+        self.smoothing_window = []
     def detect_pen(self, img):
+        if self.bypass:
+            return None, False
         gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
         corners, ids, rejected = self.aruco_detector.detectMarkers(gray)
         positions = []
@@ -87,7 +96,8 @@ class PenDetector:
             #estimated_center_obj = tvec.reshape((1,3,1))
 
             estimated_center_screen = cv2.projectPoints(estimated_center_obj, rvec, tvec, self.camera_matrix, self.dist_coeffs)[0]
-            #estimated_center_screen = cv2.undistortPoints(estimated_center_screen, self.camera_matrix, self.dist_coeffs)
+            #estimated_center_screen = cv2.projectPoints(estimated_center_obj, rvec, tvec, np.eye(3), self.dist_coeffs)[0]
+            estimated_center_screen = cv2.undistortImagePoints(estimated_center_screen, self.camera_matrix, self.dist_coeffs)
             estimated_center_screen[0][0][0] = np.clip(estimated_center_screen[0][0][0], 0, img.shape[1])
             estimated_center_screen[0][0][1] = np.clip(estimated_center_screen[0][0][1], 0, img.shape[0])
             board_pos = cv2.perspectiveTransform(estimated_center_screen, self.board_detector.perspective_matrix) / np.array([[[self.board_detector.board.width, self.board_detector.board.height]]]) - np.array([[[0.5,0.5]]])
@@ -116,5 +126,8 @@ class PenDetector:
             #     cv2.circle(img, estimated_center_screen[0][0].astype(np.uint32), 8, col[ids[i][0]], 8)
         if len(positions) > 0:
             mean_pos = np.mean(np.array(positions), axis=0).tolist()
-            return mean_pos, True
+            self.smoothing_window.append(mean_pos)
+            if len(self.smoothing_window) > SMOOTHING_WINDOW_SIZE:
+                self.smoothing_window = self.smoothing_window[-SMOOTHING_WINDOW_SIZE:]
+            return np.mean(np.array(self.smoothing_window), axis=0).tolist(), True
         return None, False

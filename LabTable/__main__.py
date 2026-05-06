@@ -61,10 +61,11 @@ class LabTable:
 
         # Initialize the centroid tracker
         self.tracker = Tracker(self.config, WebSocketBrickHandler())
-
+        self.pen_detector = PenDetector(self.board_detector)
+        self.pen_down = False
         # initialize the input and output stream
         self.output_stream = TableOutputStream(self.tracker,
-                                               self.config, self.board, self.program_stage, self.board_detector)
+                                               self.config, self.board, self.program_stage, self.board_detector, self.pen_detector)
         self.input_stream = TableInputStream.get_table_input_stream(self.config, self.board, usestream=self.used_stream)
 
         # initialize the brick detector
@@ -79,8 +80,7 @@ class LabTable:
         self.drawing_num_discard = self.config.get("drawing", "frame_delay_count")
         self.frame_times = []
 
-        self.pen_detector = PenDetector(self.board_detector)
-        self.pen_down = False
+
 
     # Run bricks detection and tracking code
     def run(self, once=False):
@@ -173,6 +173,8 @@ class LabTable:
 
         # Take only the region of interest from the color image
         pen_pos, pen_found = self.pen_detector.detect_pen(color_image)
+        region_of_interest = self.board_detector.rectify(color_image)
+
         if pen_found:
             if pen_pos[2] < -50 and not self.pen_down:
                 self.pen_down = True
@@ -180,13 +182,16 @@ class LabTable:
             elif pen_pos[2] >= 0 and self.pen_down:
                 self.pen_down = False
                 self.tracker.brick_handler.handle_pen_up(pen_pos)
-        region_of_interest = self.board_detector.rectify(color_image)
 
         # Initialize brick properties list
         potential_bricks_list = []
 
         # detect contours in area of interest
-        contours = self.shape_detector.detect_contours(region_of_interest)
+        if pen_found:
+            contours = []
+        else:
+            contours = self.shape_detector.detect_contours(region_of_interest)
+
         candidates = []
         # Loop over the contours
         for contour in contours:
@@ -206,7 +211,10 @@ class LabTable:
 
         # Compute tracked bricks dictionary using the centroid tracker and set of properties
         # Mark stored bricks virtual
-        tracked_bricks = self.tracker.update(potential_bricks_list, self.program_stage.current_stage)
+        if pen_found:
+            tracked_bricks = []
+        else:
+            tracked_bricks = self.tracker.update(potential_bricks_list, self.program_stage.current_stage)
 
         # Loop over the tracked objects and label them in the stream
         for tracked_brick in tracked_bricks:

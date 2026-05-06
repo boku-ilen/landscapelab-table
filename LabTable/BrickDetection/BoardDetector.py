@@ -63,6 +63,7 @@ class BoardDetector:
 
         self.buffer = []
         self.skip = 10
+        self.aruco_transform = None
 
     # Compute pythagoras value
     @staticmethod
@@ -128,7 +129,7 @@ class BoardDetector:
                 if solved:
                     # board corners in screen space
                     self.image_pts, _ = cv2.projectPoints(board_corners, rvec, tvec, self.camera_matrix, self.dist_coeffs)
-                    
+                    self.aruco_transform = rvec, tvec
 
                     #self.image_pts = image_pts
                     self.stage = BoardDetectorStage.CORNER_REFINEMENT
@@ -159,9 +160,8 @@ class BoardDetector:
             #     cv2.circle(dbg_mark, (int(p[0][0]), int(p[0][1])),100, 255, -1)
             # cv2.imshow("pts", cv2.resize(dbg_mark, (1280,720)))
 
-            
+
             self.board.corners = [x[0] for x in self.image_pts.tolist()]
-            
 
 
 

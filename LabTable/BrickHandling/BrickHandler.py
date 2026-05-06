@@ -14,5 +14,11 @@ class BrickHandler:
     def handle_removed_brick(self, Brick):
         pass
 
+    def handle_pen_down(self, pos):
+        pass
+
+    def handle_pen_up(self, pos):
+        pass
+
     def dispose(self):
         pass

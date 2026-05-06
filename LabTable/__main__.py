@@ -7,6 +7,7 @@ import numpy as np
 from cv2 import Mat
 
 from LabTable.DrawingRecognition.DrawingDetector import average_mats, mark_drawings
+from LabTable.PenDetection.PenDetector import PenDetector
 from .Model.ProgramStage import ProgramStage, CurrentProgramStage
 from .BrickDetection.BoardDetector import BoardDetector
 from .BrickDetection.ShapeDetector import ShapeDetector
@@ -77,6 +78,9 @@ class LabTable:
         # number of frames to skip before averaging for drawing capture
         self.drawing_num_discard = self.config.get("drawing", "frame_delay_count")
         self.frame_times = []
+
+        self.pen_detector = PenDetector(self.board_detector)
+        self.pen_down = False
 
     # Run bricks detection and tracking code
     def run(self, once=False):
@@ -168,6 +172,14 @@ class LabTable:
         # of interest and start brick detection
 
         # Take only the region of interest from the color image
+        pen_pos, pen_found = self.pen_detector.detect_pen(color_image)
+        if pen_found:
+            if pen_pos[2] < -50 and not self.pen_down:
+                self.pen_down = True
+                self.tracker.brick_handler.handle_pen_down(pen_pos)
+            elif pen_pos[2] >= 0 and self.pen_down:
+                self.pen_down = False
+                self.tracker.brick_handler.handle_pen_up(pen_pos)
         region_of_interest = self.board_detector.rectify(color_image)
 
         # Initialize brick properties list
@@ -208,6 +220,8 @@ class LabTable:
         cv2.putText(region_of_interest, f"threshold {self.shape_detector.sat_threshold}", (0,256),
                     cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255), 3)
         self.frame_times = self.frame_times[-5:]
+        if pen_found:
+            cv2.circle(region_of_interest, (int(pen_pos[0] * region_of_interest.shape[1]), int(pen_pos[1] * region_of_interest.shape[0])), 16, (255,0,255), -1)
         # Render shape detection images
         self.output_stream.write_to_channel(TableOutputChannel.CHANNEL_ROI, cv2.resize(region_of_interest, (1280, 720)))
 

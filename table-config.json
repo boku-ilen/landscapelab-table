@@ -9,7 +9,7 @@
 
   "camera": {
     "implementation": "OpenCV",
-    "opencv_device_nr": 2,
+    "opencv_device_nr": 0,
     "opencv_zoom": 110,
     "opencv_exposure": 100,
     "linux_options": {

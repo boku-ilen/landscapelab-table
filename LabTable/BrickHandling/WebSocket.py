@@ -86,3 +86,19 @@ class WebSocketBrickHandler(BrickHandler):
                 "color": str(brick.token.color)
             }
         }))
+
+    def handle_pen_down(self, pos):
+        self.ws.send(json.dumps({
+            "event":"pen_down",
+            "data":{
+                "position": pos
+            }
+        }))
+    def handle_pen_up(self, pos):
+        self.ws.send(json.dumps({
+            "event": "pen_up",
+            "data": {
+                "position": pos
+            }
+        }))
+

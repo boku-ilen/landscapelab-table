@@ -65,6 +65,7 @@ class ShapeDetector:
     max_square_area = None
     min_rectangle_area = None
     max_rectangle_area = None
+    # Threshold value for shape preprocessing, adjustable in TableOutputStream with keys 1/2
     sat_threshold = 85
 
     def __init__(self, config, output_stream):
@@ -104,7 +105,7 @@ class ShapeDetector:
                     # Compute the bounding box of the contour
                     bbox = cv2.boundingRect(contour)
 
-                    # Find the most frequent color (heu value)
+                    # Find the most frequent color (hue value)
                     # in the bounding box
                     detected_color, avg_hue = self.classify_color(bbox, frame)
 

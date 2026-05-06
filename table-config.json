@@ -30,10 +30,10 @@
   "resources": {
     "relative_path": ["resources"],
     "aruco_screen": {
-      "path": ["QR_Codes", "aruco_half_height.png"]
+      "path": ["Calibration", "aruco_half_height.png"]
     },
     "edge_screen": {
-      "path": ["QR_Codes", "edge_green.png"]
+      "path": ["Calibration", "edge_green.png"]
     },
     "calibration_file":{
       "path": ["camera_calibration_data", "brio_4k.json"]
@@ -115,6 +115,9 @@
 
   "beamer_resolution": {
     "screen_id": 0,
+    "NOTE_HEIGHT": ["screen_height_mm should be the height of the projected image in mm.",
+      "Measure between the bottom edge of the projected image and the top edge,",
+      "as close to the table surface as possible."],
     "screen_height_mm": 440,
     "NOTE": ["screen id refers to the display the projector output should be started on",
       "if the id exceeds the currently attached screen count the screen with the highest id will be selected",

@@ -86,7 +86,7 @@ try:
 
         # Show found QR-Codes
         cv2.namedWindow('RealSense', cv2.WINDOW_AUTOSIZE)
-        cv2.imshow('QR_Codes', looking_for_qr_code_image)
+        cv2.imshow('Calibration', looking_for_qr_code_image)
 
         key = cv2.waitKey(33)
 

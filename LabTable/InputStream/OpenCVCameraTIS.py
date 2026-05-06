@@ -40,7 +40,6 @@ class OpenCVCameraTIS(TableInputStream):
                 self.camera.set(cv2.CAP_PROP_ZOOM, config.get("camera", "opencv_zoom"))
                 self.camera.set(cv2.CAP_PROP_EXPOSURE, config.get("camera", "opencv_exposure"))
 
-            self.last_handled_frame_count = 0
         except Exception as e:
             logger.info("Could not initialize OpenCV Camera")
             logger.debug(e.__traceback__)

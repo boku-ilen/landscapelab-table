@@ -8,7 +8,6 @@ import cv2
 import numpy as np
 from functools import reduce
 import scipy.cluster.vq
-from cv2 import Mat
 from numpy import dtype, floating, integer, ndarray
 from scipy.cluster.vq import kmeans2, whiten
 
@@ -77,7 +76,6 @@ def mark_drawings(base_color, number_of_colors=None, sample_points = None):
 
     contour_ready = cv2.bitwise_and(simple_gray, simple_gray, mask=margin_mask)
     #contour_ready = simple_gray * margin_mask
-    struc_elem = cv2.getStructuringElement(cv2.MORPH_RECT, (3,3),(-1,-1))
     #drawing = np.zeros((contour_ready.shape[0], contour_ready.shape[1], 3), dtype=np.uint8)
 
     # contour detection
@@ -179,7 +177,7 @@ def mark_drawings(base_color, number_of_colors=None, sample_points = None):
 
     for points in colors[1:]:
         color_starts.append(len(all_color_points))
-        all_color_points = np.concat((all_color_points, points))
+        all_color_points = np.concatenate((all_color_points, points))
 
     if k is None: # no number given, try to guess
         for k in range(2, min(len(contours), 10)):
@@ -281,8 +279,7 @@ def mark_drawings(base_color, number_of_colors=None, sample_points = None):
 
     return drawings, ids, bounds, resolution
 
-def contour_plausible(bounding_box: Sequence[int],
-                      contour_ready: Mat | ndarray[Any, dtype[integer[Any] | floating[Any]]]) -> Any:
+def contour_plausible(bounding_box: Sequence[int], contour_ready: cv2.Mat):
     return contour_ready.shape[1] * 0.5 > bounding_box[2] > contour_ready.shape[1] * 0.01 and contour_ready.shape[0] * 0.5 > \
         bounding_box[3] > contour_ready.shape[0] * 0.01 \
         and bounding_box[0] > contour_ready.shape[1] * 0.1 and bounding_box[0] + bounding_box[2] < contour_ready.shape[1] * 0.9 \

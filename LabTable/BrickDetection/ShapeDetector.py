@@ -21,11 +21,11 @@ from LabTable.Model.Brick import Brick, BrickShape, BrickColor, Token
 logger = logging.getLogger(__name__)
 
 # Aspect ratio for square and rectangle
-MIN_SQ = 0.7
-MAX_SQ = 1.35
+MIN_SQ = 0.5
+MAX_SQ = 1.8
 MIN_REC = 0.2
 MAX_REC = 2.5
-BRICK_LENGTH_BUFFER = 2
+BRICK_LENGTH_BUFFER = 0.6
 
 # Camera's depth field of view
 HORIZONTAL_ANGLE = 65
@@ -49,7 +49,7 @@ HIST_SIZE = 181
 # V-value range (0 to 255)
 
 # TODO: set in masks_configuration only hue and saturation/value separately, the same for all colors?
-MIN_SATURATION = 100
+MIN_SATURATION = 20
 MAX_SATURATION = 255
 
 
@@ -65,6 +65,8 @@ class ShapeDetector:
     max_square_area = None
     min_rectangle_area = None
     max_rectangle_area = None
+    # Threshold value for shape preprocessing, adjustable in TableOutputStream with keys 1/2
+    sat_threshold = 85
 
     def __init__(self, config, output_stream):
 
@@ -79,50 +81,51 @@ class ShapeDetector:
 
         # Initialize the contour name and approximate the contour
         # with Douglas-Peucker algorithm
-        epsilon = 0.1 * cv2.arcLength(contour, True)
-        approx = cv2.approxPolyDP(contour, epsilon, True)
+        #epsilon = 0.1 * cv2.arcLength(contour, True)
+        #approx = cv2.approxPolyDP(contour, epsilon, True)
+        #if type(approx) is cv2.UMat:
+        #    approx = approx.get()
 
-        # Check if the contour has 4 vertices
-        if len(approx) == 4:
+        #if type(frame) is cv2.UMat:
+        #    frame = frame.get()
 
-            # Compute the centroid of the contour
-            moments_dict = cv2.moments(contour)
-            if moments_dict["m00"] != 0:
-                centroid_x = int((moments_dict["m10"] / moments_dict["m00"]))
-                centroid_y = int((moments_dict["m01"] / moments_dict["m00"]))
+        # Compute the centroid of the contour
+        moments_dict = cv2.moments(contour)
+        if moments_dict["m00"] != 0:
+            centroid_x = int((moments_dict["m10"] / moments_dict["m00"]))
+            centroid_y = int((moments_dict["m01"] / moments_dict["m00"]))
 
-                # Eliminate too small contours
-                area = cv2.contourArea(contour)
-                if self.min_square_area <= area <= self.max_rectangle_area:
+            # Eliminate too small contours
+            area = cv2.contourArea(contour)
+            if self.min_square_area <= area <= self.max_rectangle_area:
+                # Check if contour is a rectangle or square
+                contour_shape, aspect_ratio, rotated_bbox_lengths = self.classify_shape(cv2.boxPoints(cv2.minAreaRect(contour)))
+                if contour_shape is not BrickShape.UNKNOWN_SHAPE:
 
-                    # Check if contour is a rectangle or square
-                    contour_shape, aspect_ratio, rotated_bbox_lengths = self.classify_shape(approx)
-                    if contour_shape is not BrickShape.UNKNOWN_SHAPE:
+                    # Compute the bounding box of the contour
+                    bbox = cv2.boundingRect(contour)
 
-                        # Compute the bounding box of the contour
-                        bbox = cv2.boundingRect(approx)
+                    # Find the most frequent color (hue value)
+                    # in the bounding box
+                    detected_color, avg_hue = self.classify_color(bbox, frame)
 
-                        # Find the most frequent color (heu value)
-                        # in the bounding box
-                        detected_color, avg_hue = self.classify_color(bbox, frame)
+                    # Eliminate wrong colors contours
+                    if detected_color is not BrickColor.UNKNOWN_COLOR:
 
-                        # Eliminate wrong colors contours
-                        if detected_color is not BrickColor.UNKNOWN_COLOR:
+                        # return a Brick with the detected parameters
+                        token = Token(contour_shape, BrickColor[detected_color])
+                        brick = Brick(centroid_x, centroid_y, token)
+                        brick.aspect_ratio = aspect_ratio
+                        brick.relative_position = [] # TODO
+                        brick.average_detected_color = detected_color
+                        brick.detected_area = area
+                        brick.rotated_bbox_lengths = rotated_bbox_lengths
+                        brick.average_detected_color = avg_hue
 
-                            # return a Brick with the detected parameters
-                            token = Token(contour_shape, BrickColor[detected_color])
-                            brick = Brick(centroid_x, centroid_y, token)
-                            brick.aspect_ratio = aspect_ratio
-                            brick.relative_position = [] # TODO
-                            brick.average_detected_color = detected_color
-                            brick.detected_area = area
-                            brick.rotated_bbox_lengths = rotated_bbox_lengths
-                            brick.average_detected_color = avg_hue
+                        # log debug information
+                        logger.debug("created brick {} with area {} and hue {}".format(brick, area, avg_hue))
 
-                            # log debug information
-                            logger.debug("created brick {} with area {} and hue {}".format(brick, area, avg_hue))
-
-                            return brick
+                        return brick
         return None
 
     # Check if the contour has a brick shape: square or rectangle
@@ -188,13 +191,19 @@ class ShapeDetector:
 
         return rotated_bbox_lengths
 
-    @staticmethod
-    def detect_contours(frame):
+    def detect_contours(self, frame: cv2.Mat):
 
         # Find all edges
-        frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        frame_gray = 255 - frame_gray
-        edges = cv2.Canny(frame_gray, 30, 120)
+        frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+
+        # edge detection is run on saturation data, assumption: bricks are more saturated than board
+        frame_gray = frame_hsv[:,:,1]
+        #frame_gray = cv2.dilate(frame_gray, cv2.getStructuringElement(cv2.MORPH_CLOSE, (6, 6), (-1, -1)), iterations=1)
+
+        frame_gray = cv2.threshold(frame_gray, self.sat_threshold, 255, cv2.THRESH_BINARY)[1]
+        edges = cv2.Canny(frame_gray.astype(np.uint8), 40, 120)
+        edges = cv2.dilate(edges, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5,5), (-1,-1)), iterations=1)
+        cv2.imshow("edges", cv2.resize(edges, (1280, 720)))
 
         # Find contours in the edges image
         # Retrieve all of the contours without establishing any hierarchical relationships (RETR_LIST)
@@ -202,12 +211,11 @@ class ShapeDetector:
         if major == '3':
             _, contours, hierarchy = cv2.findContours(edges.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
         else:
-            contours, hierarchy = cv2.findContours(edges.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
-
+            contours, hierarchy = cv2.findContours(edges, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
         return contours
 
     # this is used to classify
-    def classify_color(self, bbox, frame):
+    def classify_color(self, bbox, frame: cv2.Mat):
 
         frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
@@ -265,18 +273,16 @@ class ShapeDetector:
         return tangent
 
     # Calculate possible brick dimensions using distance to the board
-    def calculate_possible_brick_dimensions(self, board_distance, horizontal_fov = HORIZONTAL_ANGLE):
+    def calculate_possible_brick_dimensions(self, board_height_mm, board_height_px):
 
-        # Use a tangent of the half of horizontal angle to calculate the display width in mm
-        horizontal_side_length = 2 * board_distance * self.calculate_tangent(horizontal_fov / 2)
         # Calculate how many pixels give one centimeter
-        one_cm_in_pixel = 10 * self.resolution_width / horizontal_side_length
-
+        one_cm_in_pixel = 10 * board_height_px / board_height_mm
+        logger.info(f"{one_cm_in_pixel} pixel/cm")
         # Calculate the squared brick side
         square_length = one_cm_in_pixel * BRICK_SHORT_SIDE
         # Add buffer
-        self.min_square_length = square_length - BRICK_LENGTH_BUFFER
-        self.max_square_length = square_length + BRICK_LENGTH_BUFFER
+        self.min_square_length = square_length - BRICK_LENGTH_BUFFER * one_cm_in_pixel
+        self.max_square_length = square_length + BRICK_LENGTH_BUFFER * one_cm_in_pixel
         # Calculate the squared brick area
         self.min_square_area = self.min_square_length * self.min_square_length
         self.max_square_area = self.max_square_length * self.max_square_length
@@ -284,8 +290,8 @@ class ShapeDetector:
         # Calculate the long side of a rectangle brick
         rectangle_length = one_cm_in_pixel * BRICK_LONG_SIDE
         # Add buffer
-        self.min_rectangle_length = rectangle_length - BRICK_LENGTH_BUFFER
-        self.max_rectangle_length = rectangle_length + BRICK_LENGTH_BUFFER
+        self.min_rectangle_length = rectangle_length - BRICK_LENGTH_BUFFER * one_cm_in_pixel
+        self.max_rectangle_length = rectangle_length + BRICK_LENGTH_BUFFER * one_cm_in_pixel
         # Calculate the squared brick area
         self.min_rectangle_area = self.min_square_length * self.min_rectangle_length
         self.max_rectangle_area = self.max_square_length * self.max_rectangle_length

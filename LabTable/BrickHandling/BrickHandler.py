@@ -13,3 +13,6 @@ class BrickHandler:
 
     def handle_removed_brick(self, Brick):
         pass
+
+    def dispose(self):
+        pass

@@ -8,16 +8,15 @@ logger = logging.getLogger(__name__)
 
 class ProgramStage(Enum):
 
-    WHITE_BALANCE = 1
-    FIND_CORNERS = 2
-    INTERNAL_MODE = 3  # brick detection without rules (disconnected, debug, ..)
-    EXTERNAL_MODE = 4  # we are playing a game
-    DRAWING_CAPTURE = 5
+    FIND_CORNERS = 1
+    INTERNAL_MODE = 2  # brick detection without rules (disconnected, debug, ..)
+    EXTERNAL_MODE = 3  # we are playing a game
+    DRAWING_CAPTURE = 4
 
     def next_stage(self):
         value = self.value + 1
-        if value > 5:
-            value = 5
+        if value > 4:
+            value = 4
         return ProgramStage(value)
 
     def prev_stage(self):
@@ -33,7 +32,7 @@ class ProgramStage(Enum):
 class CurrentProgramStage:
 
     def __init__(self):
-        self.current_stage: ProgramStage = ProgramStage.WHITE_BALANCE
+        self.current_stage: ProgramStage = ProgramStage.FIND_CORNERS
         logger.info("initialized first program stage: {}".format(self.current_stage))
 
     def next(self):

@@ -116,19 +116,6 @@ class RealsenseCameraTIS(TableInputStream):
         else:
             return None, None
 
-    # Get the depth information from the middle of the frame
-    # and save it if it is not 0
-    def get_distance_to_board(self):
-
-        # Get the depth information from the middle of the frame
-        board_distance = self.aligned_depth_frame.get_distance(int(self.width/2), int(self.height/2)) / self.depth_scale
-
-        # if not 0 -> happen when the depth data
-        # is not correctly computed
-        if board_distance:
-            self.board.distance = board_distance
-            logger.debug("Distance to the board is: {}".format(self.board.distance))
-
     def close(self):
         # Stop streaming
         if self.initialized:

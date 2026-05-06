@@ -4,6 +4,7 @@ import time
 
 import cv2
 import numpy as np
+from cv2 import Mat
 
 from LabTable.DrawingRecognition.DrawingDetector import average_mats, mark_drawings
 from .Model.ProgramStage import ProgramStage, CurrentProgramStage
@@ -62,12 +63,12 @@ class LabTable:
 
         # initialize the input and output stream
         self.output_stream = TableOutputStream(self.tracker,
-                                               self.config, self.board, self.program_stage)
+                                               self.config, self.board, self.program_stage, self.board_detector)
         self.input_stream = TableInputStream.get_table_input_stream(self.config, self.board, usestream=self.used_stream)
 
         # initialize the brick detector
         self.shape_detector = ShapeDetector(self.config, self.output_stream)
-
+        self.output_stream.shape_detector = self.shape_detector
         self.pre_drawing_stage = self.program_stage.current_stage
 
         # number of frames to average for drawing capture
@@ -75,82 +76,77 @@ class LabTable:
 
         # number of frames to skip before averaging for drawing capture
         self.drawing_num_discard = self.config.get("drawing", "frame_delay_count")
+        self.frame_times = []
 
     # Run bricks detection and tracking code
-    def run(self):
+    def run(self, once=False):
 
         # Initialize ROI as a black RGB-image
         region_of_interest = np.zeros((self.config.get("video_resolution", "height"),
                                        self.config.get("video_resolution", "width"), CHANNELS_NUMBER), np.uint8)
-
+        exit_flag = False
         if self.input_stream and self.input_stream.is_initialized():
-            logger.info("initialized input stream")
+            if not once:
+                logger.info("initialized input stream")
 
             try:
-                last_drawing = time.time()
                 drawing_buffer = []
                 # main loop which handles each frame
-                while not self.output_stream.update(self.program_stage):
+                while not exit_flag:
+                    if self.output_stream.update(self.program_stage):
+                        break
 
                     # get the next frame
                     depth_image_3d, color_image = self.input_stream.get_frame()
+                    if color_image is None:
+                        if cv2.waitKeyEx() == 27:
+                            break
+                        continue
 
+                    tick = time.perf_counter_ns()
                     # Add some additional information to the debug window
-                    color_image_debug = color_image.copy()
+                    #color_image_debug = color_image #color_image.copy()
 
                     # always write the current frame to the board detection channel
-                    self.output_stream.write_to_channel(TableOutputChannel.CHANNEL_BOARD_DETECTION, color_image_debug)
+                    #self.output_stream.write_to_channel(TableOutputChannel.CHANNEL_BOARD_DETECTION, color_image_debug)
 
                     # call different functions depending on program state
-                    if self.program_stage.current_stage == ProgramStage.WHITE_BALANCE:
+                    if self.program_stage.current_stage == ProgramStage.FIND_CORNERS:
 
-                        # calculate the average white image
-                        if self.board_detector.compute_background(color_image):
-                            # switch to next stage if finished
-                            self.program_stage.next()
-
-                    # detect the corners by finding the qr-codes
-                    elif self.program_stage.current_stage == ProgramStage.FIND_CORNERS:
-
-                        # Compute distance to the board
-                        self.input_stream.get_distance_to_board()
-
+                        logger.info("running board detection")
                         # Find position of board corners
-                        all_board_corners_found = self.board_detector.detect_board(color_image, self.output_stream)
+                        all_board_corners_found = self.board_detector.detect_board(color_image)
 
                         # if all corners were found change channel and start next stage
                         if all_board_corners_found:
                             # Use distance to set possible brick size
-                            hfov = self.input_stream.get_horizontal_fov()
-                            if hfov < 0:
-                                self.shape_detector.calculate_possible_brick_dimensions(self.board.distance)
-                            else:
-                                self.shape_detector.calculate_possible_brick_dimensions(self.board.distance, hfov)
+
+                            self.shape_detector.calculate_possible_brick_dimensions(self.board_detector.projection_height, self.board.height)
 
                             self.output_stream.set_active_channel(TableOutputChannel.CHANNEL_ROI)
                             self.program_stage.next()
-
+                    # drawing capture stage: take frames until ready to average and mark
+                    elif self.program_stage.current_stage == ProgramStage.DRAWING_CAPTURE:
+                        drawing_buffer.append((self.board_detector.rectify(color_image)))
+                        if len(drawing_buffer) >= self.drawing_num_frames + self.drawing_num_discard:
+                            drawing_buffer = drawing_buffer[int(self.drawing_num_discard):]
+                            draw_base = average_mats(drawing_buffer)
+                            sample_pts = self.tracker.brick_handler.queued_drawing_samples()
+                            logger.info("marking")
+                            drawings, ids, bounds, resolution = mark_drawings(draw_base, len(sample_pts), sample_pts)
+                            drawing_buffer.clear()
+                            self.tracker.brick_handler.handle_processed_drawing(drawings, ids, bounds, resolution)
+                            self.program_stage.current_stage = self.pre_drawing_stage
                     # do the general brick detection (for internal or external ProgramStage)
                     else:
-                        # drawing capture stage: take frames until ready to average and mark
-                        if self.program_stage.current_stage == ProgramStage.DRAWING_CAPTURE:
-                            drawing_buffer.append((self.board_detector.rectify_image(region_of_interest, color_image)).copy())
-                            if len(drawing_buffer) >= self.drawing_num_frames + self.drawing_num_discard:
-                                drawing_buffer = drawing_buffer[int(self.drawing_num_discard):]
-                                draw_base = average_mats(drawing_buffer)
-                                sample_pts = self.tracker.brick_handler.queued_drawing_samples()
-                                logger.info("marking")
-                                drawings, ids, bounds, resolution = mark_drawings(draw_base, len(sample_pts), sample_pts)
-                                drawing_buffer.clear()
-                                self.tracker.brick_handler.handle_processed_drawing(drawings, ids, bounds, resolution)
-                                self.program_stage.current_stage = self.pre_drawing_stage
-                        else:
-                            # normal brick detection, then switch to capture if requested
-                            self.pre_drawing_stage = self.program_stage.current_stage
-                            self.do_brick_detection(region_of_interest, color_image)
-                            if self.tracker.brick_handler.queued_drawing_samples() is not None:
-                                self.program_stage.current_stage = ProgramStage.DRAWING_CAPTURE
-
+                        # normal brick detection, then switch to capture if requested
+                        self.pre_drawing_stage = self.program_stage.current_stage
+                        self.do_brick_detection(color_image)
+                        if self.tracker.brick_handler.queued_drawing_samples() is not None:
+                            self.program_stage.current_stage = ProgramStage.DRAWING_CAPTURE
+                    if once:
+                        exit_flag = True
+                    self.frame_times.append((time.perf_counter_ns() - tick) / 1000000)
 
 
             except Exception as e:
@@ -158,27 +154,29 @@ class LabTable:
                 logger.exception(e)
 
         # handle the output stream correctly
-        if self.output_stream:
+        if self.output_stream and not once:
             self.output_stream.close()
 
         # make sure the stream ends correctly
-        if self.input_stream:
+        if self.input_stream and not once:
             self.input_stream.close()
 
-    def do_brick_detection(self, region_of_interest, color_image):
+        if self.tracker.brick_handler and not once:
+            self.tracker.brick_handler.dispose()
+
+    def do_brick_detection(self, color_image):
         # If the board is detected take only the region
         # of interest and start brick detection
 
         # Take only the region of interest from the color image
-        region_of_interest = self.board_detector.rectify_image(region_of_interest, color_image)
-        region_of_interest_debug = region_of_interest.copy()
+        region_of_interest = self.board_detector.rectify(color_image)
 
         # Initialize brick properties list
         potential_bricks_list = []
 
         # detect contours in area of interest
         contours = self.shape_detector.detect_contours(region_of_interest)
-
+        candidates = []
         # Loop over the contours
         for contour in contours:
 
@@ -188,9 +186,12 @@ class LabTable:
             if brick_candidate:
                 # Update the properties list of all potential bricks which are found in the frame
                 potential_bricks_list.append(brick_candidate)
+                # mark in later step to reuse input mat without affecting detection
+                candidates.append(contour)
 
-                # mark potential brick contours
-                TableOutputStream.mark_candidates(region_of_interest_debug, contour)
+        for contour in candidates:
+            # mark potential brick contours
+            TableOutputStream.mark_candidates(region_of_interest, contour)
 
         # Compute tracked bricks dictionary using the centroid tracker and set of properties
         # Mark stored bricks virtual
@@ -198,13 +199,18 @@ class LabTable:
 
         # Loop over the tracked objects and label them in the stream
         for tracked_brick in tracked_bricks:
-            TableOutputStream.labeling(region_of_interest_debug, tracked_brick)
+            TableOutputStream.labeling(region_of_interest, tracked_brick)
 
         # write current frame to the stream output
-        self.output_stream.write_to_file(region_of_interest_debug)
+        self.output_stream.write_to_file(region_of_interest)
 
+        cv2.putText(region_of_interest, f"{round(sum(self.frame_times[-5:])/5, 2)} ms/frame", (0,128),
+                    cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255), 3)
+        cv2.putText(region_of_interest, f"threshold {self.shape_detector.sat_threshold}", (0,256),
+                    cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255), 3)
+        self.frame_times = self.frame_times[-5:]
         # Render shape detection images
-        self.output_stream.write_to_channel(TableOutputChannel.CHANNEL_ROI, region_of_interest_debug)
+        self.output_stream.write_to_channel(TableOutputChannel.CHANNEL_ROI, cv2.resize(region_of_interest, (1280, 720)))
 
     def get_program_stage(self) -> ProgramStage:
         return self.program_stage.current_stage

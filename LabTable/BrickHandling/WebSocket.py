@@ -24,15 +24,22 @@ class WebSocketBrickHandler(BrickHandler):
 
     def handle_message(self):
         while True:
-            data = self.ws.recv()
-            if data == "":
-                continue
-            logger.info(f"got {data}")
-            data_obj = json.loads(data)
-            if data_obj["event"] == "start_drawing":
-                # should be clip space ([0,1],[0,1]) to be resolution agnostic
-                self.queued_samples = data_obj["data"]["points"]
-
+            try:
+                data = self.ws.recv()
+                if data == "":
+                    logger.info("none")
+                    continue
+                logger.info(f"got {data}")
+                data_obj = json.loads(data)
+                if data_obj["event"] == "start_drawing":
+                    # should be clip space ([0,1],[0,1]) to be resolution agnostic
+                    self.queued_samples = data_obj["data"]["points"]
+            except websocket.WebSocketConnectionClosedException:
+                logger.info("Websocket connection closed, stopped receiver thread.")
+                return
+    def dispose(self):
+        self.ws.abort()
+        self.ws.close()
     # pass on information about finished drawings
     # bitmaps: list of hex-encoded string representations of R8 images
     # ids: list of indices corresponding to which of the provided color samples (classes) applies to a given bitmap

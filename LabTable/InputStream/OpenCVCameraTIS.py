@@ -22,7 +22,7 @@ class OpenCVCameraTIS(TableInputStream):
 
         try:
             dev_num = config.get("camera", "opencv_device_nr")
-            if sys.platform == "windows":
+            if sys.platform == "win32":
                 # on windows, manually select DSHOW backend
                 self.camera = cv2.VideoCapture(dev_num, cv2.CAP_DSHOW)
             else:
@@ -37,11 +37,9 @@ class OpenCVCameraTIS(TableInputStream):
                 for opt in linux_options.keys():
                     linux_set_cam_option(opt, linux_options[opt], dev_num)
 
-            self.camera.set(cv2.CAP_PROP_ZOOM, config.get("camera", "opencv_zoom"))
-            self.camera.set(cv2.CAP_PROP_EXPOSURE, config.get("camera", "opencv_exposure"))
+                self.camera.set(cv2.CAP_PROP_ZOOM, config.get("camera", "opencv_zoom"))
+                self.camera.set(cv2.CAP_PROP_EXPOSURE, config.get("camera", "opencv_exposure"))
 
-            self.distance = config.get("camera", "base_distance")
-            self.fov = config.get("camera", "opencv_horizontal_fov")
         except Exception as e:
             logger.info("Could not initialize OpenCV Camera")
             logger.debug(e.__traceback__)
@@ -49,18 +47,13 @@ class OpenCVCameraTIS(TableInputStream):
         super().__init__(config, board, usestream)
 
     def get_frame(self):
-        ok = False
-        tries = 0
-        while not ok and tries < 10:
-            tries += 1
-            ok,frame = self.camera.read()
-        return None, frame  # frame[0] should return True - TODO: check for this?
+        if not self.camera.grab():
+            return None, None
+        ok, frame = self.camera.retrieve()
+        if ok:
+            return None, frame
+        return None, None
 
     def close(self):
         if self.camera.isOpened():
             self.camera.release()
-
-    def get_horizontal_fov(self):
-        return self.fov
-    def get_distance_to_board(self):
-        self.board.distance = self.distance

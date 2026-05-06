@@ -5,6 +5,7 @@ import numpy as np
 import logging
 from typing import List
 
+from LabTable.BrickDetection.BoardDetector import BoardDetectorStage
 from LabTable.Model.ProgramStage import ProgramStage, CurrentProgramStage
 from LabTable.BrickDetection.Tracker import Tracker
 from LabTable.Configurator import Configurator
@@ -20,14 +21,14 @@ logger = logging.getLogger(__name__)
 # drawing constants
 BRICK_DISPLAY_SIZE = 10
 VIRTUAL_BRICK_ALPHA = 0.3
-BRICK_LABEL_OFFSET = 10
+BRICK_LABEL_OFFSET = 50
 BLUE = (255, 0, 0)
 GREEN = (0, 255, 0)
 RED = (0, 0, 255)
 DARK_GRAY = (40, 40, 40)
-FONT_SIZE = 0.4
-FONT_THICKNESS = 1
-CONTOUR_THICKNESS = 1
+FONT_SIZE = 1.4
+FONT_THICKNESS = 3
+CONTOUR_THICKNESS = 3
 IDX_DRAW_ALL = -1
 RADIUS = 3
 
@@ -67,12 +68,14 @@ class TableOutputStream:
     MOUSE_BRICKS_REFRESHED = False
 
     is_window_destroyed: bool = False
-
+    last_program_stage = None
+    shape_detector = None
     def __init__(self,
                  tracker: Tracker,
                  config: Configurator,
                  board: Board,
                  program_stage: CurrentProgramStage,
+                 board_detector,
                  video_output_name=None):
 
         self.config = config
@@ -87,6 +90,8 @@ class TableOutputStream:
         self.channel_images = {}
         for channel in TableOutputChannel:
             self.channel_images[channel.name] = np.empty((1, 1))
+
+        self.channel_dirty_flags = {ch.name: False for ch in TableOutputChannel}
 
         # create debug window
         cv2.namedWindow(TableOutputStream.WINDOW_NAME_DEBUG, cv2.WINDOW_NORMAL)
@@ -108,11 +113,10 @@ class TableOutputStream:
             cv2.namedWindow(TableOutputStream.WINDOW_NAME_BEAMER, cv2.WINDOW_AUTOSIZE)
 
         cv2.setMouseCallback(TableOutputStream.WINDOW_NAME_BEAMER, self.beamer_mouse_callback)
-
         if video_output_name:
             # Define the codec and create VideoWriter object. The output is stored in .avi file.
             # Define the fps to be equal to 10. Also frame size is passed.
-            self.video_handler = cv2.VideoWriter(video_output_name, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'),
+            self.video_handler = cv2.VideoWriter(video_output_name, cv2.VideoWriter.fourcc('M', 'J', 'P', 'G'),
                                                  10, (config.get('video_resolution', 'width'),
                                                       config.get('video_resolution', 'height')))
         else:
@@ -123,22 +127,13 @@ class TableOutputStream:
         # create empty variable for tracker
         self.tracker: Tracker = tracker
 
+        self.board_detector = board_detector
+
         # create image handler to load images
         self.image_handler = ImageHandler(config)
 
-        # load qr code images
-        qr_size = self.config.get("qr_code", "size")
-        # TODO calc optimal size on draw instead of scaling down to fixed size
-        self.qr_bottom_left = self.image_handler.load_image("qr_bottom_left", (qr_size, qr_size))
-        self.qr_bottom_right = self.image_handler.load_image("qr_bottom_right", (qr_size, qr_size))
-        self.qr_top_left = self.image_handler.load_image("qr_top_left", (qr_size, qr_size))
-        self.qr_top_right = self.image_handler.load_image("qr_top_right", (qr_size, qr_size))
-
-        # load brick overlay images
-        self.brick_outdated = self.image_handler.load_image("outdated_brick")
-        self.brick_unknown = self.image_handler.load_image("unknown_brick")
-        self.brick_internal = self.image_handler.load_image("internal_brick")
-
+        self.aruco_image = self.image_handler.load_image("aruco_screen", (self.config.get("beamer_resolution", "width"), self.config.get("beamer_resolution", "height")))
+        self.edge_image = self.image_handler.load_image("edge_screen", (self.config.get("beamer_resolution", "width"), self.config.get("beamer_resolution", "height")))
         # load and initialize icon lists
         self.brick_icons = {}
         self.virtual_icons = {}
@@ -153,8 +148,8 @@ class TableOutputStream:
 
         monitors = screeninfo.get_monitors()
 
-        config.set("screen_resolution", "width", monitors[0].width)
-        config.set("screen_resolution", "height", monitors[0].height)
+        config.set("screen_resolution", "width", int(monitors[0].width / 2))
+        config.set("screen_resolution", "height", int(monitors[0].height / 2))
         config.set("screen_resolution", "pos_x", monitors[0].x - 1)
         config.set("screen_resolution", "pos_y", monitors[0].y - 1)
 
@@ -186,6 +181,7 @@ class TableOutputStream:
 
         # store the last frame for later display
         self.channel_images[channel.name] = frame
+        self.channel_dirty_flags[channel.name] = True
 
     # change the active channel, which is displayed in the window
     def set_active_channel(self, channel):
@@ -231,27 +227,33 @@ class TableOutputStream:
         self.redraw_beamer_image(program_stage)
 
         # redraw debug window
-        cv2.imshow(self.active_window, self.channel_images[self.active_channel.name])
+        if self.channel_dirty_flags[self.active_channel.name]:
+            cv2.imshow(self.active_window, self.channel_images[self.active_channel.name])
+            self.channel_dirty_flags[self.active_channel.name] = False
 
         # check if key pressed
-        key = cv2.waitKeyEx(1)
-
+        #key = cv2.waitKeyEx(1)
+        key = cv2.pollKey()
+        #key = 1
         # Break with Esc  # FIXME: CG: keyboard might not be available - use signals?
         if key == 27:
             logger.info("quit the program with the key")
             return True
+        if key == ord("1"):
+            self.shape_detector.sat_threshold = min(self.shape_detector.sat_threshold + 5, 255)
+        if key == ord("2"):
+            self.shape_detector.sat_threshold = max(self.shape_detector.sat_threshold - 5, 0)
         return False
 
     # redraws the beamer image if necessary with the correct frame depending on the ProgramStage
     # TODO: maybe make the image configurable via the GameEngine?
     def redraw_beamer_image(self, program_stage: CurrentProgramStage):
-
-        if program_stage.current_stage == ProgramStage.WHITE_BALANCE:
-            self.draw_white_frame()
-
-        elif program_stage.current_stage == ProgramStage.FIND_CORNERS:
-            self.draw_corner_qr_codes()
-
+        self.last_program_stage = program_stage.current_stage
+        if program_stage.current_stage == ProgramStage.FIND_CORNERS:
+            if self.board_detector.stage == BoardDetectorStage.MARKER_DETECTION:
+                self.draw_calibration_screen()
+            elif self.board_detector.stage == BoardDetectorStage.CORNER_REFINEMENT:
+                self.draw_refinement_screen()
         else:
             if self.is_window_destroyed: return
             cv2.destroyWindow(TableOutputStream.WINDOW_NAME_BEAMER)
@@ -270,25 +272,11 @@ class TableOutputStream:
 
     # displays qr-codes in each corner for the detection of the game board dimensions
     # called every frame when in ProgramStage FIND_CORNERS
-    def draw_corner_qr_codes(self):
-        frame = self.last_frame
+    def draw_calibration_screen(self):
+        cv2.imshow(TableOutputStream.WINDOW_NAME_BEAMER, self.aruco_image["image"])
 
-        # calculate qr-code offsets
-        pos_top_left = (0, 0)
-        pos_top_right = (frame.shape[1] - self.qr_top_right['image'].shape[1], 0)
-        pos_bottom_left = (0, frame.shape[0] - self.qr_bottom_left['image'].shape[0])
-        pos_bottom_right = (
-            frame.shape[1] - self.qr_bottom_right['image'].shape[1],
-            frame.shape[0] - self.qr_bottom_right['image'].shape[0]
-        )
-
-        # display images with calculated offsets
-        ImageHandler.img_on_background(frame, self.qr_top_left, pos_top_left)
-        ImageHandler.img_on_background(frame, self.qr_top_right, pos_top_right)
-        ImageHandler.img_on_background(frame, self.qr_bottom_left, pos_bottom_left)
-        ImageHandler.img_on_background(frame, self.qr_bottom_right, pos_bottom_right)
-        cv2.imshow(TableOutputStream.WINDOW_NAME_BEAMER, frame)
-
+    def draw_refinement_screen(self):
+        cv2.imshow(TableOutputStream.WINDOW_NAME_BEAMER, self.edge_image["image"])
     # checks if the frame has updated and redraws it if this is the case
     # called every frame when running the actual game
     def redraw_brick_detection(self):

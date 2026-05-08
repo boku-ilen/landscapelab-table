@@ -5,34 +5,37 @@ import numpy as np
 
 logger = logging.getLogger(__name__)
 
-SMOOTHING_WINDOW_SIZE = 3
+
 
 class PenDetector:
-    def __init__(self, board_detector, marker_size_mm = 40):
+    def __init__(self, config, board_detector):
         aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
         aruco_params = cv2.aruco.DetectorParameters()
         aruco_params.useAruco3Detection = True
         aruco_params.perspectiveRemovePixelPerCell = 12
         aruco_params.cornerRefinementMethod = cv2.aruco.CORNER_REFINE_CONTOUR
         self.aruco_detector = cv2.aruco.ArucoDetector(aruco_dict, aruco_params)
+        self.smoothing_window_size = config.get("pen", "num_smoothing_frames")
 
+        marker_size_mm = float(config.get("pen", "marker_size_mm"))
         obj_points = np.array([
             [-marker_size_mm / 2, marker_size_mm / 2, 0],
             [marker_size_mm / 2, marker_size_mm / 2, 0],
             [marker_size_mm / 2, -marker_size_mm / 2, 0],
             [-marker_size_mm / 2, -marker_size_mm / 2, 0],
         ])
-        self.marker_positions = {
-            1: np.array([0, 0, 122.5]),
-            2: np.array([0, -41, 98.5]),
-            3: np.array([41, 0, 98.5])
-        }
+        self.marker_positions = {}
+        config_positions = config.get("pen", "marker_positions_by_id")
+        self.marker_positions = {int(k):np.array(config_positions[k], dtype=np.float32) for k in config_positions.keys()}
+
         # intrinsic euler (applied r-p-y)
-        marker_rotations_euler = {
-            1: [0.0, 0.0, 0.0],
-            2: [59.0, 0.0, 0.0],
-            3: [59.0, 0.0, 90.0]
-        }
+        config_rotations = config.get("pen", "marker_rotations_by_id")
+        marker_rotations_euler = {int(k):[float(x) for x in config_rotations[k]] for k in config_rotations.keys()}
+        # marker_rotations_euler = {
+        #     2: [59.0, 0.0, 0.0],
+        #     3: [59.0, 0.0, 90.0],
+        #     4: [0.0, 0.0, 0.0],
+        # }
 
         self.marker_points = {}
         deg_to_rad = 1.0 / 57.2957795131
@@ -75,17 +78,21 @@ class PenDetector:
         self.board_detector = board_detector
         self.bypass = True
         self.smoothing_window = []
+        self.pen_down_threshold = config.get("pen", "touch_activate_threshold")
+        self.pen_up_threshold = config.get("pen", "touch_release_threshold")
     def detect_pen(self, img):
         if self.bypass:
             return None, False
         gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+        #gray = img[:,:,2]
+        #cv2.imshow("edges", gray)
         corners, ids, rejected = self.aruco_detector.detectMarkers(gray)
         positions = []
         for i in range(len(corners)):
             if ids[i][0] not in self.marker_points.keys(): continue
             for j in range(corners[i].shape[0]):
                 betterCorner = cv2.cornerSubPix(gray, corners[i][j], (5, 5), (-1, -1),
-                                                (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_COUNT, 40, 0.001))
+                                                (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_COUNT, 120, 0.001))
                 corners[i][j] = betterCorner
             solved, rvec, tvec = cv2.solvePnP(self.marker_points[ids[i][0]], corners[i], self.camera_matrix, self.dist_coeffs)
             if not solved:
@@ -114,20 +121,10 @@ class PenDetector:
             if ids[i][0] != 1:
                 clip_pos = (cv2.perspectiveTransform(estimated_center_screen, self.board_detector.perspective_matrix) / np.array([[[self.board_detector.board.width, self.board_detector.board.height]]]))[0][0]
                 positions.append([clip_pos[0], clip_pos[1], distance])
-
-            # if distance < -20:
-            #     cv2.circle(img, estimated_center_screen[0][0].astype(np.uint32), 16, (255, 0, 255), -1)
-            # else:
-            #     col = {
-            #         1: (255,255,0),
-            #         2: (0,255,0),
-            #         3: (0,0,255)
-            #     }
-            #     cv2.circle(img, estimated_center_screen[0][0].astype(np.uint32), 8, col[ids[i][0]], 8)
         if len(positions) > 0:
-            mean_pos = np.mean(np.array(positions), axis=0).tolist()
+            mean_pos = np.median(np.array(positions), axis=0).tolist()
             self.smoothing_window.append(mean_pos)
-            if len(self.smoothing_window) > SMOOTHING_WINDOW_SIZE:
-                self.smoothing_window = self.smoothing_window[-SMOOTHING_WINDOW_SIZE:]
-            return np.mean(np.array(self.smoothing_window), axis=0).tolist(), True
+            if len(self.smoothing_window) > self.smoothing_window_size:
+                self.smoothing_window = self.smoothing_window[-self.smoothing_window_size:]
+            return np.median(np.array(self.smoothing_window), axis=0).tolist(), True
         return None, False

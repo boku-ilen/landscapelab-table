@@ -6,6 +6,8 @@ from .BrickHandler import BrickHandler
 import websocket, rel
 import json
 
+from ..Model.Brick import BrickShape
+
 WEBSOCKET_URL = "ws://127.0.0.1:14541"
 logger = logging.getLogger(__name__)
 class WebSocketBrickHandler(BrickHandler):
@@ -89,15 +91,21 @@ class WebSocketBrickHandler(BrickHandler):
 
     def handle_pen_down(self, pos):
         self.ws.send(json.dumps({
-            "event":"pen_down",
+            "event":"brick_added",
             "data":{
+                "id": 0,
+                "shape": "BrickShape.SQUARE_BRICK",
+                "color": "BrickColor.RED_BRICK",
                 "position": pos
             }
         }))
     def handle_pen_up(self, pos):
         self.ws.send(json.dumps({
-            "event": "pen_up",
+            "event": "brick_removed",
             "data": {
+                "id": 0,
+                "shape": "BrickShape.SQUARE_BRICK",
+                "color": "BrickColor.RED_BRICK",
                 "position": pos
             }
         }))

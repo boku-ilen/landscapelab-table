@@ -3,8 +3,6 @@ import logging.config
 import time
 
 import cv2
-import numpy as np
-from cv2 import Mat
 
 from LabTable.DrawingRecognition.DrawingDetector import average_mats, mark_drawings
 from LabTable.PenDetection.PenDetector import PenDetector
@@ -61,7 +59,7 @@ class LabTable:
 
         # Initialize the centroid tracker
         self.tracker = Tracker(self.config, WebSocketBrickHandler())
-        self.pen_detector = PenDetector(self.board_detector)
+        self.pen_detector = PenDetector(self.config, self.board_detector)
         self.pen_down = False
         # initialize the input and output stream
         self.output_stream = TableOutputStream(self.tracker,
@@ -80,14 +78,12 @@ class LabTable:
         self.drawing_num_discard = self.config.get("drawing", "frame_delay_count")
         self.frame_times = []
 
-
+        self.pen_down_threshold = self.config.get("pen", "touch_activate_threshold")
+        self.pen_up_threshold = self.config.get("pen", "touch_release_threshold")
 
     # Run bricks detection and tracking code
     def run(self, once=False):
 
-        # Initialize ROI as a black RGB-image
-        region_of_interest = np.zeros((self.config.get("video_resolution", "height"),
-                                       self.config.get("video_resolution", "width"), CHANNELS_NUMBER), np.uint8)
         exit_flag = False
         if self.input_stream and self.input_stream.is_initialized():
             if not once:
@@ -152,9 +148,9 @@ class LabTable:
                     self.frame_times.append((time.perf_counter_ns() - tick) / 1000000)
 
 
-            except Exception as e:
-                logger.error("closing because encountered a problem: {}".format(e))
-                logger.exception(e)
+            except Exception as ex:
+                logger.error("closing because encountered a problem: {}".format(ex))
+                logger.exception(ex)
 
         # handle the output stream correctly
         if self.output_stream and not once:
@@ -176,10 +172,10 @@ class LabTable:
         region_of_interest = self.board_detector.rectify(color_image)
 
         if pen_found:
-            if pen_pos[2] < -50 and not self.pen_down:
+            if pen_pos[2] < self.pen_down_threshold and not self.pen_down:
                 self.pen_down = True
                 self.tracker.brick_handler.handle_pen_down(pen_pos)
-            elif pen_pos[2] >= 0 and self.pen_down:
+            elif pen_pos[2] >= self.pen_up_threshold and self.pen_down:
                 self.pen_down = False
                 self.tracker.brick_handler.handle_pen_up(pen_pos)
 

@@ -26,6 +26,22 @@
     "frame_average_count": 3,
     "frame_delay_count": 10
   },
+  "pen": {
+    "num_smoothing_frames": 3,
+    "touch_activate_threshold": -10,
+    "touch_release_threshold": 10,
+    "marker_size_mm": 38.5,
+    "marker_positions_by_id": {
+      "2": [0.0, -41.0, 98.5],
+      "3": [41.0, 0.0, 98.5],
+      "4": [0.0, 0.0, 122.5]
+    },
+    "marker_rotations_by_id": {
+      "2": [59.0, 0.0, 0.0],
+      "3": [59.0, 0.0, 90.0],
+      "4": [0.0, 0.0, 0.0]
+    }
+  },
 
   "resources": {
     "relative_path": ["resources"],

@@ -78,10 +78,10 @@ class BoardDetector:
 
         if self.stage == BoardDetectorStage.MARKER_DETECTION:
             self.buffer.append(color_image)
-            if len(self.buffer) < 3:
+            if len(self.buffer) < 6:
                 return False
-            if len(self.buffer) > 3:
-                self.buffer = self.buffer[-3:]
+            if len(self.buffer) > 6:
+                self.buffer = self.buffer[-6:]
 
             # initialize detector and image
             aruco_frame_gray = cv2.cvtColor(average_mats(self.buffer), cv2.COLOR_BGR2GRAY)
@@ -128,7 +128,7 @@ class BoardDetector:
                 if solved:
                     # board corners in screen space
                     self.image_pts, _ = cv2.projectPoints(board_corners, rvec, tvec, self.camera_matrix, self.dist_coeffs)
-
+                    
 
                     #self.image_pts = image_pts
                     self.stage = BoardDetectorStage.CORNER_REFINEMENT
@@ -143,12 +143,27 @@ class BoardDetector:
             # since we do perspective correction on undistorted image, undistort the corner coords
             self.image_pts = cv2.undistortImagePoints(self.image_pts, self.camera_matrix, self.dist_coeffs)
 
+            undistorted = cv2.dilate(cv2.undistort(color_image, self.camera_matrix, self.dist_coeffs),cv2.getStructuringElement(cv2.MORPH_RECT, (5,5), (-1,-1)), iterations=2)
             # corner refinement using monocolor frame to find real corners
-            frame_channel = cv2.undistort(color_image, self.camera_matrix, self.dist_coeffs)[:,:,1]
-            frame_channel = cv2.dilate(frame_channel, cv2.getStructuringElement(cv2.MORPH_RECT, (3,3), (-1,-1)), iterations=2)
-            self.image_pts = cv2.cornerSubPix(frame_channel, self.image_pts, (40,40), (-1,-1), (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_COUNT, 40, 0.001))
+            frame_channel = undistorted[:,:,1].astype(np.uint8)#np.clip((undistorted[:,:,1] / 255) * (1 - undistorted[:,:,0] / 512) * (1 - undistorted[:,:,2] / 512) * 255, 0, 255).astype(np.uint8)
+            #frame_channel = cv2.dilate(frame_channel, cv2.getStructuringElement(cv2.MORPH_RECT, (5,5), (-1,-1)), iterations=2)
+            cv2.threshold(frame_channel, 200, 255, cv2.THRESH_BINARY, frame_channel)
+            #frame_channel = cv2.adaptiveThreshold(frame_channel, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY,31,-4)
 
+            self.image_pts = cv2.cornerSubPix(frame_channel, self.image_pts, (160,160), (-1,-1), (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_COUNT, 40, 0.001))
+
+
+            # dbg_mark = frame_channel
+            # print(self.image_pts.shape)
+            # for p in self.image_pts.tolist():
+            #     cv2.circle(dbg_mark, (int(p[0][0]), int(p[0][1])),100, 255, -1)
+            # cv2.imshow("pts", cv2.resize(dbg_mark, (1280,720)))
+
+            
             self.board.corners = [x[0] for x in self.image_pts.tolist()]
+            
+
+
 
             self.compute_board_size(self.board.corners)
 

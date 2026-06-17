@@ -9,7 +9,7 @@
 
   "camera": {
     "implementation": "OpenCV",
-    "opencv_device_nr": 2,
+    "opencv_device_nr": 0,
     "opencv_zoom": 110,
     "opencv_exposure": 100,
     "linux_options": {
@@ -33,7 +33,7 @@
       "path": ["Calibration", "aruco_half_height.png"]
     },
     "edge_screen": {
-      "path": ["Calibration", "edge_green.png"]
+      "path": ["Calibration", "thick_green_border.png"]
     },
     "calibration_file":{
       "path": ["camera_calibration_data", "brio_4k.json"]
@@ -114,11 +114,11 @@
   },
 
   "beamer_resolution": {
-    "screen_id": 0,
+    "screen_id": 1,
     "NOTE_HEIGHT": ["screen_height_mm should be the height of the projected image in mm.",
       "Measure between the bottom edge of the projected image and the top edge,",
       "as close to the table surface as possible."],
-    "screen_height_mm": 440,
+    "screen_height_mm": 680,
     "NOTE": ["screen id refers to the display the projector output should be started on",
       "if the id exceeds the currently attached screen count the screen with the highest id will be selected",
       "if the id is negative the projector output will be shown in a window instead of full-screen"],

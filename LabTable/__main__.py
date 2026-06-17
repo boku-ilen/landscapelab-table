@@ -120,7 +120,6 @@ class LabTable:
                         # if all corners were found change channel and start next stage
                         if all_board_corners_found:
                             # Use distance to set possible brick size
-
                             self.shape_detector.calculate_possible_brick_dimensions(self.board_detector.projection_height, self.board.height)
 
                             self.output_stream.set_active_channel(TableOutputChannel.CHANNEL_ROI)

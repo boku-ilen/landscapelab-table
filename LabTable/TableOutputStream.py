@@ -247,6 +247,8 @@ class TableOutputStream:
             self.shape_detector.sat_threshold = max(self.shape_detector.sat_threshold - 5, 0)
         if key == ord("p"):
             self.pen_detector.bypass = not self.pen_detector.bypass
+        if key == ord(" "):
+            cv2.destroyWindow("pts")
         return False
 
     # redraws the beamer image if necessary with the correct frame depending on the ProgramStage

@@ -40,6 +40,8 @@ class BoardDetector:
         self.projection_height = self.config.get("beamer_resolution", "screen_height_mm")
         self.aruco_size = self.config.get("camera", "aruco_height_fraction") * self.projection_height
 
+        self.corner_color_threshold = self.config.get("camera", "calibration_refinement_threshold")
+
         # get data about camera calibration
         calib_file = self.config.get("resources", "calibration_file")["path"]
         resources_path = list(concat([".."], self.config.get("resources", "relative_path")))
@@ -148,17 +150,17 @@ class BoardDetector:
             # corner refinement using monocolor frame to find real corners
             frame_channel = undistorted[:,:,1].astype(np.uint8)#np.clip((undistorted[:,:,1] / 255) * (1 - undistorted[:,:,0] / 512) * (1 - undistorted[:,:,2] / 512) * 255, 0, 255).astype(np.uint8)
             #frame_channel = cv2.dilate(frame_channel, cv2.getStructuringElement(cv2.MORPH_RECT, (5,5), (-1,-1)), iterations=2)
-            cv2.threshold(frame_channel, 200, 255, cv2.THRESH_BINARY, frame_channel)
+            cv2.threshold(frame_channel, self.corner_color_threshold, 255, cv2.THRESH_BINARY, frame_channel)
             #frame_channel = cv2.adaptiveThreshold(frame_channel, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY,31,-4)
 
             self.image_pts = cv2.cornerSubPix(frame_channel, self.image_pts, (160,160), (-1,-1), (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_COUNT, 40, 0.001))
 
 
-            # dbg_mark = frame_channel
-            # print(self.image_pts.shape)
-            # for p in self.image_pts.tolist():
-            #     cv2.circle(dbg_mark, (int(p[0][0]), int(p[0][1])),100, 255, -1)
-            # cv2.imshow("pts", cv2.resize(dbg_mark, (1280,720)))
+            dbg_mark = frame_channel
+            print(self.image_pts.shape)
+            for p in self.image_pts.tolist():
+                cv2.circle(dbg_mark, (int(p[0][0]), int(p[0][1])),10, 255, -1)
+            cv2.imshow("pts", cv2.resize(dbg_mark, (1280,720)))
 
 
             self.board.corners = [x[0] for x in self.image_pts.tolist()]
@@ -216,7 +218,7 @@ class BoardDetector:
         # assumption: width in middle approximately equals the mean of top and bottom
         self.board.width = int((top_width + bottom_width) / 2)
         # assumption: square pixels -> aspect ratio should be the same as screen resolution
-        self.board.height = int((self.config.get("screen_resolution", "height")/self.config.get("screen_resolution", "width"))*self.board.width)
+        self.board.height = int((self.config.get("beamer_resolution", "height")/self.config.get("beamer_resolution", "width"))*self.board.width)
 
         ExtentTracker.get_instance().board = Extent.from_rectangle(0, 0, self.board.width, self.board.height)
         logger.info('board has been set to {}'.format(ExtentTracker.get_instance().board))

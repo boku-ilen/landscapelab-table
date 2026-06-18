@@ -227,7 +227,7 @@ class LabTable:
         if pen_found:
             cv2.circle(region_of_interest, (int(pen_pos[0] * region_of_interest.shape[1]), int(pen_pos[1] * region_of_interest.shape[0])), 16, (255,0,255), -1)
         # Render shape detection images
-        self.output_stream.write_to_channel(TableOutputChannel.CHANNEL_ROI, cv2.resize(region_of_interest, (1280, 720)))
+        self.output_stream.write_to_channel(TableOutputChannel.CHANNEL_ROI, region_of_interest)
 
     def get_program_stage(self) -> ProgramStage:
         return self.program_stage.current_stage

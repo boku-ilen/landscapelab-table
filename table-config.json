@@ -19,7 +19,12 @@
       "pan_absolute": 21600,
       "sharpness": 64
     },
-    "aruco_height_fraction": 0.5
+    "aruco_height_fraction": 0.5,
+    "NOTE_THRESHOLD": [
+      "calibration_refinement_threshold is the threshold applied to the green channel during calibration",
+      "at the corner refinement stage, where a green margin is displayed and detected."
+    ],
+    "calibration_refinement_threshold": 180
   },
 
   "drawing": {
@@ -32,14 +37,20 @@
     "touch_release_threshold": 10,
     "marker_size_mm": 38.5,
     "marker_positions_by_id": {
-      "2": [0.0, -41.0, 98.5],
-      "3": [41.0, 0.0, 98.5],
-      "4": [0.0, 0.0, 122.5]
+      "1": [0.0, 0.0, 162],
+      "2": [33.76, 10.97, 145.5],
+      "3": [0.0, 35.5, 145.5],
+      "4": [-33.7, 10.97, 145.5],
+      "5": [-20.86, -28.72, 145.5],
+      "6": [20.86, -28.72, 145.5]
     },
     "marker_rotations_by_id": {
-      "2": [59.0, 0.0, 0.0],
-      "3": [59.0, 0.0, 90.0],
-      "4": [0.0, 0.0, 0.0]
+      "1": [0.0, 0.0, 0.0],
+      "2": [65.0, 0.0, 18.0],
+      "3": [65.0, 0.0, 90.0],
+      "4": [65.0, 0.0, 162.0],
+      "5": [65.0, 0.0, 234.0],
+      "6": [65.0, 0.0, 306.0]
     }
   },
 

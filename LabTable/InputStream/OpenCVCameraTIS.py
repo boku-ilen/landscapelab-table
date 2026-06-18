@@ -27,7 +27,7 @@ class OpenCVCameraTIS(TableInputStream):
                 self.camera = cv2.VideoCapture(dev_num, cv2.CAP_DSHOW)
             else:
                 # on linux, automatic selection works fine
-                self.camera = cv2.VideoCapture(dev_num)
+                self.camera = cv2.VideoCapture(dev_num, cv2.CAP_V4L2)
             self.camera.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter.fourcc('M','J','P','G'))
             self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, config.get("video_resolution","width"))
             self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, config.get("video_resolution", "height"))

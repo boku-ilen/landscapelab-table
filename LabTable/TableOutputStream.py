@@ -76,6 +76,7 @@ class TableOutputStream:
                  board: Board,
                  program_stage: CurrentProgramStage,
                  board_detector,
+                 pen_detector,
                  video_output_name=None):
 
         self.config = config
@@ -128,6 +129,7 @@ class TableOutputStream:
         self.tracker: Tracker = tracker
 
         self.board_detector = board_detector
+        self.pen_detector = pen_detector
 
         # create image handler to load images
         self.image_handler = ImageHandler(config)
@@ -243,6 +245,10 @@ class TableOutputStream:
             self.shape_detector.sat_threshold = min(self.shape_detector.sat_threshold + 5, 255)
         if key == ord("2"):
             self.shape_detector.sat_threshold = max(self.shape_detector.sat_threshold - 5, 0)
+        if key == ord("p"):
+            self.pen_detector.bypass = not self.pen_detector.bypass
+        if key == ord(" "):
+            cv2.destroyWindow("pts")
         return False
 
     # redraws the beamer image if necessary with the correct frame depending on the ProgramStage

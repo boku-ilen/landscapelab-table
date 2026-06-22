@@ -3,10 +3,9 @@ import logging.config
 import time
 
 import cv2
-import numpy as np
-from cv2 import Mat
 
 from LabTable.DrawingRecognition.DrawingDetector import average_mats, mark_drawings
+from LabTable.PenDetection.PenDetector import PenDetector
 from .Model.ProgramStage import ProgramStage, CurrentProgramStage
 from .BrickDetection.BoardDetector import BoardDetector
 from .BrickDetection.ShapeDetector import ShapeDetector
@@ -60,10 +59,11 @@ class LabTable:
 
         # Initialize the centroid tracker
         self.tracker = Tracker(self.config, WebSocketBrickHandler())
-
+        self.pen_detector = PenDetector(self.config, self.board_detector)
+        self.pen_down = False
         # initialize the input and output stream
         self.output_stream = TableOutputStream(self.tracker,
-                                               self.config, self.board, self.program_stage, self.board_detector)
+                                               self.config, self.board, self.program_stage, self.board_detector, self.pen_detector)
         self.input_stream = TableInputStream.get_table_input_stream(self.config, self.board, usestream=self.used_stream)
 
         # initialize the brick detector
@@ -78,12 +78,12 @@ class LabTable:
         self.drawing_num_discard = self.config.get("drawing", "frame_delay_count")
         self.frame_times = []
 
+        self.pen_down_threshold = self.config.get("pen", "touch_activate_threshold")
+        self.pen_up_threshold = self.config.get("pen", "touch_release_threshold")
+
     # Run bricks detection and tracking code
     def run(self, once=False):
 
-        # Initialize ROI as a black RGB-image
-        region_of_interest = np.zeros((self.config.get("video_resolution", "height"),
-                                       self.config.get("video_resolution", "width"), CHANNELS_NUMBER), np.uint8)
         exit_flag = False
         if self.input_stream and self.input_stream.is_initialized():
             if not once:
@@ -148,9 +148,9 @@ class LabTable:
                     self.frame_times.append((time.perf_counter_ns() - tick) / 1000000)
 
 
-            except Exception as e:
-                logger.error("closing because encountered a problem: {}".format(e))
-                logger.exception(e)
+            except Exception as ex:
+                logger.error("closing because encountered a problem: {}".format(ex))
+                logger.exception(ex)
 
         # handle the output stream correctly
         if self.output_stream and not once:
@@ -168,13 +168,26 @@ class LabTable:
         # of interest and start brick detection
 
         # Take only the region of interest from the color image
+        pen_pos, pen_found = self.pen_detector.detect_pen(color_image)
         region_of_interest = self.board_detector.rectify(color_image)
+
+        if pen_found:
+            if pen_pos[2] < self.pen_down_threshold and not self.pen_down:
+                self.pen_down = True
+                self.tracker.brick_handler.handle_pen_down(pen_pos)
+            elif pen_pos[2] >= self.pen_up_threshold and self.pen_down:
+                self.pen_down = False
+                self.tracker.brick_handler.handle_pen_up(pen_pos)
 
         # Initialize brick properties list
         potential_bricks_list = []
 
         # detect contours in area of interest
-        contours = self.shape_detector.detect_contours(region_of_interest)
+        if pen_found:
+            contours = []
+        else:
+            contours = self.shape_detector.detect_contours(region_of_interest)
+
         candidates = []
         # Loop over the contours
         for contour in contours:
@@ -194,7 +207,10 @@ class LabTable:
 
         # Compute tracked bricks dictionary using the centroid tracker and set of properties
         # Mark stored bricks virtual
-        tracked_bricks = self.tracker.update(potential_bricks_list, self.program_stage.current_stage)
+        if pen_found:
+            tracked_bricks = []
+        else:
+            tracked_bricks = self.tracker.update(potential_bricks_list, self.program_stage.current_stage)
 
         # Loop over the tracked objects and label them in the stream
         for tracked_brick in tracked_bricks:
@@ -208,8 +224,10 @@ class LabTable:
         cv2.putText(region_of_interest, f"threshold {self.shape_detector.sat_threshold}", (0,256),
                     cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255), 3)
         self.frame_times = self.frame_times[-5:]
+        if pen_found:
+            cv2.circle(region_of_interest, (int(pen_pos[0] * region_of_interest.shape[1]), int(pen_pos[1] * region_of_interest.shape[0])), 16, (255,0,255), -1)
         # Render shape detection images
-        self.output_stream.write_to_channel(TableOutputChannel.CHANNEL_ROI, cv2.resize(region_of_interest, (1280, 720)))
+        self.output_stream.write_to_channel(TableOutputChannel.CHANNEL_ROI, region_of_interest)
 
     def get_program_stage(self) -> ProgramStage:
         return self.program_stage.current_stage
